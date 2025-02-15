@@ -431,7 +431,13 @@ def merge_armatures(
         attach_bone = bpy.context.scene.attach_to_bone 
         if attach_bone:
             for bone in merge_armature.data.bones:
-                original_parents[bone.name] = attach_bone
+                # Only set new parent for root bones (bones without parents)
+                if not bone.parent:
+                    original_parents[bone.name] = attach_bone
+                else:
+                    # Keep the original parent relationship for non-root bones
+                    original_parents[bone.name] = bone.parent.name
+
 
     # Get names of bones in the base armature
     base_bone_names = set(bone.name for bone in base_armature.data.bones)
