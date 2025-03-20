@@ -112,15 +112,19 @@ class FnModel:
         if armature_object is None:
             return None
 
-        # TODO consistency issue
-        return next(filter(lambda o: o.type == "MESH" and "mmd_bone_order_override" in o.modifiers, armature_object.children), None)
+        for o in armature_object.children:
+            if o.type == "MESH" and "mmd_bone_order_override" in o.modifiers:
+                return o
+        return None
 
     @staticmethod
     def find_mesh_object_by_name(root_object: bpy.types.Object, name: str) -> Optional[bpy.types.Object]:
+        if not name:
+            return None
+            
         for o in FnModel.iterate_mesh_objects(root_object):
-            if o.name != name:
-                continue
-            return o
+            if o.name == name or (hasattr(o.data, 'name') and o.data.name == name):
+                return o
         return None
 
     @staticmethod
@@ -557,11 +561,13 @@ class MigrationFnModel:
             if "mmd_tools_local_version" in root_object:
                 continue
 
-            root_object["mmd_tools_local_version"] = "2.8.0"
+            root_object["mmd_tools_local_version"] = "4.3.1"
 
 
 class Model:
     def __init__(self, root_obj):
+        if root_obj is None:
+            raise ValueError("must be MMD ROOT type object")
         if root_obj.mmd_type != "ROOT":
             raise ValueError("must be MMD ROOT type object")
         self.__root: bpy.types.Object = getattr(root_obj, "original", root_obj)
@@ -600,18 +606,32 @@ class Model:
         setattr(armature_object, Props.show_in_front, True)
         setattr(armature_object, Props.display_type, "WIRE")
 
-        from mmd_tools_local.core.bone import FnBone
+        from .bone import FnBone
 
         FnBone.setup_special_bone_collections(armature_object)
 
         if add_root_bone:
             bone_name = "全ての親"
+            bone_name_english = "Root"
+
+            # Create the root bone
             with bpyutils.edit_object(armature_object) as data:
                 bone = data.edit_bones.new(name=bone_name)
-                bone.head = [0.0, 0.0, 0.0]
-                bone.tail = [0.0, 0.0, getattr(root, Props.empty_display_size)]
-            armature_object.pose.bones[bone_name].mmd_bone.name_j = bone_name
-            armature_object.pose.bones[bone_name].mmd_bone.name_e = "Root"
+                bone.head = (0.0, 0.0, 0.0)
+                bone.tail = (0.0, 0.0, getattr(root, Props.empty_display_size))
+
+            # Set MMD bone properties
+            pose_bone = armature_object.pose.bones[bone_name]
+            pose_bone.mmd_bone.name_j = bone_name
+            pose_bone.mmd_bone.name_e = bone_name_english
+
+            # Create a bone collection named "Root"
+            bone_collection_name = bone_name_english
+            bone_collection = armature_object.data.collections.new(name=bone_collection_name)
+
+            # Assign the new bone to the bone collection
+            data_bone = armature_object.data.bones[bone_name]
+            bone_collection.assign(data_bone)
 
         FnContext.set_active_and_select_single_object(context, root)
         return Model(root)
