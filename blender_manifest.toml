@@ -2,7 +2,7 @@ schema_version = "1.0.0"
 
 # Unoffical Cats Blender Plugin Extenstion
 id = "cats_blender_plugin"
-version = "4.4.0"
+version = "4.4.1"
 name = "Unoffical Cats Blender Plugin"
 tagline = "A tool designed to shorten steps needed to import and optimize models into VRChat"
 maintainer = "Unoffical Cats Team <hello@yusarina.xyz>"
