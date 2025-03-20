@@ -433,12 +433,8 @@ class ImportMMD(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
-
-
-
 @register_wrap
-class ImportMMDAnimation(bpy.types.Operator,bpy_extras.io_utils.ImportHelper):
+class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     bl_idname = 'cats_importer.import_mmd_animation'
     bl_label = "MMD Animation"
     bl_description = "Import a MMD Animation (.vmd)"
@@ -546,7 +542,8 @@ class ImportMMDAnimation(bpy.types.Operator,bpy_extras.io_utils.ImportHelper):
 
             #delete active object which is armature.
             bpy.ops.object.delete(use_global=True, confirm=False)
-
+            
+        return {'FINISHED'}
 
 @register_wrap
 class ImportXPS(bpy.types.Operator):
