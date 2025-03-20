@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class FnMorph:
-    def __init__(self, morph, model: "mmd_tools_local.core.model.Model"):
+    def __init__(self, morph, model: "Model"):
         self.__morph = morph
         self.__rig = model
 
@@ -141,29 +141,39 @@ class FnMorph:
             obj.vertex_groups.active.name = vg_name.replace(src_name, dest_name)
 
     @staticmethod
-    def overwrite_bone_morphs_from_pose_library(armature_object):
+    def overwrite_bone_morphs_from_action_pose(armature_object):
         armature = armature_object.id_data
-        pose_library = armature.pose_library
+        
+        # Use animation_data and action instead of action_pose
+        if armature.animation_data is None or armature.animation_data.action is None:
+            logging.warning('[WARNING] armature "%s" has no animation data or action', armature_object.name)
+            return
 
-        if pose_library is None:
+        action = armature.animation_data.action
+        pose_markers = action.pose_markers
+
+        if not pose_markers:
             return
 
         root = armature_object.parent
         mmd_root = root.mmd_root
         bone_morphs = mmd_root.bone_morphs
 
+        utils.selectAObject(armature_object)
         original_mode = bpy.context.object.mode
         bpy.ops.object.mode_set(mode="POSE")
         try:
-            for index, pose_maker in enumerate(pose_library.pose_markers):
-                bone_morph = next(iter([m for m in bone_morphs if m.name == pose_maker.name]), None)
+            for index, pose_marker in enumerate(pose_markers):
+                bone_morph = next(iter([m for m in bone_morphs if m.name == pose_marker.name]), None)
                 if bone_morph is None:
                     bone_morph = bone_morphs.add()
-                    bone_morph.name = pose_maker.name
+                    bone_morph.name = pose_marker.name
 
                 bpy.ops.pose.select_all(action="SELECT")
                 bpy.ops.pose.transforms_clear()
-                bpy.ops.poselib.apply_pose(pose_index=index)
+                
+                frame = pose_marker.frame
+                bpy.context.scene.frame_set(int(frame))
 
                 mmd_root.active_morph = bone_morphs.find(bone_morph.name)
                 bpy.ops.mmd_tools_local.apply_bone_morph()
@@ -172,6 +182,7 @@ class FnMorph:
 
         finally:
             bpy.ops.object.mode_set(mode=original_mode)
+        utils.selectAObject(root)
 
     @staticmethod
     def clean_uv_morph_vertex_groups(obj):
@@ -309,7 +320,7 @@ class FnMorph:
 
 
 class _MorphSlider:
-    def __init__(self, model: "mmd_tools_local.core.model.Model"):
+    def __init__(self, model: "Model"):
         self.__rig = model
 
     def placeholder(self, create=False, binded=False):
@@ -342,7 +353,7 @@ class _MorphSlider:
             arm.parent = obj
             FnContext.link_object(FnContext.ensure_context(), arm)
 
-            from mmd_tools_local.core.bone import FnBone
+            from .bone import FnBone
 
             FnBone.setup_special_bone_collections(arm)
         return arm
@@ -435,7 +446,7 @@ class _MorphSlider:
                 if m.name.startswith("mmd_bind") and m.name not in names_in_use:
                     mesh_object.modifiers.remove(m)
 
-        from mmd_tools_local.core.shader import _MaterialMorph
+        from .shader import _MaterialMorph
 
         for m in rig.materials():
             if m and m.node_tree:
@@ -544,7 +555,7 @@ class _MorphSlider:
 
         bone_offset_map = {}
         with bpyutils.edit_object(arm) as data:
-            from mmd_tools_local.core.bone import FnBone
+            from .bone import FnBone
 
             edit_bones = data.edit_bones
 
@@ -675,7 +686,7 @@ class _MorphSlider:
             driver.expression = f"({__config_groups(variables, var.name, groups)})*{fvar.name}"
 
         # material morphs
-        from mmd_tools_local.core.shader import _MaterialMorph
+        from .shader import _MaterialMorph
 
         group_dict = material_offset_map.get("group_dict", {})
 
@@ -708,7 +719,7 @@ class _MorphSlider:
 class MigrationFnMorph:
     @staticmethod
     def update_mmd_morph():
-        from mmd_tools_local.core.material import FnMaterial
+        from .material import FnMaterial
 
         for root in bpy.data.objects:
             if root.mmd_type != "ROOT":

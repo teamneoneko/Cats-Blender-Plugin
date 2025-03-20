@@ -67,7 +67,8 @@ class RigidBodyMaterial:
             if len(mat.diffuse_color) > 3:
                 mat.diffuse_color[3] = 0.5
             mat.blend_method = "BLEND"
-            mat.shadow_method = "NONE"
+            if hasattr(mat, "shadow_method"):
+                mat.shadow_method = "NONE"
             mat.use_backface_culling = True
             mat.show_transparent_back = False
             mat.use_nodes = True

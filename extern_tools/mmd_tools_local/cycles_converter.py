@@ -7,6 +7,7 @@ from typing import Iterable, Optional
 import bpy
 
 from mmd_tools_local.core.shader import _NodeGroupUtils
+from mmd_tools_local.core.material import FnMaterial
 
 
 def __switchToCyclesRenderEngine():
@@ -122,6 +123,14 @@ def convertToBlenderShader(obj: bpy.types.Object, use_principled=False, clean_no
         if clean_nodes:
             __cleanNodeTree(i.material)
 
+def convertToMMDShader(obj):
+    """BSDF -> MMDShaderDev conversion."""
+    for i in obj.material_slots:
+        if not i.material:
+            continue
+        if not i.material.use_nodes:
+            i.material.use_nodes = True
+        FnMaterial.convert_to_mmd_material(i.material)
 
 def __convertToMMDBasicShader(material: bpy.types.Material):
     # TODO: test me

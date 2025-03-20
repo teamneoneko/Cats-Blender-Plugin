@@ -19,6 +19,7 @@ def selectAObject(obj):
     except Exception:
         pass
     bpy.ops.object.select_all(action="DESELECT")
+    FnContext.select_object(FnContext.ensure_context(), obj)
     FnContext.set_active_object(FnContext.ensure_context(), obj)
 
 
@@ -143,7 +144,7 @@ def clearUnusedMeshes():
 ## Boneのカスタムプロパティにname_jが存在する場合、name_jの値を
 # それ以外の場合は通常のbone名をキーとしたpose_boneへの辞書を作成
 def makePmxBoneMap(armObj):
-    # Maintain backward compatibility with mmd_tools_local v0.4.x or older.
+    # Maintain backward compatibility with mmd_tools v0.4.x or older.
     return {(i.mmd_bone.name_j or i.get("mmd_bone_name_j", i.get("name_j", i.name))): i for i in armObj.pose.bones}
 
 
@@ -207,21 +208,19 @@ def saferelpath(path, start, strategy="inside"):
     - absolute: this will return the absolute path instead of a relative.
     See http://bugs.python.org/issue7195
     """
-    result = os.path.basename(path)
-    if os.name == "nt":
-        d1 = os.path.splitdrive(path)[0]
-        d2 = os.path.splitdrive(start)[0]
-        if d1 != d2:
-            if strategy == "outside":
-                result = ".." + os.sep + os.path.basename(path)
-            elif strategy == "absolute":
-                result = os.path.abspath(path)
-        else:
-            result = os.path.relpath(path, start)
-    else:
-        result = os.path.relpath(path, start)
-    return result
+    if strategy == "inside":
+        return os.path.basename(path)
 
+    if strategy == "absolute":
+        return os.path.abspath(path)
+
+    if strategy == "outside" and os.name == "nt":
+        d1, _ = os.path.splitdrive(path)
+        d2, _ = os.path.splitdrive(start)
+        if d1 != d2:
+            return ".." + os.sep + os.path.basename(path)
+
+    return os.path.relpath(path, start)
 
 class ItemOp:
     @staticmethod
