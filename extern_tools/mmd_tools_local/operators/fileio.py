@@ -12,7 +12,7 @@ import bpy
 from bpy.types import Operator, OperatorFileListElement
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-import mmd_tools_local.core.model as mmd_model
+import mmd_tools_local.core.model as FnModel
 import mmd_tools_local.core.pmd.importer as pmd_importer
 import mmd_tools_local.core.pmx.exporter as pmx_exporter
 import mmd_tools_local.core.pmx.importer as pmx_importer
