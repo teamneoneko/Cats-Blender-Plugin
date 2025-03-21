@@ -1,6 +1,7 @@
 # MIT License
 
 import os
+import traceback
 import bpy
 import copy
 import zipfile
@@ -20,6 +21,10 @@ from . import settings as Settings
 from ..tools import iconloader as Iconloader
 from .register import register_wrap
 from .translations import t
+from mmd_tools_local.utils import makePmxBoneMap
+from mmd_tools_local.core.vmd import importer as vmd_importer
+from mmd_tools_local.translations import DictionaryEnum
+from mmd_tools_local import auto_scene_setup
 
 current_blender_version = str(bpy.app.version[:2])[1:-1].replace(', ', '.')
 
@@ -378,6 +383,9 @@ class ModelsPopup(bpy.types.Operator):
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(ImportMMDAnimation.bl_idname)
+        row = col.row(align=True)
+        row.scale_y = 1.3
+        row.operator(ImportMMDAnimationNew.bl_idname)
 
 
 @register_wrap
@@ -2106,6 +2114,111 @@ class ExportModel(bpy.types.Operator):
             self.report({'ERROR'}, t('ExportModel.error.notEnabled'))
 
         return {'FINISHED'}
+
+@register_wrap
+class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
+    bl_idname = 'cats_importer.import_mmd_animation_new'
+    bl_label = "Import MMD Animation (New)"
+    bl_description = "Import a MMD Animation (.vmd) using MMD Tools importer"
+    bl_options = {'INTERNAL'}
+
+    filename_ext = ".vmd"
+    filter_glob: bpy.props.StringProperty(default="*.vmd", options={'HIDDEN'})
+
+    # Copy the properties from MMD Tools importer that we want to expose
+    bone_mapper: bpy.props.EnumProperty(
+        name="Bone Mapper",
+        description="Select bone mapper",
+        items=[
+            ("BLENDER", "Blender", "Use blender bone name", 0),
+            ("PMX", "PMX", "Use japanese name of MMD bone", 1),
+            ("RENAMED_BONES", "Renamed bones", "Rename the bone of motion data to be blender suitable", 2),
+        ],
+        default="PMX",
+    )
+    rename_bones: bpy.props.BoolProperty(
+        name="Rename Bones - L / R Suffix",
+        description="Use Blender naming conventions for Left / Right paired bones",
+        default=True,
+    )
+    use_underscore: bpy.props.BoolProperty(
+        name="Rename Bones - Use Underscore",
+        description="Will not use dot, e.g. if renaming bones, will use _R instead of .R",
+        default=False,
+    )
+    dictionary: bpy.props.EnumProperty(
+        name="Rename Bones To English",
+        items=DictionaryEnum.get_dictionary_items,
+        description="Translate bone names from Japanese to English using selected dictionary",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        if Common.get_armature() is None:
+            return False
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "bone_mapper")
+        if self.bone_mapper == "RENAMED_BONES":
+            layout.prop(self, "rename_bones")
+            layout.prop(self, "use_underscore")
+            layout.prop(self, "dictionary")
+
+    def execute(self, context):
+        if not mmd_tools_local_installed:
+            bpy.ops.cats_importer.enable_mmd('INVOKE_DEFAULT')
+            return {'FINISHED'}
+
+        try:
+            # Select the armature
+            armature = Common.get_armature()
+            Common.unselect_all()
+            Common.set_active(armature)
+            
+            # Call the MMD Tools VMD importer directly with the file we selected
+            # and the parameters we set in the UI
+            from mmd_tools_local.core.vmd import importer as vmd_importer
+            from mmd_tools_local import auto_scene_setup
+            from mmd_tools_local.utils import makePmxBoneMap
+            from mmd_tools_local.translations import DictionaryEnum
+            
+            bone_mapper = None
+            if self.bone_mapper == "PMX":
+                bone_mapper = makePmxBoneMap
+            elif self.bone_mapper == "RENAMED_BONES":
+                bone_mapper = vmd_importer.RenamedBoneMapper(
+                    rename_LR_bones=self.rename_bones,
+                    use_underscore=self.use_underscore,
+                    translator=DictionaryEnum.get_translator(self.dictionary),
+                ).init
+            
+            importer = vmd_importer.VMDImporter(
+                filepath=self.filepath,
+                scale=0.08,
+                bone_mapper=bone_mapper,
+                use_pose_mode=False,
+                frame_margin=5,
+                use_mirror=False,
+                use_NLA=False
+            )
+            
+            importer.assign(armature)
+            
+            # Update scene settings
+            auto_scene_setup.setupFrameRanges()
+            auto_scene_setup.setupFps()
+            
+            self.report({'INFO'}, f'Successfully imported animation from "{os.path.basename(self.filepath)}"')
+            return {'FINISHED'}
+            
+        except Exception as e:
+            import traceback
+            err_msg = traceback.format_exc()
+            self.report({'ERROR'}, f"Error importing animation: {str(e)}")
+            print(err_msg)
+            return {'CANCELLED'}
 
 
 #donated to cats unofficial by @989onan - comment by @989onan

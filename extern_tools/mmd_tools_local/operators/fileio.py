@@ -12,7 +12,6 @@ import bpy
 from bpy.types import Operator, OperatorFileListElement
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-import mmd_tools_local.core.model as FnModel
 import mmd_tools_local.core.pmd.importer as pmd_importer
 import mmd_tools_local.core.pmx.exporter as pmx_exporter
 import mmd_tools_local.core.pmx.importer as pmx_importer
@@ -20,6 +19,7 @@ import mmd_tools_local.core.vmd.exporter as vmd_exporter
 import mmd_tools_local.core.vmd.importer as vmd_importer
 import mmd_tools_local.core.vpd.exporter as vpd_exporter
 import mmd_tools_local.core.vpd.importer as vpd_importer
+from mmd_tools_local.core.model import Model, FnModel
 from mmd_tools_local import auto_scene_setup
 from mmd_tools_local.core.camera import MMDCamera
 from mmd_tools_local.core.lamp import MMDLamp
