@@ -473,7 +473,7 @@ class PMXImporter:
     def __importRigids(self):
         start_time = time.time()
         self.__rigidTable = {}
-        context = bpyutils.FnContext.ensure_context()
+        context = FnContext.ensure_context()
         rigid_pool = FnRigidBody.new_rigid_body_objects(context, FnModel.ensure_rigid_group_object(context, self.__rig.rootObject()), len(self.__model.rigids))
         for i, (rigid, rigid_obj) in enumerate(zip(self.__model.rigids, rigid_pool)):
             loc = Vector(rigid.location).xzy * self.__scale
@@ -506,7 +506,7 @@ class PMXImporter:
 
     def __importJoints(self):
         start_time = time.time()
-        context = bpyutils.FnContext.ensure_context()
+        context = FnContext.ensure_context()
         joint_pool = FnRigidBody.new_joint_objects(context, FnModel.ensure_joint_group_object(context, self.__rig.rootObject()), len(self.__model.joints), FnModel.get_empty_display_size(self.__rig.rootObject()))
         for i, (joint, joint_obj) in enumerate(zip(self.__model.joints, joint_pool)):
             loc = Vector(joint.location).xzy * self.__scale
@@ -896,7 +896,7 @@ class PMXImporter:
 
         FnModel.change_mmd_ik_loop_factor(self.__root, args.get("ik_loop_factor", 1))
         # bpy.context.scene.gravity[2] = -9.81 * 10 * self.__scale
-        FnContext.set_active_object(self.__targetContext, self.__root)
+        utils.selectAObject(self.__root)
 
         logging.info(" Finished importing the model in %f seconds.", time.time() - start_time)
         logging.info("----------------------------------------")
