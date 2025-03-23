@@ -92,6 +92,23 @@ class ConvertMaterials(Operator):
             cycles_converter.convertToBlenderShader(obj, use_principled=self.use_principled, clean_nodes=self.clean_nodes, subsurface=self.subsurface)
         return {"FINISHED"}
 
+class ConvertBSDFMaterials(Operator):
+    bl_idname = 'mmd_tools_local.convert_bsdf_materials'
+    bl_label = 'Convert Blender Materials'
+    bl_description = 'Convert materials of selected objects.'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return next((x for x in context.selected_objects if x.type == 'MESH'), None)
+
+    def execute(self, context):
+        for obj in context.selected_objects:
+            if obj.type != 'MESH':
+                continue
+            cycles_converter.convertToMMDShader(obj)
+        return {'FINISHED'}
+
 
 class _OpenTextureBase:
     """Create a texture for mmd model material."""
