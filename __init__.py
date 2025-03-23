@@ -1,7 +1,7 @@
 # MIT License
 
-CATS_VERSION = "4.2.3.0"
-dev_branch = False
+CATS_VERSION = "4.2.4.0"
+dev_branch = True
 
 import os
 import sys
@@ -51,12 +51,8 @@ from .tools.translations import t
 
 
 # How to update mmd_tools:
-# Delete mmd_tools_local folder
-# Paste updated mmd_tools folder into root of project
-# Refactor folder name "mmd_tools" to "mmd_tools_local" and update all references
-# Move mmd_tools_local folder into extern_tools folder
-# Search for "show_backface_culling" and set it to False in view.py
-# Done
+# MMD Tools is no longer a drop in replacement, manually work is required please ask
+# us to update it instead.
 
 # How to update google_trans_new:
 # In google_trans.py comment out everything that has to do with urllib3
