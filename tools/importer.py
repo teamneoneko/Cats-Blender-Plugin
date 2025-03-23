@@ -113,11 +113,11 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         if file_ending == 'pmx' or file_ending == 'pmd':
             try:
                 bpy.ops.mmd_tools_local.import_model('EXEC_DEFAULT',
-                                               files=[{'name': file_name}],
-                                               directory=directory,
-                                               scale=0.08,
-                                               types={'MESH', 'ARMATURE', 'MORPHS'},
-                                               log_level='WARNING')
+                                            files=[{'name': file_name}],
+                                            directory=directory,
+                                            scale=0.08,
+                                            types={'MESH', 'ARMATURE', 'MORPHS', 'DISPLAY'},
+                                            log_level='WARNING')
             except AttributeError:
                 bpy.ops.mmd_tools_local.import_model('INVOKE_DEFAULT')
             except (TypeError, ValueError):
