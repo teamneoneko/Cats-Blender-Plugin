@@ -127,8 +127,6 @@ def get_armature(armature_name=None):
         for obj in objects:
             if obj and obj.type == 'ARMATURE':
                 return obj
-                
-    return None
 
 def get_armature_objects():
     armatures = []
@@ -857,34 +855,44 @@ def separate_by_loose_parts(context, mesh):
     # This essentially does nothing but merges the extremely small parts together.
     remove_doubles(mesh, 0, save_shapes=True)
 
-    # Switch to edit mode and select all vertices
-    set_active(mesh)
-    switch('EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
-
-    # Separate by loose parts using Blender's built-in operator
-    bpy.ops.mesh.separate(type='LOOSE')
+    utils.separateByMaterials(mesh)
 
     meshes = []
-    for obj in context.selected_objects:
-        if obj.type == 'MESH':
-            hide(obj, False)
-            meshes.append(obj)
+    for ob in context.selected_objects:
+        if ob.type == 'MESH':
+            hide(ob, False)
+            meshes.append(ob)
 
     wm = bpy.context.window_manager
     current_step = 0
     wm.progress_begin(current_step, len(meshes))
 
     for mesh in meshes:
-        clean_shapekeys(mesh)
+        unselect_all()
+        set_active(mesh)
+        bpy.ops.mesh.separate(type='LOOSE')
+
+        meshes2 = []
+        for ob in context.selected_objects:
+            if ob.type == 'MESH':
+                meshes2.append(ob)
+
+        ## This crashes blender, but would be better
+        # unselect_all()
+        # for mesh2 in meshes2:
+        #     if len(mesh2.data.vertices) <= 3:
+        #         select(mesh2)
+        #     elif bpy.ops.object.join.poll():
+        #         bpy.ops.object.join()
+        #         unselect_all()
+
+        for mesh2 in meshes2:
+            clean_shapekeys(mesh2)
 
         current_step += 1
         wm.progress_update(current_step)
 
     wm.progress_end()
-
-    # Switch back to object mode
-    switch('OBJECT')
 
     utils.clearUnusedMeshes()
 
@@ -1244,6 +1252,7 @@ def delete_zero_weight(armature_name=None, ignore=''):
         if keep_twists and ("_twist" in bone_name.lower() or "Twist" in bone_name):
             continue
 
+
         if keep_empty_parents:
             found_non_empty_child = False
             if bone:
@@ -1253,7 +1262,7 @@ def delete_zero_weight(armature_name=None, ignore=''):
                         break
             if found_non_empty_child:
                 continue
-
+        
         if not bpy.context.scene.keep_end_bones or not is_end_bone(bone_name, armature_name):
             if bone_name not in Bones.dont_delete_these_bones and 'Root_' not in bone_name and bone_name != ignore:
                 armature.data.edit_bones.remove(bone)  # delete bone
