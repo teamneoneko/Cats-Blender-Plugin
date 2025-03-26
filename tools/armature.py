@@ -40,6 +40,34 @@ class FixArmature(bpy.types.Operator):
         saved_data = Common.SavedData()
         armature = Common.get_armature()
         
+        # Store and remove bone collections to prevent crashes
+        bone_collections_backup = []
+        # Check if this is an MMD model
+        mmd_root = None
+        try:
+            mmd_root = armature.parent.mmd_root
+        except AttributeError:
+            pass
+                
+        if mmd_root:
+            # This is an MMD model, back up and remove bone collections
+            for collection in list(armature.data.collections):
+                # Store collection data
+                collection_data = {
+                    'name': collection.name,
+                    'is_visible': collection.is_visible,
+                    'bones': []
+                }
+                
+                # Store bones in edit mode
+                Common.switch('EDIT')
+                for bone in collection.bones:
+                    collection_data['bones'].append(bone.name)
+                
+                bone_collections_backup.append(collection_data)
+                # Remove the collection
+                armature.data.collections.remove(collection)
+        
         # Check for Rigify/Metarig
         is_rigify = False
         rigify_bones = {'brow.B.L', 'lip.B.R', 'lip.T.R', 'lip.B.L', 'lip.T.L'}
@@ -67,9 +95,9 @@ class FixArmature(bpy.types.Operator):
         for mesh in meshes_to_check:
             if mesh.data.users > 1:
                 Common.show_error(4, [t('JoinMeshes.error.not_single_user'),
-                                      t('JoinMeshes.error.make_single_user'),
-                                      t('JoinMeshes.error.make_single_user1'),
-                                      t('JoinMeshes.error.make_single_user2')])
+                                    t('JoinMeshes.error.make_single_user'),
+                                    t('JoinMeshes.error.make_single_user1'),
+                                    t('JoinMeshes.error.make_single_user2')])
                 return {'CANCELLED'}
 
         is_vrm = False
@@ -98,12 +126,12 @@ class FixArmature(bpy.types.Operator):
         for key, value in temp_rename_bones.items():
             if key == 'Spine':
                 continue
-            list = temp_reweight_bones.get(key)
-            if not list:
+            bone_list = temp_reweight_bones.get(key) 
+            if not bone_list:
                 temp_reweight_bones[key] = value
             else:
                 for name in value:
-                    if name not in list:
+                    if name not in bone_list:
                         temp_reweight_bones.get(key).append(name)
 
         # Count objects for loading bar
@@ -123,19 +151,19 @@ class FixArmature(bpy.types.Operator):
         # Get Double Entries
         print('DOUBLE ENTRIES:')
         print('RENAME:')
-        list = []
+        name_list = []  
         for key, value in temp_rename_bones.items():
             for name in value:
-                if name.lower() not in list:
-                    list.append(name.lower())
+                if name.lower() not in name_list:
+                    name_list.append(name.lower())
                 else:
                     print(key + " | " + name)
         print('REWEIGHT:')
-        list = []
+        name_list = [] 
         for key, value in temp_reweight_bones.items():
             for name in value:
-                if name.lower() not in list:
-                    list.append(name.lower())
+                if name.lower() not in name_list:
+                    name_list.append(name.lower())
                 else:
                     print(key + " | " + name)
         print('DOUBLES END')
@@ -372,7 +400,7 @@ class FixArmature(bpy.types.Operator):
 
                 Common.sort_shape_keys(mesh.name, shapekey_order)        
 
-			# Remove empty shape keys and then save the shape key order
+            # Remove empty shape keys and then save the shape key order
             Common.clean_shapekeys(mesh)
             Common.save_shapekey_order(mesh.name)
 
@@ -441,17 +469,16 @@ class FixArmature(bpy.types.Operator):
 
         # Count steps for loading bar again and reset the layers
         steps += len(armature.data.edit_bones)
-        if Common.version_3_6_or_older:
-            def set_bone_visible(edit_bone):
-                edit_bone.layers[0] = True
+        
+        # Handle bone visibility based on Blender version
+        if Common.version_3_6_or_older():
+            # For Blender 3.6 or older, use bone layers
+            for bone in armature.data.edit_bones:
+                bone.layers[0] = True
         else:
-            # Armature/Bone layers were replaced with Bone Collections in Blender 4.0.
+            # For Blender 4.0+, use bone collections
             bone_collections = armature.data.collections
-            if not bone_collections:
-                # All bones are visible when there are no bone collections, so nothing to do.
-                def set_bone_visible(_edit_bone):
-                    pass
-            else:
+            if bone_collections:
                 # The default collection on new Armatures is called "Bones" and usually has all bones assigned to it.
                 default_collection_name = "Bones"
                 bone_collection = bone_collections.get(default_collection_name)
@@ -460,18 +487,17 @@ class FixArmature(bpy.types.Operator):
                     bone_collection = bone_collections.new(default_collection_name)
                 # Ensure the collection is visible.
                 bone_collection.is_visible = True
-
-                def set_bone_visible(edit_bone):
-                    bone_collection.assign(edit_bone)
+                
+                # Assign all bones to the default collection
+                for bone in armature.data.edit_bones:
+                    bone_collection.assign(bone)
+        
         for bone in armature.data.edit_bones:
             if bone.name in Bones.bone_list or bone.name.startswith(tuple(Bones.bone_list_with)):
                 if bone.parent is not None:
                     steps += 1
                 else:
                     steps -= 1
-        if version_3_6_or_older():
-            bone.layers[0] = True
-            
 
         # Start loading bar
         current_step = 0
@@ -650,7 +676,7 @@ class FixArmature(bpy.types.Operator):
         for bone_new, bones_old in temp_rename_bones.items():
             if "\\L" in bone_new:
                 bones = [[bone_new.replace("\\Left", "Left").replace("\\L", "L"), ""],
-                         [bone_new.replace("\\Left", "Right").replace("\\L", "R"), ""]]
+                        [bone_new.replace("\\Left", "Right").replace("\\L", "R"), ""]]
             else:
                 bones = [[bone_new, ""]]
             for bone_old in bones_old:
@@ -1204,7 +1230,6 @@ class FixArmature(bpy.types.Operator):
         Common.fix_armature_names()
         
         fixed_uv_coords = False
-
         armature.show_in_front = False
         wm.progress_end()
 

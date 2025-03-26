@@ -149,11 +149,9 @@ class google_translator:
                 decoded_line = line.decode('utf-8')
                 if "MkEWBc" in decoded_line:
                     try:
-                        # print("RESPONSE 1:", response)
-                        # response = (decoded_line + ']')
                         response = decoded_line
                         # print("RESPONSE 2:", response)
-                        response = json.loads(response)
+                        response = json.loads(decoded_line)
 
                         # print("RESPONSE 3:", response)
                         response = list(response)
@@ -249,8 +247,7 @@ class google_translator:
                     # regex_str = r"\[\[\"wrb.fr\",\"MkEWBc\",\"\[\[(.*).*?,\[\[\["
                     try:
                         # data_got = re.search(regex_str,decoded_line).group(1)
-                        response = (decoded_line + ']')
-                        response = json.loads(response)
+                        response = json.loads(decoded_line)
                         response = list(response)
                         response = json.loads(response[0][2])
                         response = list(response)
