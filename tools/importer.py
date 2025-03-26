@@ -433,7 +433,7 @@ class ImportMMD(bpy.types.Operator):
         try:
             bpy.ops.mmd_tools_local.import_model('INVOKE_DEFAULT',
                                            scale=0.08,
-                                           types={'MESH', 'ARMATURE', 'MORPHS'},
+                                           types={'MESH', 'ARMATURE', 'MORPHS', 'DISPLAY'},
                                            log_level='WARNING')
         except AttributeError:
             bpy.ops.cats_importer.enable_mmd('INVOKE_DEFAULT')
