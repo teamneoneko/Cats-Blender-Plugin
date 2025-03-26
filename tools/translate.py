@@ -637,13 +637,13 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
             if self:
                 self.report({'ERROR'}, t('update_dictionary.error.cantConnect'))
             return
-        except json.JSONDecodeError as e:
+        except (json.JSONDecodeError, TypeError) as e:
             if self:
                 print(traceback.format_exc())
-                self.report({'ERROR'}, 'Either Google changed their API or you got banned from Google Translate temporarily!'
-                                       '\nCats translated what it could with the local dictionary,'
-                                       '\nbut you will have to try again later for the Google translations.')
-            print('YOU GOT BANNED BY GOOGLE!')
+                self.report({'ERROR'}, 'Google Translate API has changed or returned an invalid response or you'
+                                    '\ncould have been banned. Cats translated what it could with the local dictionary,'
+                                    '\nbut you will need to update the translation module or try again later.')
+            print('GOOGLE TRANSLATE API ERROR:', str(e))
             return
         except RuntimeError as e:
             error = Common.html_to_text(str(e))
