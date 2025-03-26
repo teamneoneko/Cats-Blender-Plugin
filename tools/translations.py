@@ -24,7 +24,7 @@ translations_dir = os.path.join(resources_dir, "translations")
 dictionary: dict[str, str] = dict()
 languages = []
 verbose = True
-dictionary_download_link = "https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/blob/4.2-translations/dictionary.json"
+dictionary_download_link = "https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/blob/4.3-translations/dictionary.json"
 
 def load_translations():
     global dictionary, languages
@@ -139,7 +139,7 @@ class DownloadTranslations(bpy.types.Operator):
         # GitHub repository and folder information
         repo_owner = "teamneoneko"
         repo_name = "Cats-Blender-Plugin-Unofficial-translations"
-        branch = "4.2-translations"
+        branch = "4.3-translations"
         folder_path = "UI%20Tanslations"
 
         # Construct the API URL to get the list of files in the folder
