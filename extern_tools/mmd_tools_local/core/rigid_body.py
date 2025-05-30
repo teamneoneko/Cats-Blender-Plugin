@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -7,7 +6,7 @@ from typing import List, Optional
 import bpy
 from mathutils import Euler, Vector
 
-from mmd_tools_local.bpyutils import FnContext, Props
+from ..bpyutils import FnContext, Props
 
 SHAPE_SPHERE = 0
 SHAPE_BOX = 1

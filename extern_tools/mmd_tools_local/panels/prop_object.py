@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015 MMD Tools authors
 # This file is part of MMD Tools.
 
 import bpy
 
-from mmd_tools_local.core.model import FnModel
+from ..core.model import FnModel
 
 
 class MMDModelObjectPanel(bpy.types.Panel):

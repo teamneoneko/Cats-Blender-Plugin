@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -6,10 +5,10 @@ import bpy
 from bpy.props import BoolProperty, StringProperty
 from bpy.types import Operator
 
-from mmd_tools_local import cycles_converter
-from mmd_tools_local.core.exceptions import MaterialNotFoundError
-from mmd_tools_local.core.material import FnMaterial
-from mmd_tools_local.core.shader import _NodeGroupUtils
+from .. import cycles_converter
+from ..core.exceptions import MaterialNotFoundError
+from ..core.material import FnMaterial
+from ..core.shader import _NodeGroupUtils
 
 
 class ConvertMaterialsForCycles(Operator):
@@ -108,7 +107,6 @@ class ConvertBSDFMaterials(Operator):
                 continue
             cycles_converter.convertToMMDShader(obj)
         return {'FINISHED'}
-
 
 class _OpenTextureBase:
     """Create a texture for mmd model material."""
@@ -256,22 +254,21 @@ class EdgePreviewSetup(Operator):
     )
 
     def execute(self, context):
-        from mmd_tools_local.core.model import Model
+        from ..core.model import FnModel
 
-        root = Model.findRoot(context.active_object)
+        root = FnModel.find_root_object(context.active_object)
         if root is None:
             self.report({"ERROR"}, "Select a MMD model")
             return {"CANCELLED"}
 
-        rig = Model(root)
         if self.action == "CLEAN":
-            for obj in rig.meshes():
+            for obj in FnModel.iterate_mesh_objects(root):
                 self.__clean_toon_edge(obj)
         else:
-            from mmd_tools_local.bpyutils import Props
+            from ..bpyutils import Props
 
-            scale = 0.2 * getattr(rig.rootObject(), Props.empty_display_size)
-            counts = sum(self.__create_toon_edge(obj, scale) for obj in rig.meshes())
+            scale = 0.2 * getattr(root, Props.empty_display_size)
+            counts = sum(self.__create_toon_edge(obj, scale) for obj in FnModel.iterate_mesh_objects(root))
             self.report({"INFO"}, "Created %d toon edge(s)" % counts)
         return {"FINISHED"}
 
