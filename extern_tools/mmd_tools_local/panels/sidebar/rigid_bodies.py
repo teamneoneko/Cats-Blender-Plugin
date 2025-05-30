@@ -1,18 +1,17 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015 MMD Tools authors
 # This file is part of MMD Tools.
 
 import bpy
 
-from mmd_tools_local.core.model import FnModel
-from mmd_tools_local.panels.sidebar import PT_ProductionPanelBase, UL_ObjectsMixIn
+from ...core.model import FnModel
+from . import PT_ProductionPanelBase, UL_ObjectsMixIn
 
 
 class MMDRigidbodySelectorPanel(PT_ProductionPanelBase, bpy.types.Panel):
     bl_idname = "OBJECT_PT_mmd_tools_local_rigidbody_list"
     bl_label = "Rigid Bodies"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 6
+    bl_order = 7
 
     def draw(self, context):
         active_obj = context.active_object
@@ -25,7 +24,7 @@ class MMDRigidbodySelectorPanel(PT_ProductionPanelBase, bpy.types.Panel):
         c = col.column(align=True)
         row = c.row()
         row.template_list(
-            "MMD_TOOLS_LOCAL_UL_rigidbodies",
+            "mmd_tools_local_UL_rigidbodies",
             "",
             context.scene,
             "objects",
@@ -44,7 +43,7 @@ class MMDRigidbodySelectorPanel(PT_ProductionPanelBase, bpy.types.Panel):
         tb1.operator("mmd_tools_local.object_move", text="", icon="TRIA_DOWN").type = "DOWN"
 
 
-class MMD_TOOLS_LOCAL_UL_rigidbodies(bpy.types.UIList, UL_ObjectsMixIn):
+class mmd_tools_local_UL_rigidbodies(bpy.types.UIList, UL_ObjectsMixIn):
     mmd_type = "RIGID_BODY"
     icon = "MESH_ICOSPHERE"
     prop_name = "mmd_rigid"

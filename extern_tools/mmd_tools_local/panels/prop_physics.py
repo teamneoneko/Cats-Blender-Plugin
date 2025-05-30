@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 # Copyright 2021 MMD Tools authors
 # This file is part of MMD Tools.
 
 import bpy
 
-import mmd_tools_local.core.model as mmd_model
+from ..core.model import FnModel
 
 
 class MMDRigidPanel(bpy.types.Panel):
@@ -37,14 +36,14 @@ class MMDRigidPanel(bpy.types.Panel):
         row = c.row(align=True)
         row.prop(obj.mmd_rigid, "type", expand=True)
 
-        root = mmd_model.FnModel.find_root_object(obj)
+        root = FnModel.find_root_object(obj)
         if root is None:
             row = c.row(align=True)
             row.enabled = False
             row.prop(obj.mmd_rigid, "bone", text="", icon="BONE_DATA")
         else:
             row = c.row(align=True)
-            armature = mmd_model.FnModel.find_armature_object(root)
+            armature = FnModel.find_armature_object(root)
             row.prop_search(obj.mmd_rigid, "bone", text="", search_data=armature.pose, search_property="bones", icon="BONE_DATA")
 
         c = layout.column(align=True)

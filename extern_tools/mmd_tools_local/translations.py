@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -8,7 +7,7 @@ import time
 
 import bpy
 
-from mmd_tools_local.bpyutils import FnContext
+from .bpyutils import FnContext
 
 jp_half_to_full_tuples = (
     ("ｳﾞ", "ヴ"),

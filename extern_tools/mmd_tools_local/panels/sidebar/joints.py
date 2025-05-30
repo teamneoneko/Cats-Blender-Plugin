@@ -1,18 +1,17 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015 MMD Tools authors
 # This file is part of MMD Tools.
 
 import bpy
 
-from mmd_tools_local.core.model import FnModel
-from mmd_tools_local.panels.sidebar import PT_ProductionPanelBase, UL_ObjectsMixIn
+from ...core.model import FnModel
+from . import PT_ProductionPanelBase, UL_ObjectsMixIn
 
 
 class MMDJointSelectorPanel(PT_ProductionPanelBase, bpy.types.Panel):
     bl_idname = "OBJECT_PT_mmd_tools_local_joint_list"
     bl_label = "Joints"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 7
+    bl_order = 8
 
     def draw(self, context):
         active_obj = context.active_object
@@ -26,7 +25,7 @@ class MMDJointSelectorPanel(PT_ProductionPanelBase, bpy.types.Panel):
 
         row = c.row()
         row.template_list(
-            "MMD_TOOLS_LOCAL_UL_joints",
+            "mmd_tools_local_UL_joints",
             "",
             context.scene,
             "objects",
@@ -45,7 +44,7 @@ class MMDJointSelectorPanel(PT_ProductionPanelBase, bpy.types.Panel):
         tb1.operator("mmd_tools_local.object_move", text="", icon="TRIA_DOWN").type = "DOWN"
 
 
-class MMD_TOOLS_LOCAL_UL_joints(bpy.types.UIList, UL_ObjectsMixIn):
+class mmd_tools_local_UL_joints(bpy.types.UIList, UL_ObjectsMixIn):
     mmd_type = "JOINT"
     icon = "CONSTRAINT"
     prop_name = "mmd_joint"
