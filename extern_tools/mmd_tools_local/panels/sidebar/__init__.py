@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -6,8 +5,8 @@ from typing import Optional
 
 import bpy
 
-from mmd_tools_local.bpyutils import FnContext
-from mmd_tools_local.core.model import FnModel
+from ...bpyutils import FnContext
+from ...core.model import FnModel
 
 
 class FnDraw:

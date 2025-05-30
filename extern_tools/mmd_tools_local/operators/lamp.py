@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017 MMD Tools authors
 # This file is part of MMD Tools.
 
 from bpy.props import FloatProperty
 from bpy.types import Operator
 
-from mmd_tools_local.core.lamp import MMDLamp
+from ..core.lamp import MMDLamp
 
 
 class ConvertToMMDLamp(Operator):

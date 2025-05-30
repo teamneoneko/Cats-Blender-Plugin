@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -10,10 +9,10 @@ from typing import List, Optional, Set
 import bpy
 import mathutils
 
-from mmd_tools_local.core import vmd
-from mmd_tools_local.core.camera import MMDCamera
-from mmd_tools_local.core.lamp import MMDLamp
-from mmd_tools_local.core.vmd.importer import _FnBezier
+from .. import vmd
+from ..camera import MMDCamera
+from ..lamp import MMDLamp
+from ..vmd.importer import _FnBezier
 
 
 class _FCurve:

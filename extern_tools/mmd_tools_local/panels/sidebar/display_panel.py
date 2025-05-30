@@ -1,20 +1,19 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015 MMD Tools authors
 # This file is part of MMD Tools.
 
 
 import bpy
 
-from mmd_tools_local.core.model import FnModel
-from mmd_tools_local.panels.sidebar import FnDraw, PT_ProductionPanelBase
-from mmd_tools_local.utils import ItemOp
+from ...core.model import FnModel
+from ...utils import ItemOp
+from . import FnDraw, PT_ProductionPanelBase
 
 
 class MMDDisplayItemsPanel(PT_ProductionPanelBase, bpy.types.Panel):
     bl_idname = "OBJECT_PT_mmd_tools_local_display_items"
     bl_label = "Display Panel"
     bl_options = {"DEFAULT_CLOSED"}
-    bl_order = 10
+    bl_order = 11
 
     def draw(self, context):
         active_obj = context.active_object

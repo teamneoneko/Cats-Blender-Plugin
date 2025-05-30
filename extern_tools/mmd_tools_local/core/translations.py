@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2021 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -10,14 +9,14 @@ from typing import TYPE_CHECKING, Callable, Dict, Optional, Set, Tuple
 
 import bpy
 
-from mmd_tools_local.core.model import FnModel, Model
-from mmd_tools_local.translations import DictionaryEnum
-from mmd_tools_local.utils import convertLRToName, convertNameToLR
+from ..translations import DictionaryEnum
+from ..utils import convertLRToName, convertNameToLR
+from .model import FnModel, Model
 
 if TYPE_CHECKING:
-    from mmd_tools_local.properties.morph import _MorphBase
-    from mmd_tools_local.properties.root import MMDRoot
-    from mmd_tools_local.properties.translations import MMDTranslation, MMDTranslationElement, MMDTranslationElementIndex
+    from ..properties.morph import _MorphBase
+    from ..properties.root import MMDRoot
+    from ..properties.translations import MMDTranslation, MMDTranslationElement, MMDTranslationElementIndex
 
 
 class MMDTranslationElementType(Enum):

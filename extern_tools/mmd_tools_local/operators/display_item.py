@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
-
-from collections import OrderedDict
 
 import bpy
 from bpy.types import Operator
 
-import mmd_tools_local.core.model as mmd_model
-from mmd_tools_local import utils
-from mmd_tools_local.core.bone import FnBone
-from mmd_tools_local.utils import ItemMoveOp, ItemOp
+from ..core.bone import FnBone
+from ..core.model import FnModel, Model
+from ..utils import ItemMoveOp, ItemOp, selectSingleBone
 
 
 class AddDisplayItemFrame(Operator):
@@ -21,7 +17,7 @@ class AddDisplayItemFrame(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
+        root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
 
         frames = mmd_root.display_item_frames
@@ -39,7 +35,7 @@ class RemoveDisplayItemFrame(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
+        root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
 
         index = mmd_root.active_display_item_frame
@@ -62,7 +58,7 @@ class MoveDisplayItemFrame(Operator, ItemMoveOp):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
+        root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
 
         index = mmd_root.active_display_item_frame
@@ -83,7 +79,7 @@ class AddDisplayItem(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
+        root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
         frame = ItemOp.get_by_index(mmd_root.display_item_frames, mmd_root.active_display_item_frame)
         if frame is None:
@@ -134,7 +130,7 @@ class RemoveDisplayItem(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
+        root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
         frame = ItemOp.get_by_index(mmd_root.display_item_frames, mmd_root.active_display_item_frame)
         if frame is None:
@@ -156,7 +152,7 @@ class MoveDisplayItem(Operator, ItemMoveOp):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
+        root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
         frame = ItemOp.get_by_index(mmd_root.display_item_frames, mmd_root.active_display_item_frame)
         if frame is None:
@@ -183,7 +179,7 @@ class FindDisplayItem(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
+        root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
         if self.type == "MORPH":
             morph_type = mmd_root.active_morph_type
@@ -226,7 +222,7 @@ class SelectCurrentDisplayItem(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
+        root = FnModel.find_root_object(obj)
         mmd_root = root.mmd_root
         frame = ItemOp.get_by_index(mmd_root.display_item_frames, mmd_root.active_display_item_frame)
         if frame is None:
@@ -242,7 +238,7 @@ class SelectCurrentDisplayItem(Operator):
                 mmd_root.active_morph_type = item.morph_type
                 mmd_root.active_morph = index
         else:
-            utils.selectSingleBone(context, mmd_model.FnModel.find_armature_object(root), item.name)
+            selectSingleBone(context, FnModel.find_armature_object(root), item.name)
         return {"FINISHED"}
 
 
@@ -266,8 +262,8 @@ class DisplayItemQuickSetup(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        root = mmd_model.Model.findRoot(obj)
-        rig = mmd_model.Model(root)
+        root = FnModel.find_root_object(obj)
+        rig = Model(root)
         if self.type == "RESET":
             rig.initialDisplayFrames()
         elif self.type == "FACIAL":
