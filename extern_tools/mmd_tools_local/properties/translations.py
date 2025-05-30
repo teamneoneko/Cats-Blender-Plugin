@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2021 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -6,8 +5,8 @@ from typing import Dict, List, Optional, Tuple
 
 import bpy
 
-from mmd_tools_local.core.translations import FnTranslations, MMDTranslationElementType
-from mmd_tools_local.translations import DictionaryEnum
+from ..core.translations import FnTranslations, MMDTranslationElementType
+from ..translations import DictionaryEnum
 
 MMD_TRANSLATION_ELEMENT_TYPE_ENUM_ITEMS = [
     (MMDTranslationElementType.BONE.name, MMDTranslationElementType.BONE.value, "Bones", 1),

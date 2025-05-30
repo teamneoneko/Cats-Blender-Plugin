@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
 from bpy.props import BoolProperty, EnumProperty, FloatProperty
 from bpy.types import Operator
 
-from mmd_tools_local.bpyutils import FnContext
-from mmd_tools_local.core.camera import MMDCamera
+from ..bpyutils import FnContext
+from ..core.camera import MMDCamera
 
 
 class ConvertToMMDCamera(Operator):
