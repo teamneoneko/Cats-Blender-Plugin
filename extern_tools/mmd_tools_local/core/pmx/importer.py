@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -11,20 +10,20 @@ from typing import TYPE_CHECKING, List, Optional
 import bpy
 from mathutils import Matrix, Vector
 
-from mmd_tools_local import bpyutils, utils
-from mmd_tools_local.bpyutils import FnContext
-from mmd_tools_local.core import pmx
-from mmd_tools_local.core.bone import FnBone
-from mmd_tools_local.core.material import FnMaterial
-from mmd_tools_local.core.model import FnModel, Model
-from mmd_tools_local.core.morph import FnMorph
-from mmd_tools_local.core.rigid_body import FnRigidBody
-from mmd_tools_local.core.vmd.importer import BoneConverter
-from mmd_tools_local.operators.misc import MoveObject
+from ... import bpyutils, utils
+from ...bpyutils import FnContext
+from ...operators.misc import MoveObject
+from .. import pmx
+from ..bone import FnBone
+from ..material import FnMaterial
+from ..model import FnModel, Model
+from ..morph import FnMorph
+from ..rigid_body import FnRigidBody
+from ..vmd.importer import BoneConverter
 
 if TYPE_CHECKING:
-    from mmd_tools_local.properties.pose_bone import MMDBone
-    from mmd_tools_local.properties.root import MMDRoot
+    from ...properties.pose_bone import MMDBone
+    from ...properties.root import MMDRoot
 
 
 class PMXImporter:
@@ -272,20 +271,6 @@ class PMXImporter:
                 elif FnBone.has_auto_local_axis(m_bone.name):
                     FnBone.update_auto_bone_roll(b_bone)
 
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
-                if isinstance(m_bone.displayConnection, int) and m_bone.displayConnection >= 0:
-                    t = editBoneTable[m_bone.displayConnection]
-                    if t.parent is None or t.parent != b_bone:
-                        continue
-                    if pmx_bones[m_bone.displayConnection].isMovable:
-                        continue
-                    if (b_bone.tail - t.head).length > 1e-4:
-                        continue
-                    if not m_bone.isMovable:
-                        continue
-                    logging.warning(" * connected: %s (%d)-> %s", b_bone.name, len(b_bone.children), t.name)
-                    t.use_connect = True
-
         return nameTable, specialTipBones
 
     def __sortPoseBonesByBoneIndex(self, pose_bones: List[bpy.types.PoseBone], bone_names):
@@ -430,6 +415,13 @@ class PMXImporter:
             mmd_bone.is_controllable = pmx_bone.isControllable
             mmd_bone.transform_order = pmx_bone.transform_order
             mmd_bone.transform_after_dynamics = pmx_bone.transAfterPhis
+            mmd_bone.bone_id = i
+
+            if isinstance(pmx_bone.displayConnection, int):
+                mmd_bone.display_connection_type = "BONE"
+                mmd_bone.display_connection_bone_id = pmx_bone.displayConnection
+            else:  # vector offset
+                mmd_bone.display_connection_type = "OFFSET"
 
             if pmx_bone.displayConnection == -1 or pmx_bone.displayConnection == (0.0, 0.0, 0.0):
                 mmd_bone.is_tip = True
@@ -786,7 +778,7 @@ class PMXImporter:
         armModifier = meshObj.modifiers.new(name="Armature", type="ARMATURE")
         armModifier.object = armObj
         armModifier.use_vertex_groups = True
-        armModifier.name = "mmd_bone_order_override"
+        armModifier.name = "mmd_armature"
         armModifier.show_render = armModifier.show_viewport = len(meshObj.data.vertices) > 0
 
     def __assignCustomNormals(self):

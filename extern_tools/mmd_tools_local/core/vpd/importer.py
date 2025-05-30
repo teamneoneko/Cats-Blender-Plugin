@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -7,9 +6,10 @@ import logging
 import bpy
 from mathutils import Matrix
 
-import mmd_tools_local.core.vmd.importer
-import mmd_tools_local.core.vpd
-from mmd_tools_local.bpyutils import FnContext
+from ...bpyutils import FnContext
+from .. import vpd
+from ..vmd import importer
+
 
 class VPDImporter:
     def __init__(self, filepath, scale=1.0, bone_mapper=None, use_pose_mode=False):

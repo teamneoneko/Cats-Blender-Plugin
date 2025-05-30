@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015 MMD Tools authors
 # This file is part of MMD Tools.
 
 import bpy
 
-from mmd_tools_local import utils
-from mmd_tools_local.core.bone import FnBone
-from mmd_tools_local.core.material import FnMaterial
-from mmd_tools_local.core.model import FnModel, Model
-from mmd_tools_local.core.morph import FnMorph
+from .. import utils
+from ..core.bone import FnBone
+from ..core.material import FnMaterial
+from ..core.model import FnModel, Model
+from ..core.morph import FnMorph
 
 
 def _morph_base_get_name(prop: "_MorphBase") -> str:
@@ -221,7 +220,7 @@ def _material_morph_data_get_related_mesh(prop):
 def _material_morph_data_update_modifiable_values(prop: "MaterialMorphData", _context):
     if not prop.name.startswith("mmd_bind"):
         return
-    from mmd_tools_local.core.shader import _MaterialMorph
+    from ..core.shader import _MaterialMorph
 
     mat = prop["material_data"]
     if mat is not None:
