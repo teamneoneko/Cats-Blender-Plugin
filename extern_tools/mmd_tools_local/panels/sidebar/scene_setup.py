@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 # Copyright 2021 MMD Tools authors
 # This file is part of MMD Tools.
 
 import bpy
 
-from mmd_tools_local.panels.sidebar import PT_PanelBase
+from . import PT_PanelBase
 
 
 class MMDToolsSceneSetupPanel(PT_PanelBase, bpy.types.Panel):

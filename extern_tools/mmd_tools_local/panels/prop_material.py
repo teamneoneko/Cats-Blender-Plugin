@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015 MMD Tools authors
 # This file is part of MMD Tools.
 
 from bpy.types import Panel
 
-from mmd_tools_local.core.material import FnMaterial
+from ..core.material import FnMaterial
 
 
 class MMDMaterialPanel(Panel):

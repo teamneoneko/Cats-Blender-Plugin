@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -6,14 +5,14 @@
 
 import bpy
 
-from mmd_tools_local import utils
-from mmd_tools_local.bpyutils import FnContext
-from mmd_tools_local.core.material import FnMaterial
-from mmd_tools_local.core.model import FnModel
-from mmd_tools_local.core.sdef import FnSDEF
-from mmd_tools_local.properties import patch_library_overridable
-from mmd_tools_local.properties.morph import BoneMorph, GroupMorph, MaterialMorph, UVMorph, VertexMorph
-from mmd_tools_local.properties.translations import MMDTranslation
+from .. import utils
+from ..bpyutils import FnContext
+from ..core.material import FnMaterial
+from ..core.model import FnModel
+from ..core.sdef import FnSDEF
+from . import patch_library_overridable
+from .morph import BoneMorph, GroupMorph, MaterialMorph, UVMorph, VertexMorph
+from .translations import MMDTranslation
 
 
 def __driver_variables(constraint: bpy.types.Constraint, path: str, index=-1):
@@ -437,6 +436,15 @@ class MMDRoot(bpy.types.PropertyGroup):
     )
 
     # *************************
+    # Bone
+    # *************************
+    active_bone_index: bpy.props.IntProperty(
+        name="Active Bone Index",
+        description="Index of the active bone in the armature",
+        default=0,
+    )
+
+    # *************************
     # Morph
     # *************************
     material_morphs: bpy.props.CollectionProperty(
@@ -496,22 +504,26 @@ class MMDRoot(bpy.types.PropertyGroup):
 
     @staticmethod
     def __get_select(prop: bpy.types.Object) -> bool:
-        utils.warn_deprecation("Object.select", "v4.0.0", "Use Object.select_get() method instead")
+        # TODO: Object.select is deprecated since v4.0.0, use Object.select_get() method instead
+        # utils.warn_deprecation("Object.select", "v4.0.0", "Use Object.select_get() method instead")
         return prop.select_get()
 
     @staticmethod
     def __set_select(prop: bpy.types.Object, value: bool) -> None:
-        utils.warn_deprecation("Object.select", "v4.0.0", "Use Object.select_set() method instead")
+        # TODO: Object.select is deprecated since v4.0.0, use Object.select_set() method instead
+        # utils.warn_deprecation("Object.select", "v4.0.0", "Use Object.select_set() method instead")
         prop.select_set(value)
 
     @staticmethod
     def __get_hide(prop: bpy.types.Object) -> bool:
-        utils.warn_deprecation("Object.hide", "v4.0.0", "Use Object.hide_get() method instead")
+        # TODO: Object.hide is deprecated since v4.0.0, use Object.hide_get() method instead
+        # utils.warn_deprecation("Object.hide", "v4.0.0", "Use Object.hide_get() method instead")
         return prop.hide_get()
 
     @staticmethod
     def __set_hide(prop: bpy.types.Object, value: bool) -> None:
-        utils.warn_deprecation("Object.hide", "v4.0.0", "Use Object.hide_set() method instead")
+        # TODO: Object.hide is deprecated since v4.0.0, use Object.hide_set() method instead
+        # utils.warn_deprecation("Object.hide", "v4.0.0", "Use Object.hide_set() method instead")
         prop.hide_set(value)
         if prop.hide_viewport != value:
             prop.hide_viewport = value

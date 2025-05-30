@@ -19,14 +19,14 @@
 bl_info = {
     "name": "mmd_tools_local",
     "author": "sugiany",
-    "version": (4, 3, 1),
-    "blender": (4, 2, 2),
+    "version": (4, 3, 6),
+    "blender": (4, 2, 5),
     "location": "View3D > Sidebar > MMD Panel",
     "description": "Utility tools for MMD model editing. (UuuNyaa's forked version)",
     "warning": "",
-    "doc_url": "https://mmd-blender.fandom.com/wiki/mmd_tools",
-    "wiki_url": "https://mmd-blender.fandom.com/wiki/mmd_tools",
-    "tracker_url": "https://github.com/UuuNyaa/blender_mmd_tools/issues",
+    "doc_url": "https://mmd-blender.fandom.com/wiki/mmd_tools_local",
+    "wiki_url": "https://mmd-blender.fandom.com/wiki/mmd_tools_local",
+    "tracker_url": "https://github.com/UuuNyaa/blender_mmd_tools_local/issues",
     "support": "COMMUNITY",
     "category": "Object",
 }
@@ -47,32 +47,28 @@ auto_load.init()
 def register():
     import bpy
 
-    import mmd_tools_local.handlers
-    import mmd_tools_local.operators.addon_updater
+    from . import handlers
 
-    mmd_tools_local.auto_load.register()
+    auto_load.register()
 
     # pylint: disable=import-outside-toplevel
-    from mmd_tools_local.m17n import translation_dict
+    from .m17n import translations_dict
 
-    bpy.app.translations.register(bl_info["name"], translation_dict)
+    bpy.app.translations.register(bl_info["name"],translations_dict)
 
-    mmd_tools_local.operators.addon_updater.register_updater(bl_info, __file__)
-    mmd_tools_local.handlers.MMDHanders.register()
+    handlers.MMDHanders.register()
 
 
 def unregister():
     import bpy
 
-    import mmd_tools_local.handlers
-    import mmd_tools_local.operators.addon_updater
+    from . import handlers
 
-    mmd_tools_local.handlers.MMDHanders.unregister()
-    mmd_tools_local.operators.addon_updater.unregister_updater()
+    handlers.MMDHanders.unregister()
 
     bpy.app.translations.unregister(bl_info["name"])
 
-    mmd_tools_local.auto_load.unregister()
+    auto_load.unregister()
 
 
 if __name__ == "__main__":

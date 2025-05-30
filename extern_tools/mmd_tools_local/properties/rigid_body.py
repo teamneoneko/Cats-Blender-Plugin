@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -6,14 +5,14 @@
 
 import bpy
 
-from mmd_tools_local import bpyutils
-from mmd_tools_local.core import rigid_body
-from mmd_tools_local.core.rigid_body import RigidBodyMaterial, FnRigidBody
-from mmd_tools_local.core.model import FnModel
-from mmd_tools_local.properties import patch_library_overridable
+from .. import bpyutils
+from ..core import rigid_body
+from ..core.model import FnModel
+from ..core.rigid_body import FnRigidBody, RigidBodyMaterial
+from . import patch_library_overridable
 
 
-def _updateCollisionGroup(prop, context):
+def _updateCollisionGroup(prop, _context):
     obj = prop.id_data
     materials = obj.data.materials
     if len(materials) == 0:
@@ -22,14 +21,14 @@ def _updateCollisionGroup(prop, context):
         obj.material_slots[0].material = RigidBodyMaterial.getMaterial(prop.collision_group_number)
 
 
-def _updateType(prop, context):
+def _updateType(prop, _context):
     obj = prop.id_data
     rb = obj.rigid_body
     if rb:
         rb.kinematic = int(prop.type) == rigid_body.MODE_STATIC
 
 
-def _updateShape(prop, context):
+def _updateShape(prop, _context):
     obj = prop.id_data
 
     if len(obj.data.vertices) > 0:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -11,24 +10,24 @@ class MMDHanders:
     @bpy.app.handlers.persistent
     def load_hander(_):
         # pylint: disable=import-outside-toplevel
-        from mmd_tools_local.core.sdef import FnSDEF
+        from .core.sdef import FnSDEF
 
         FnSDEF.clear_cache()
         FnSDEF.register_driver_function()
 
-        from mmd_tools_local.core.material import MigrationFnMaterial
+        from .core.material import MigrationFnMaterial
 
         MigrationFnMaterial.update_mmd_shader()
 
-        from mmd_tools_local.core.morph import MigrationFnMorph
+        from .core.morph import MigrationFnMorph
 
         MigrationFnMorph.update_mmd_morph()
 
-        from mmd_tools_local.core.camera import MigrationFnCamera
+        from .core.camera import MigrationFnCamera
 
         MigrationFnCamera.update_mmd_camera()
 
-        from mmd_tools_local.core.model import MigrationFnModel
+        from .core.model import MigrationFnModel
 
         MigrationFnModel.update_mmd_ik_loop_factor()
         MigrationFnModel.update_mmd_tools_local_version()
@@ -37,7 +36,7 @@ class MMDHanders:
     @bpy.app.handlers.persistent
     def save_pre_handler(_):
         # pylint: disable=import-outside-toplevel
-        from mmd_tools_local.core.morph import MigrationFnMorph
+        from .core.morph import MigrationFnMorph
 
         MigrationFnMorph.compatible_with_old_version_mmd_tools_local()
 
