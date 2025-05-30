@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2015 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -8,11 +7,11 @@ from typing import Dict, Optional, Tuple, cast
 import bpy
 from mathutils import Euler, Vector
 
-from mmd_tools_local import utils
-from mmd_tools_local.bpyutils import FnContext, Props
-from mmd_tools_local.core import rigid_body
-from mmd_tools_local.core.model import FnModel, Model
-from mmd_tools_local.core.rigid_body import FnRigidBody
+from .. import utils
+from ..bpyutils import FnContext, Props
+from ..core import rigid_body
+from ..core.model import FnModel, Model
+from ..core.rigid_body import FnRigidBody
 
 
 class SelectRigidBody(bpy.types.Operator):

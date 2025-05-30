@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2021 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -6,12 +5,12 @@ from typing import TYPE_CHECKING, cast
 
 import bpy
 
-from mmd_tools_local.core.model import FnModel, Model
-from mmd_tools_local.core.translations import MMD_DATA_TYPE_TO_HANDLERS, FnTranslations
-from mmd_tools_local.translations import DictionaryEnum
+from ..core.model import FnModel, Model
+from ..core.translations import MMD_DATA_TYPE_TO_HANDLERS, FnTranslations
+from ..translations import DictionaryEnum
 
 if TYPE_CHECKING:
-    from mmd_tools_local.properties.translations import MMDTranslation, MMDTranslationElement, MMDTranslationElementIndex
+    from ..properties.translations import MMDTranslation, MMDTranslationElement, MMDTranslationElementIndex
 
 
 class TranslateMMDModel(bpy.types.Operator):
@@ -197,7 +196,7 @@ class TranslateMMDModel(bpy.types.Operator):
 DEFAULT_SHOW_ROW_COUNT = 20
 
 
-class MMD_TOOLS_LOCAL_UL_MMDTranslationElementIndex(bpy.types.UIList):
+class mmd_tools_local_UL_MMDTranslationElementIndex(bpy.types.UIList):
     def draw_item(self, context, layout: bpy.types.UILayout, data, mmd_translation_element_index: "MMDTranslationElementIndex", icon, active_data, active_propname, index: int):
         mmd_translation_element: "MMDTranslationElement" = data.translation_elements[mmd_translation_element_index.value]
         MMD_DATA_TYPE_TO_HANDLERS[mmd_translation_element.type].draw_item(layout, mmd_translation_element, index)
@@ -263,7 +262,7 @@ class GlobalTranslationPopup(bpy.types.Operator):
             row.label(text="", icon="BLANK1")
 
         col.template_list(
-            "MMD_TOOLS_LOCAL_UL_MMDTranslationElementIndex",
+            "mmd_tools_local_UL_MMDTranslationElementIndex",
             "",
             mmd_translation,
             "filtered_translation_element_indices",

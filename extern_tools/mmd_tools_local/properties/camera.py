@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -6,7 +5,7 @@ import math
 
 import bpy
 
-from mmd_tools_local.properties import patch_library_overridable
+from . import patch_library_overridable
 
 
 class MMDCamera(bpy.types.PropertyGroup):
