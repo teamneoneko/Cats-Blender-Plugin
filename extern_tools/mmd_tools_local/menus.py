@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023 MMD Tools authors
 # This file is part of MMD Tools.
 
 import bpy
-import mmd_tools_local.operators.fileio
-import mmd_tools_local.operators.model
-import mmd_tools_local.operators.misc
-import mmd_tools_local.operators.rigid_body
-import mmd_tools_local.operators.view
+
+from .operators import fileio, misc, model, rigid_body, view
 
 
 class MMDFileImportMenu(bpy.types.Menu):
@@ -19,9 +15,9 @@ class MMDFileImportMenu(bpy.types.Menu):
 
     @staticmethod
     def draw_menu(this: bpy.types.Menu, _):
-        this.layout.operator(mmd_tools_local.operators.fileio.ImportPmx.bl_idname, text="MikuMikuDance Model (.pmd, .pmx)", icon="OUTLINER_OB_ARMATURE")
-        this.layout.operator(mmd_tools_local.operators.fileio.ImportVmd.bl_idname, text="MikuMikuDance Motion (.vmd)", icon="ANIM")
-        this.layout.operator(mmd_tools_local.operators.fileio.ImportVpd.bl_idname, text="Vocaloid Pose Data (.vpd)", icon="POSE_HLT")
+        this.layout.operator(fileio.ImportPmx.bl_idname, text="MikuMikuDance Model (.pmd, .pmx)", icon="OUTLINER_OB_ARMATURE")
+        this.layout.operator(fileio.ImportVmd.bl_idname, text="MikuMikuDance Motion (.vmd)", icon="ANIM")
+        this.layout.operator(fileio.ImportVpd.bl_idname, text="Vocaloid Pose Data (.vpd)", icon="POSE_HLT")
 
     @staticmethod
     def register():
@@ -41,9 +37,9 @@ class MMDFileExportMenu(bpy.types.Menu):
 
     @staticmethod
     def draw_menu(this: bpy.types.Menu, _):
-        this.layout.operator(mmd_tools_local.operators.fileio.ExportPmx.bl_idname, text="MikuMikuDance Model (.pmx)", icon="OUTLINER_OB_ARMATURE")
-        this.layout.operator(mmd_tools_local.operators.fileio.ExportVmd.bl_idname, text="MikuMikuDance Motion (.vmd)", icon="ANIM")
-        this.layout.operator(mmd_tools_local.operators.fileio.ExportVpd.bl_idname, text="Vocaloid Pose Data (.vpd)", icon="POSE_HLT")
+        this.layout.operator(fileio.ExportPmx.bl_idname, text="MikuMikuDance Model (.pmx)", icon="OUTLINER_OB_ARMATURE")
+        this.layout.operator(fileio.ExportVmd.bl_idname, text="MikuMikuDance Motion (.vmd)", icon="ANIM")
+        this.layout.operator(fileio.ExportVpd.bl_idname, text="Vocaloid Pose Data (.vpd)", icon="POSE_HLT")
 
     @staticmethod
     def register():
@@ -63,7 +59,7 @@ class MMDArmatureAddMenu(bpy.types.Menu):
 
     @staticmethod
     def draw_menu(this: bpy.types.Menu, _):
-        this.layout.operator(mmd_tools_local.operators.model.CreateMMDModelRoot.bl_idname, text="Create MMD Model", icon="OUTLINER_OB_ARMATURE")
+        this.layout.operator(model.CreateMMDModelRoot.bl_idname, text="Create MMD Model", icon="OUTLINER_OB_ARMATURE")
 
     @staticmethod
     def register():
@@ -84,7 +80,7 @@ class MMDObjectMenu(bpy.types.Menu):
     @staticmethod
     def draw_menu(this: bpy.types.Menu, _):
         this.layout.separator()
-        this.layout.operator(mmd_tools_local.operators.misc.CleanShapeKeys.bl_idname, text="Clean Shape Keys", icon="SHAPEKEY_DATA")
+        this.layout.operator(misc.CleanShapeKeys.bl_idname, text="Clean Shape Keys", icon="SHAPEKEY_DATA")
 
     @staticmethod
     def register():
@@ -106,7 +102,7 @@ class MMDSelectObjectMenu(bpy.types.Menu):
     def draw_menu(this: bpy.types.Menu, _):
         this.layout.separator()
         this.layout.operator_context = "EXEC_DEFAULT"
-        this.layout.operator(mmd_tools_local.operators.rigid_body.SelectRigidBody.bl_idname, text="Select MMD Rigid Body").properties = {"collision_group_number", "shape"}
+        this.layout.operator(rigid_body.SelectRigidBody.bl_idname, text="Select MMD Rigid Body").properties = {"collision_group_number", "shape"}
 
     @staticmethod
     def register():
@@ -126,7 +122,7 @@ class MMDPoseMenu(bpy.types.Menu):
 
     @staticmethod
     def draw_menu(this: bpy.types.Menu, _):
-        this.layout.operator(mmd_tools_local.operators.view.FlipPose.bl_idname, text="MMD Flip Pose", icon="ARROW_LEFTRIGHT")
+        this.layout.operator(view.FlipPose.bl_idname, text="MMD Flip Pose", icon="ARROW_LEFTRIGHT")
 
     @staticmethod
     def register():

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -9,12 +8,12 @@ from typing import TYPE_CHECKING, Callable, Iterable, Optional, Tuple, cast
 import bpy
 from mathutils import Vector
 
-from mmd_tools_local.bpyutils import FnContext
-from mmd_tools_local.core.exceptions import MaterialNotFoundError
-from mmd_tools_local.core.shader import _NodeGroupUtils
+from ..bpyutils import FnContext
+from .exceptions import MaterialNotFoundError
+from .shader import _NodeGroupUtils
 
 if TYPE_CHECKING:
-    from mmd_tools_local.properties.material import MMDMaterial
+    from ..properties.material import MMDMaterial
 
 # TODO: use enum instead of constants
 SPHERE_MODE_OFF = 0

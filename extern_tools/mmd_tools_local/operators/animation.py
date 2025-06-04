@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
 from bpy.types import Operator
 
-from mmd_tools_local import auto_scene_setup
+from .. import auto_scene_setup
 
 
 class SetFrameRange(Operator):

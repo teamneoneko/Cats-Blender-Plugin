@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
 import bpy
 
-from mmd_tools_local import utils
-from mmd_tools_local.core import material
-from mmd_tools_local.core.material import FnMaterial
-from mmd_tools_local.core.model import FnModel
-from mmd_tools_local.properties import patch_library_overridable
+from .. import utils
+from ..core import material
+from ..core.material import FnMaterial
+from ..core.model import FnModel
+from . import patch_library_overridable
 
 
 def _mmd_material_update_ambient_color(prop: "MMDMaterial", _context):
