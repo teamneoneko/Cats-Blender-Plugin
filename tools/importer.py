@@ -745,6 +745,58 @@ class InstallVRM(bpy.types.Operator):
 
 
 @register_wrap
+class ImportFBXTest(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
+    bl_idname = 'cats_importer.import_fbx_test'
+    bl_label = 'Import FBX (Test)'
+    bl_description = 'Import FBX with automatic bone orientation enabled (experimental)'
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    files = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'HIDDEN', 'SKIP_SAVE'})
+    directory = bpy.props.StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    filter_glob = bpy.props.StringProperty(default='*.fbx', options={'HIDDEN'})
+
+    def execute(self, context):
+        Common.remove_unused_objects()
+        
+        # Save all current objects to check which armatures got added by the importer
+        pre_import_objects = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE']
+
+        # Import the files
+        if self.directory:
+            for f in self.files:
+                file_name = f.name
+                if file_name.lower().endswith('.fbx'):
+                    file_path = os.path.join(self.directory, file_name)
+                    self.import_fbx_test(file_path)
+        elif self.filepath:
+            self.import_fbx_test(self.filepath)
+
+        # Create list of armatures that got added during import
+        fix_armatures_post_import(pre_import_objects)
+
+        return {'FINISHED'}
+
+    def import_fbx_test(self, file_path):
+        # Enable fbx if it isn't enabled yet
+        fbx_is_enabled = addon_utils.check('io_scene_fbx')[1]
+        if not fbx_is_enabled:
+            addon_utils.enable('io_scene_fbx')
+
+        try:
+            bpy.ops.import_scene.fbx('EXEC_DEFAULT',
+                                     filepath=file_path,
+                                     automatic_bone_orientation=True,  
+                                     use_prepost_rot=True, 
+                                     use_anim=False)
+        except (TypeError, ValueError):
+            bpy.ops.import_scene.fbx('INVOKE_DEFAULT')
+        except RuntimeError as e:
+            if 'unsupported, must be 7100 or later' in str(e):
+                Common.show_error(6.2, [t('ImportAnyModel.error.unsupportedFBX')])
+            print(str(e))
+
+
+@register_wrap
 class EnableMMD(bpy.types.Operator):
     bl_idname = "cats_importer.enable_mmd"
     bl_label = t('EnableMMD.label')
