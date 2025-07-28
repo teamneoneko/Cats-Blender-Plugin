@@ -56,6 +56,13 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
                            icon='ARMATURE_DATA')
         split.operator(Importer.ModelsPopup.bl_idname, text="", icon='COLLAPSEMENU')
 
+        # FBX Test Import row
+        row = col.row(align=True)
+        row.scale_y = 1.0
+        row.operator(Importer.ImportFBXTest.bl_idname, 
+                    text="Import FBX (Test)", 
+                    icon='EXPERIMENTAL')
+
         # Armature selector
         if len(Common.get_armature_objects()) > 1:
             col.separator(factor=1.5)
