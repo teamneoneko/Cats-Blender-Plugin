@@ -1745,9 +1745,18 @@ class DuplicateBonesButton(bpy.types.Operator):
         saved_data = Common.SavedData()
         armature = bpy.context.object
         
+        # Get selected bones before switching modes
+        if armature.mode == 'POSE':
+            selected_bone_names = [bone.name for bone in bpy.context.selected_pose_bones]
+        else:
+            selected_bone_names = [bone.name for bone in bpy.context.selected_editable_bones]
+        
+        # Switch to edit mode
+        Common.switch('EDIT')
+        
         # Cache edit bones
         edit_bones = armature.data.edit_bones
-        selected_bones = bpy.context.selected_editable_bones
+        selected_bones = [edit_bones[name] for name in selected_bone_names if name in edit_bones]
         bone_count = len(selected_bones)
         
         # Create mapping for duplicate bones
