@@ -223,6 +223,29 @@ def switch(new_mode, check_mode=True):
     active = context.view_layer.objects.active
     if check_mode and active and active.mode == new_mode:
         return
+    
+    # Validate that the active object supports the requested mode
+    if active is None:
+        print(f"Warning: No active object when trying to switch to {new_mode} mode")
+        return
+        
+    # Check if the object type supports the requested mode
+    supported_modes = []
+    if active.type == 'MESH':
+        supported_modes = ['OBJECT', 'EDIT', 'SCULPT', 'VERTEX_PAINT', 'WEIGHT_PAINT', 'TEXTURE_PAINT']
+    elif active.type == 'ARMATURE':
+        supported_modes = ['OBJECT', 'EDIT', 'POSE']
+    elif active.type in ['CURVE', 'SURFACE', 'META', 'FONT']:
+        supported_modes = ['OBJECT', 'EDIT']
+    elif active.type == 'LATTICE':
+        supported_modes = ['OBJECT', 'EDIT']
+    else:
+        supported_modes = ['OBJECT']
+    
+    if new_mode not in supported_modes:
+        print(f"Warning: {active.type} object '{active.name}' does not support {new_mode} mode. Supported modes: {supported_modes}")
+        return
+    
     if bpy.ops.object.mode_set.poll():
         bpy.ops.object.mode_set(mode=new_mode, toggle=False)
 
