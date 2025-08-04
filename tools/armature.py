@@ -60,6 +60,7 @@ class FixArmature(bpy.types.Operator):
                 }
                 
                 # Store bones in edit mode
+                Common.set_active(armature)
                 Common.switch('EDIT')
                 for bone in collection.bones:
                     collection_data['bones'].append(bone.name)
@@ -282,6 +283,7 @@ class FixArmature(bpy.types.Operator):
                         to_delete.append(child2.name)
                         continue
             for obj_name in to_delete:
+                Common.set_active(armature)
                 Common.switch('EDIT')
                 Common.switch('OBJECT')
                 Common.delete_hierarchy(bpy.data.objects[obj_name])
@@ -314,6 +316,7 @@ class FixArmature(bpy.types.Operator):
             bone.lock_scale[2] = False
 
         # Remove empty mmd object and unused objects
+        Common.set_active(armature)
         Common.switch('EDIT')
         Common.switch('OBJECT')
         Common.remove_empty()
@@ -446,9 +449,10 @@ class FixArmature(bpy.types.Operator):
         # Enter edit mode
         Common.switch('EDIT')
 
-        # Show all hidden verts and faces
-        if bpy.ops.mesh.reveal.poll():
-            bpy.ops.mesh.reveal()
+        # Show all hidden bones (the comment was misleading - this should be for bones, not mesh verts)
+        # In armature edit mode, ensure all bones are visible
+        for bone in armature.data.edit_bones:
+            bone.hide = False
 
         # Remove Bone Groups
         # Replaced in 4.0 with Bone Collections (Armature.collections), which also subsumed Armature.layers. Bone colors
