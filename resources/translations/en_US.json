@@ -819,6 +819,11 @@
         "EyeTrackingPanel.troubleshooting.shapeKeys": "• Check shape keys are named correctly", 
         "EyeTrackingPanel.troubleshooting.boneWeights": "• Ensure eye bones are properly weighted",
         "EyeTrackingPanel.troubleshooting.restPosition": "• Confirm armature is in rest position",
-        "merge_armatures.error.mustapplytransforms": "Your armature has different scale values for X, Y, and Z axes, rather\nthan having uniform scaling (where all axes have the same scale value)\n\nThis is important to fix before merging armatures to ensure proper bone\ntransformations and avoid potential deformation issues.\n\nIf you want to continue with this merge even with this warning please\nmake sure apply transforms is checked before you start merging."
+        "merge_armatures.error.mustapplytransforms": "Your armature has different scale values for X, Y, and Z axes, rather\nthan having uniform scaling (where all axes have the same scale value)\n\nThis is important to fix before merging armatures to ensure proper bone\ntransformations and avoid potential deformation issues.\n\nIf you want to continue with this merge even with this warning please\nmake sure apply transforms is checked before you start merging.",
+        "QuickAccess.warn.blender42eol1": "Cats for Blender 4.2 is End of Life.",
+        "QuickAccess.warn.blender42eol2": "No more patches or support will be",
+        "QuickAccess.warn.blender42eol3": "provided for this Blender version.",
+        "QuickAccess.warn.blender42eol4": "Please upgrade to Blender 4.5 LTS",
+        "QuickAccess.warn.blender42eol5": "for continued support and updates."
     }
 }

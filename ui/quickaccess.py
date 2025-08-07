@@ -32,6 +32,7 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         # Version warnings section
         has_warnings = (bpy.app.version < (4, 2, 0) or 
                         bpy.app.version > (4, 3, 99) or 
+                        (bpy.app.version >= (4, 2, 0) and bpy.app.version < (4, 3, 0)) or
                         not globs.dict_found)
 
         if has_warnings:
@@ -101,6 +102,10 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
     def draw_version_warnings(self, col, context):
         if bpy.app.version < (4, 2, 0):
             self.draw_warning(col, "QuickAccess.warn.oldBlender", 3)
+        
+        # Show End of Life warning for Blender 4.2.x    
+        if bpy.app.version >= (4, 2, 0) and bpy.app.version < (4, 3, 0):
+            self.draw_warning(col, "QuickAccess.warn.blender42eol", 5)
             
         if bpy.app.version > (4, 3, 99):
             self.draw_warning(col, "QuickAccess.warn.newBlender", 3)
