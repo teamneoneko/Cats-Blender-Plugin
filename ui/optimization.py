@@ -24,6 +24,96 @@ smc_is_disabled = False
 found_very_old_smc = False
 
 
+def custom_draw_smc_ui(context, m_col):
+    """Custom wrapper for Material Combiner UI that handles interface changes"""
+    try:
+        # Try to import the Material Combiner modules
+        smc_module = None
+        globs_module = None
+        main_panel_module = None
+        
+        for mod in addon_utils.modules():
+            if mod.bl_info['name'] == "Shotariya's Material Combiner" and addon_utils.check(mod.__name__)[0]:
+                try:
+                    smc_module = import_module(mod.__name__ + '.operators.ui.include')
+                    globs_module = import_module(mod.__name__ + '.globs')
+                    main_panel_module = import_module(mod.__name__ + '.ui.main_panel')
+                    break
+                except ImportError:
+                    continue
+        
+        if not smc_module or not globs_module or not main_panel_module:
+            col = m_col.column()
+            col.label(text="Your Material Combiner is out of date,", icon='ERROR')
+            col.label(text="please use the master branch as releases are outdated", icon='BLANK1')
+            col.separator()
+            row = col.row(align=True)
+            row.scale_y = 1.2
+            row.operator(Atlas.ShotariyaButton.bl_idname, icon=globs.ICON_URL)
+            return
+        
+        # Check if Material Combiner uses the old interface
+        if not hasattr(main_panel_module.MaterialCombinerPanel, 'draw_pillow_installer'):
+            col = m_col.column()
+            col.label(text="Your Material Combiner is out of date,", icon='ERROR')
+            col.label(text="please use the master branch as releases are outdated", icon='BLANK1')
+            col.separator()
+            row = col.row(align=True)
+            row.scale_y = 1.2
+            row.operator(Atlas.ShotariyaButton.bl_idname, icon=globs.ICON_URL)
+            return
+            
+        # Check Pillow availability using Material Combiner's globals
+        if globs_module.pil_available:
+            # Pillow is available, show the materials list
+            if hasattr(context.scene, 'smc_ob_data') and context.scene.smc_ob_data:
+                m_col.template_list(
+                    "SMC_UL_Combine_List",
+                    "combine_list", 
+                    context.scene,
+                    "smc_ob_data",
+                    context.scene,
+                    "smc_ob_data_id",
+                    rows=12,
+                    type="DEFAULT",
+                )
+            col = m_col.column(align=True)
+            col.scale_y = 1.2
+            col.operator(
+                "smc.refresh_ob_data",
+                text="Update Material List" if hasattr(context.scene, 'smc_ob_data') and context.scene.smc_ob_data else "Generate Material List",
+                icon='FILE_REFRESH'
+            )
+            col = m_col.column()
+            col.scale_y = 1.5
+            col.operator("smc.combiner", text="Save Atlas to..", icon='TEXTURE').cats = True
+            
+        elif globs_module.pil_install_attempted:
+            # Installation complete, restart required
+            col = m_col.box().column()
+            col.label(text="Installation complete", icon='CHECKMARK')
+            col.label(text="Please restart Blender")
+            
+        else:
+            # Pillow needs to be installed - use Material Combiner's installer
+            if hasattr(main_panel_module.MaterialCombinerPanel, 'draw_pillow_installer'):
+                main_panel_module.MaterialCombinerPanel.draw_pillow_installer(context, m_col)
+            else:
+                # Fallback for older versions
+                col = m_col.box().column()
+                col.label(text="Python Imaging Library Required", icon='ERROR')
+                col.separator()
+                row = col.row()
+                row.scale_y = 1.5
+                row.operator('smc.get_pillow', text='Install Pillow', icon='IMPORT')
+            
+    except Exception as e:
+        # If there's any error, show a helpful message
+        col = m_col.column()
+        col.label(text="Material Combiner interface error", icon='ERROR')
+        col.label(text="Use the main Material Combiner panel", icon='BLANK1')
+
+
 def check_for_smc():
     global draw_smc_ui, old_smc_version, smc_is_disabled, found_very_old_smc
 
@@ -115,7 +205,7 @@ class OptimizePanel(ToolPanel, bpy.types.Panel):
         elif not draw_smc_ui:
             self.draw_smc_message(status_box, 'not_installed')
         elif hasattr(bpy.context.scene, 'smc_ob_data'):
-            draw_smc_ui(context, status_box.column(align=True))
+            custom_draw_smc_ui(context, status_box.column(align=True))
 
         check_for_smc()
 
