@@ -141,7 +141,20 @@ class ShotariyaButton(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
-        webbrowser.open('https://github.com/Grim-es/material-combiner-addon/releases/latest')
+        webbrowser.open('https://github.com/Grim-es/material-combiner-addon/archive/refs/heads/master.zip')
 
         self.report({'INFO'}, 'ShotariyaButton.success')
         return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=500)
+    
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.label(text="This will download Material Combiner master branch:", icon='INFO')
+        col.separator()
+        col.label(text="https://github.com/Grim-es/material-combiner-addon/")
+        col.label(text="archive/refs/heads/master.zip")
+        col.separator() 
+        col.label(text="Click OK to download, or Cancel to download manually.")
