@@ -816,6 +816,11 @@
         "EyeTrackingPanel.troubleshooting.shapeKeys": "• 쉐이프 키의 이름이 올바른지 확인",
         "EyeTrackingPanel.troubleshooting.boneWeights": "• 눈 본이 올바르게 가중치가 적용되어 있는지 확인",
         "EyeTrackingPanel.troubleshooting.restPosition": "• 아마추어가 기본 자세에 있는지 확인",
-        "merge_armatures.error.mustapplytransforms": "아마추어의 X, Y, Z축 스케일 값이 서로 다르며,\n균일한 스케일링(모든 축이 동일한 스케일 값)이 되어있지 않습니다.\n\n아마추어 병합 전 이를 수정하는 것은\n올바른 본 변환과 변형 문제를 방지하는데 중요합니다.\n\n이 경고에도 불구하고 병합을 진행하려면\n병합을 시작하기 전에 '트랜스폼 적용'을 체크해주세요."
+        "merge_armatures.error.mustapplytransforms": "아마추어의 X, Y, Z축 스케일 값이 서로 다르며,\n균일한 스케일링(모든 축이 동일한 스케일 값)이 되어있지 않습니다.\n\n아마추어 병합 전 이를 수정하는 것은\n올바른 본 변환과 변형 문제를 방지하는데 중요합니다.\n\n이 경고에도 불구하고 병합을 진행하려면\n병합을 시작하기 전에 '트랜스폼 적용'을 체크해주세요.",
+        "QuickAccess.warn.blender42eol1": "Blender 4.4용 Cats는 생명주기가 종료되었습니다.",
+        "QuickAccess.warn.blender42eol2": "이 Blender 버전에 대한 패치나 지원은",
+        "QuickAccess.warn.blender42eol3": "더 이상 제공되지 않습니다.",
+        "QuickAccess.warn.blender42eol4": "지속적인 지원과 업데이트를 위해",
+        "QuickAccess.warn.blender42eol5": "Blender 4.5 LTS로 업그레이드하세요."
     }
 }
