@@ -24,6 +24,82 @@ if platform.system() != "Linux":
         pass
 
 
+def convert_bone_morphs_native(context, armature, mmd_root):
+    """Native bone morph to shape key conversion for Linux compatibility"""
+    if not hasattr(mmd_root, 'bone_morphs') or len(mmd_root.bone_morphs) == 0:
+        return
+    
+    from mathutils import Vector, Quaternion
+    
+    mesh_objects = Common.get_meshes_objects()
+    if not mesh_objects:
+        return
+    
+    mesh = mesh_objects[0]
+    Common.set_active(mesh)
+    
+    # Ensure we have shape keys
+    if not mesh.data.shape_keys:
+        mesh.shape_key_add(name="Basis")
+    
+    # Collect morph names for translation (same as bones do) - USE JAPANESE NAMES
+    to_translate = []
+    for morph in mmd_root.bone_morphs:
+        to_translate.append(morph.name)  # Always use Japanese name for translation
+    
+    # Update translation dictionary (same as bones do)
+    Translate.update_dictionary(to_translate, translating_shapes=True)
+    
+    wm = context.window_manager
+    current_step = 0
+    wm.progress_begin(current_step, len(mmd_root.bone_morphs))
+    
+    # Store original bone transforms
+    original_transforms = {}
+    for bone in armature.pose.bones:
+        original_transforms[bone.name] = {
+            'location': bone.location.copy(),
+            'rotation_quaternion': bone.rotation_quaternion.copy(),
+            'rotation_euler': bone.rotation_euler.copy(),
+        }
+    
+    # Process each bone morph
+    for morph in mmd_root.bone_morphs:
+        current_step += 1
+        wm.progress_update(current_step)
+        
+        if not morph.data:
+            continue
+            
+        # Apply bone transformations
+        for morph_data in morph.data:
+            if morph_data.bone in armature.pose.bones:
+                bone = armature.pose.bones[morph_data.bone]
+                
+                bone.location = original_transforms[bone.name]['location'] + Vector(morph_data.location)
+                offset_quat = Quaternion(morph_data.rotation)
+                bone.rotation_quaternion = original_transforms[bone.name]['rotation_quaternion'] @ offset_quat
+        
+        # Update scene to apply transformations
+        context.view_layer.update()
+        
+        # Create shape key with translated name - ALWAYS translate Japanese name
+        original_name = morph.name  # Use Japanese name
+        shape_key_name, translated = Translate.translate(original_name, add_space=True, translating_shapes=True)
+        shape_key = mesh.shape_key_add(name=shape_key_name)
+        
+        # Reset bone transforms for next morph
+        for bone_name, transforms in original_transforms.items():
+            if bone_name in armature.pose.bones:
+                bone = armature.pose.bones[bone_name]
+                bone.location = transforms['location']
+                bone.rotation_quaternion = transforms['rotation_quaternion']
+                bone.rotation_euler = transforms['rotation_euler']
+    
+    wm.progress_end()
+    context.view_layer.update()
+
+
 @register_wrap
 class FixArmature(bpy.types.Operator):
     bl_idname = 'cats_armature.fix'
@@ -176,23 +252,32 @@ class FixArmature(bpy.types.Operator):
         print('DOUBLES END')
 
         # Check if model is mmd model
-        if mmd_tools_local_installed:
-            mmd_root = None
-            try:
-                mmd_root = armature.parent.mmd_root
-            except AttributeError:
-                pass
+        mmd_root = None
+        try:
+            mmd_root = armature.parent.mmd_root
+        except AttributeError:
+            pass
 
-            # Perform mmd specific operations
-            if mmd_root:
-
-                # Set correct mmd shading
+        # Perform mmd specific operations
+        if mmd_root:
+            # Set correct mmd shading (only if mmd_tools_local available)
+            if mmd_tools_local_installed:
                 mmd_root.use_toon_texture = False
                 mmd_root.use_sphere_texture = False
 
-                # Convert mmd bone morphs into shape keys
-                if mmd_tools_local_installed and hasattr(mmd_root, 'bone_morphs') and len(mmd_root.bone_morphs) > 0:
-
+            # Convert mmd bone morphs into shape keys
+            if hasattr(mmd_root, 'bone_morphs') and len(mmd_root.bone_morphs) > 0:
+                
+                if mmd_tools_local_installed:
+                    # Collect morph names for translation (same as bones do) - USE JAPANESE NAMES
+                    to_translate = []
+                    for morph in mmd_root.bone_morphs:
+                        to_translate.append(morph.name)  # Always use Japanese name for translation
+                    
+                    # Update translation dictionary (same as bones do)
+                    Translate.update_dictionary(to_translate, translating_shapes=True)
+                    
+                    # Use mmd_tools_local for non-Linux platforms
                     current_step = 0
                     wm.progress_begin(current_step, len(mmd_root.bone_morphs))
 
@@ -207,10 +292,17 @@ class FixArmature(bpy.types.Operator):
                         mesh = Common.get_meshes_objects()[0]
                         Common.set_active(mesh)
 
-                        mod = mesh.modifiers.new(morph.name, 'ARMATURE')
+                        # Use same translation system as bones - ALWAYS translate Japanese name
+                        original_name = morph.name  # Use Japanese name
+                        modifier_name, _ = Translate.translate(original_name, add_space=True, translating_shapes=True)
+                        mod = mesh.modifiers.new(modifier_name, 'ARMATURE')
                         mod.object = armature
                         Common.apply_modifier(mod, as_shapekey=True)
                     wm.progress_end()
+                else:
+                    # Use native conversion for Linux
+                    armature.data.pose_position = 'POSE'
+                    convert_bone_morphs_native(context, armature, mmd_root)
 
         # Perform source engine specific operations
         # Check if model is source engine model
