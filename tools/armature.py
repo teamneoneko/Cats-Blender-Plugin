@@ -3,6 +3,7 @@
 import bpy
 import copy
 import math
+import platform
 from mathutils import Matrix
 
 from . import common as Common
@@ -14,8 +15,13 @@ from .register import register_wrap
 from .translations import t
 
 # Only load mmd_tools_local if it's not on linux and 2.90 or higher since it causes Blender to crash
-from mmd_tools_local.operators import morph as Morph
-mmd_tools_local_installed = True
+mmd_tools_local_installed = False
+if platform.system() != "Linux":
+    try:
+        from mmd_tools_local.operators import morph as Morph
+        mmd_tools_local_installed = True
+    except ImportError:
+        pass
 
 
 @register_wrap
@@ -185,7 +191,7 @@ class FixArmature(bpy.types.Operator):
                 mmd_root.use_sphere_texture = False
 
                 # Convert mmd bone morphs into shape keys
-                if hasattr(mmd_root, 'bone_morphs') and len(mmd_root.bone_morphs) > 0:
+                if mmd_tools_local_installed and hasattr(mmd_root, 'bone_morphs') and len(mmd_root.bone_morphs) > 0:
 
                     current_step = 0
                     wm.progress_begin(current_step, len(mmd_root.bone_morphs))
