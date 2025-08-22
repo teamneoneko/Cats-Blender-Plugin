@@ -705,7 +705,7 @@ def _merge_vertex_groups_optimized(mesh: bpy.types.Object, vg_from: bpy.types.Ve
     idx_from = vg_from.index
     idx_to = vg_to.index
 
-    # Collect weights using list comprehensions for better performance
+    # Collect weights efficiently using vectorized operations
     vertex_groups_from = {}
     vertex_groups_to = {}
     
@@ -725,10 +725,12 @@ def _merge_vertex_groups_optimized(mesh: bpy.types.Object, vg_from: bpy.types.Ve
     # Combine weights efficiently
     weights_combined = np.clip(weights_from + weights_to, 0.0, 1.0)
     
-    # Find vertices that actually have weights to avoid unnecessary operations
+    # Apply weights individually (Blender API requirement)
     non_zero_indices = np.where(weights_combined > TRANSFORM_EPSILON)[0]
     if len(non_zero_indices) > 0:
-        vg_to.add(non_zero_indices.tolist(), weights_combined[non_zero_indices].tolist(), 'REPLACE')
+        # Apply weights one by one as Blender's VertexGroup.add() requires individual vertex operations
+        for vertex_idx in non_zero_indices:
+            vg_to.add([int(vertex_idx)], float(weights_combined[vertex_idx]), 'REPLACE')
 
 def mix_vertex_groups(mesh: bpy.types.Object, vg_from_name: str, vg_to_name: str) -> None:
     """Mix vertex group weights from 'vg_from' into 'vg_to' and remove 'vg_from'."""
