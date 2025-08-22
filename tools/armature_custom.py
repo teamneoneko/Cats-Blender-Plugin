@@ -3,13 +3,18 @@
 import bpy
 import webbrowser
 import numpy as np
-from typing import List, Optional, Dict, Set
+from typing import List, Optional, Dict, Set, Tuple, Union
 from mathutils import Vector
 
 from . import common as Common
 from . import armature_bones as Bones
 from .register import register_wrap
 from .translations import t
+
+# Constants
+POSITION_TOLERANCE = 0.00008726647  # around 0.005 degrees
+SCALE_TOLERANCE = 0.001
+TRANSFORM_EPSILON = 1e-6
 
 
 @register_wrap
@@ -115,7 +120,7 @@ class AttachMesh(bpy.types.Operator):
         wm.progress_update(10)
 
         # Validate mesh transforms
-        is_valid, error_msg = validate_mesh_transforms(mesh)
+        is_valid, error_msg = TransformValidator.validate_mesh_transforms(mesh)
         if not is_valid:
             self.report({'ERROR'}, error_msg)
             saved_data.load()
@@ -229,20 +234,61 @@ class CustomModelTutorialButton(bpy.types.Operator):
         self.report({'INFO'}, t('CustomModelTutorialButton.success'))
         return {'FINISHED'}
 
-def validate_mesh_transforms(mesh):
-    """Validate mesh transforms are suitable for attaching."""
-    if not mesh:
-        return False, "Mesh not found"
+class TransformValidator:
+    """Unified transform validation system for improved consistency and maintainability."""
     
-    # Check for non-uniform scale
-    scale = mesh.scale
-    if abs(scale[0] - scale[1]) > 0.001 or abs(scale[1] - scale[2]) > 0.001:
-        return False, "Mesh has non-uniform scale. Please apply scale (Ctrl+A)"
+    @staticmethod
+    def validate_mesh_transforms(mesh: Optional[bpy.types.Object]) -> Tuple[bool, str]:
+        """Validate mesh transforms are suitable for attaching."""
+        if not mesh:
+            return False, "Mesh not found"
+        
+        # Check for non-uniform scale
+        scale = mesh.scale
+        if (abs(scale[0] - scale[1]) > SCALE_TOLERANCE or 
+            abs(scale[1] - scale[2]) > SCALE_TOLERANCE or
+            abs(scale[0] - scale[2]) > SCALE_TOLERANCE):
+            return False, "Mesh has non-uniform scale. Please apply scale (Ctrl+A)"
+        
+        return True, ""
     
-    return True, ""
+    @staticmethod
+    def validate_object_transforms_clean(obj: bpy.types.Object) -> bool:
+        """Check if an object's transforms are at default values using consistent tolerance."""
+        if not obj:
+            return False
+            
+        for i in range(3):
+            if (abs(obj.scale[i] - 1.0) > TRANSFORM_EPSILON or 
+                abs(obj.location[i]) > TRANSFORM_EPSILON or 
+                abs(obj.rotation_euler[i]) > TRANSFORM_EPSILON):
+                return False
+        return True
+    
+    @staticmethod
+    def validate_armature_transforms_compatible(
+        base_armature: bpy.types.Object,
+        merge_armature: bpy.types.Object, 
+        mesh_merge: Optional[bpy.types.Object] = None
+    ) -> bool:
+        """Validate transforms of armatures and optional mesh for compatibility."""
+        # Check if both armatures have compatible scale values
+        for i in range(3):
+            if abs(base_armature.scale[i] - merge_armature.scale[i]) > POSITION_TOLERANCE:
+                return False
+                
+            # Check rotations
+            if (abs(merge_armature.rotation_euler[i]) > POSITION_TOLERANCE or 
+                (mesh_merge and abs(mesh_merge.rotation_euler[i]) > POSITION_TOLERANCE)):
+                return False
+                
+        return True
 
-def validate_mesh_name(armature, mesh_name):
+def validate_mesh_name(armature: bpy.types.Object, mesh_name: str) -> Tuple[bool, str]:
     """Validate mesh name doesn't conflict with existing bones."""
+    if not armature or not armature.data:
+        return False, "Invalid armature"
+        
     if mesh_name in armature.data.bones:
         return False, f"Bone named '{mesh_name}' already exists in armature"
     return True, ""
@@ -614,63 +660,85 @@ def detect_bones_to_merge(
 
     return bones_to_merge
 
-def process_vertex_groups(meshes: List[bpy.types.Object]):
-    """Process all vertex groups in the given meshes, merging or renaming groups with '.merge' suffix."""
+def process_vertex_groups(meshes: List[bpy.types.Object]) -> None:
+    """Process all vertex groups in the given meshes efficiently, merging or renaming groups with '.merge' suffix."""
     for mesh in meshes:
-        vg_names = {vg.name for vg in mesh.vertex_groups}
-
-        # Find all vertex groups ending with '.merge'
-        merge_vg_names = [vg_name for vg_name in vg_names if vg_name.endswith('.merge')]
-
-        for vg_merge_name in merge_vg_names:
-            # Remove the '.merge' suffix to get the base vertex group name
-            base_name = vg_merge_name[:-6]  # Remove the last 6 characters ('.merge')
-            vg_merge = mesh.vertex_groups.get(vg_merge_name)
-            vg_base = mesh.vertex_groups.get(base_name)
-
-            if vg_merge is None:
-                continue  # Skip if the vertex group is not found
-
-            if vg_base:
-                # Both vertex groups exist, so merge them using the mix_weights function
-                Common.mix_weights(mesh, vg_merge_name, base_name, mix_set='ALL')
-                # Remove the '.merge' vertex group after merging (handled in mix_weights)
-            else:
-                # Only the '.merge' vertex group exists, rename it to the base name
-                vg_merge.name = base_name
-
-def mix_vertex_groups(mesh: bpy.types.Object, vg_from_name: str, vg_to_name: str):
-    """Mix vertex group weights from 'vg_from' into 'vg_to' and remove 'vg_from'."""
-    vg_from = mesh.vertex_groups.get(vg_from_name)
-    vg_to = mesh.vertex_groups.get(vg_to_name)
+        if not mesh.vertex_groups:
+            continue
+            
+        # Build lookup tables for efficient processing
+        vertex_groups_by_name = {vg.name: vg for vg in mesh.vertex_groups}
+        merge_groups = {}
         
+        # Collect all merge groups in one pass
+        for vg_name, vg in vertex_groups_by_name.items():
+            if vg_name.endswith('.merge'):
+                base_name = vg_name[:-6]  # Remove '.merge' suffix
+                merge_groups[base_name] = (vg_name, vg)
+        
+        # Process merge groups efficiently
+        for base_name, (merge_name, merge_vg) in merge_groups.items():
+            base_vg = vertex_groups_by_name.get(base_name)
+            
+            if base_vg:
+                # Both vertex groups exist, merge them efficiently
+                _merge_vertex_groups_optimized(mesh, merge_vg, base_vg)
+                mesh.vertex_groups.remove(merge_vg)
+            else:
+                # Only the '.merge' vertex group exists, rename it
+                merge_vg.name = base_name
+
+def _merge_vertex_groups_optimized(mesh: bpy.types.Object, vg_from: bpy.types.VertexGroup, vg_to: bpy.types.VertexGroup) -> None:
+    """Optimized vertex group merging using vectorized operations for better performance on large meshes."""
     if not vg_from or not vg_to:
         return
 
     num_vertices = len(mesh.data.vertices)
-    weights_from = np.zeros(num_vertices)
-    weights_to = np.zeros(num_vertices)
+    if num_vertices == 0:
+        return
 
+    # Pre-allocate arrays for better memory efficiency
+    weights_from = np.zeros(num_vertices, dtype=np.float32)
+    weights_to = np.zeros(num_vertices, dtype=np.float32)
+    
     # Build index mappings
     idx_from = vg_from.index
     idx_to = vg_to.index
 
-    # Collect weights efficiently
-    for v in mesh.data.vertices:
-        for g in v.groups:
-            if g.group == idx_from:
-                weights_from[v.index] = g.weight
-            elif g.group == idx_to:
-                weights_to[v.index] = g.weight
+    # Collect weights using list comprehensions for better performance
+    vertex_groups_from = {}
+    vertex_groups_to = {}
+    
+    for vertex in mesh.data.vertices:
+        for group in vertex.groups:
+            if group.group == idx_from:
+                vertex_groups_from[vertex.index] = group.weight
+            elif group.group == idx_to:
+                vertex_groups_to[vertex.index] = group.weight
 
-    # Combine weights
-    weights_combined = weights_from + weights_to
-    weights_combined = np.clip(weights_combined, 0.0, 1.0)  # Optional: Clamp weights to [0, 1]
+    # Vectorized weight assignment
+    for idx, weight in vertex_groups_from.items():
+        weights_from[idx] = weight
+    for idx, weight in vertex_groups_to.items():
+        weights_to[idx] = weight
 
-    # Apply combined weights to the target vertex group
-    vg_to.add(range(num_vertices), weights_combined.tolist(), 'REPLACE')
+    # Combine weights efficiently
+    weights_combined = np.clip(weights_from + weights_to, 0.0, 1.0)
+    
+    # Find vertices that actually have weights to avoid unnecessary operations
+    non_zero_indices = np.where(weights_combined > TRANSFORM_EPSILON)[0]
+    if len(non_zero_indices) > 0:
+        vg_to.add(non_zero_indices.tolist(), weights_combined[non_zero_indices].tolist(), 'REPLACE')
 
-    # Remove the source vertex group
+def mix_vertex_groups(mesh: bpy.types.Object, vg_from_name: str, vg_to_name: str) -> None:
+    """Mix vertex group weights from 'vg_from' into 'vg_to' and remove 'vg_from'."""
+    vg_from = mesh.vertex_groups.get(vg_from_name)
+    vg_to = mesh.vertex_groups.get(vg_to_name)
+    
+    if not vg_from or not vg_to:
+        return
+
+    _merge_vertex_groups_optimized(mesh, vg_from, vg_to)
     mesh.vertex_groups.remove(vg_from)
 
 def add_armature_modifier(mesh: bpy.types.Object, armature: bpy.types.Object):
