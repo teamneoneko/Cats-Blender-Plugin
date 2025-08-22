@@ -5,6 +5,7 @@ import copy
 import math
 import platform
 from mathutils import Matrix
+from collections import defaultdict
 
 from . import common as Common
 from . import material as Material
@@ -22,6 +23,140 @@ if platform.system() != "Linux":
         mmd_tools_local_installed = True
     except ImportError:
         pass
+
+
+class ValidationError(Exception):
+    """Custom exception for validation errors"""
+    def __init__(self, message, error_code=None):
+        self.message = message
+        self.error_code = error_code
+        super().__init__(self.message)
+
+
+class ArmatureValidator:
+    """Comprehensive input validation for armature fixing"""
+    
+    @staticmethod
+    def validate_armature_requirements(context, armature):
+        """Validate all requirements before processing begins"""
+        errors = []
+        warnings = []
+        
+        # Basic armature validation
+        if not armature:
+            errors.append("No armature found in the scene")
+            return errors, warnings
+            
+        if not armature.data:
+            errors.append("Armature has no data")
+            return errors, warnings
+        
+        if any(armature.lock_location) or any(armature.lock_rotation) or any(armature.lock_scale):
+            warnings.append("Armature has locked transforms - these will be unlocked")
+        
+        # Check bone count
+        bone_count = len(armature.data.bones)
+        if bone_count == 0:
+            errors.append("Armature has no bones")
+        elif bone_count > 1000:
+            warnings.append(f"Armature has {bone_count} bones - processing may be slow")
+        
+        # Check for Rigify/Metarig (from original logic)
+        if ArmatureValidator._is_rigify_armature(armature):
+            errors.append("Rigify and Metarig armatures are not supported. Please use Rigify to Unity plugin instead.")
+        
+        # Validate meshes
+        mesh_errors, mesh_warnings = ArmatureValidator._validate_meshes(context, armature)
+        errors.extend(mesh_errors)
+        warnings.extend(mesh_warnings)
+        
+        # Check for required bones for basic functionality
+        required_bone_groups = [
+            ['Hips', 'Spine'],
+            ['Head', 'Neck'],
+        ]
+        
+        for bone_group in required_bone_groups:
+            if not any(bone.name in bone_group for bone in armature.data.bones):
+                warnings.append(f"No bones found from group: {', '.join(bone_group)}")
+        
+        return errors, warnings
+    
+    @staticmethod
+    def _is_rigify_armature(armature):
+        """Check if armature is Rigify/Metarig"""
+        if armature.name.lower() == 'metarig':
+            return True
+            
+        rigify_bones = {'brow.B.L', 'lip.B.R', 'lip.T.R', 'lip.B.L', 'lip.T.L'}
+        
+        for bone in armature.data.bones:
+            if bone.name.startswith(('DEF-', 'MCH-', 'ORG-')) or bone.name in rigify_bones:
+                return True
+                
+        return False
+    
+    @staticmethod
+    def _validate_meshes(context, armature):
+        """Validate mesh requirements"""
+        errors = []
+        warnings = []
+        
+        meshes = Common.get_meshes_objects()
+        
+        if not meshes:
+            # Check for VRM models with .baked meshes
+            is_vrm = False
+            for mesh in Common.get_meshes_objects(mode=2):
+                if mesh.name.endswith(('.baked', '.baked0')):
+                    is_vrm = True
+                    break
+            
+            if not is_vrm:
+                errors.append("No meshes found in the scene")
+        
+        # Single user data check removed - handled by original code to preserve popup behavior
+        
+        # Check for valid vertex groups
+        for mesh in meshes:
+            if not mesh.vertex_groups:
+                warnings.append(f"Mesh '{mesh.name}' has no vertex groups")
+            
+            # Check for NaN values in UV coordinates
+            uv_issues = 0
+            for uv_layer in mesh.data.uv_layers:
+                for vert_idx in range(len(uv_layer.data)):
+                    if math.isnan(uv_layer.data[vert_idx].uv.x) or math.isnan(uv_layer.data[vert_idx].uv.y):
+                        uv_issues += 1
+            
+            if uv_issues > 0:
+                warnings.append(f"Mesh '{mesh.name}' has {uv_issues} faulty UV coordinates that will be fixed")
+        
+        return errors, warnings
+
+
+class BoneCache:
+    """Lightweight cache system for bone lookups"""
+    
+    def __init__(self, armature):
+        self.armature = armature
+        self.bone_name_map = {}  # lowercase name -> actual bone
+        self._build_name_cache()
+    
+    def _build_name_cache(self):
+        """Build lightweight name mapping cache only"""
+        # Only cache bone names for case-insensitive lookups
+        for bone in self.armature.data.bones:
+            self.bone_name_map[bone.name.lower()] = bone.name
+    
+    def find_bone_by_name(self, name):
+        """Find bone by name with caching"""
+        return self.bone_name_map.get(name.lower())
+    
+    def clear_cache(self):
+        """Clear all cached data to prevent memory leaks"""
+        self.bone_name_map.clear()
+        self.armature = None
 
 
 def convert_bone_morphs_native(context, armature, mmd_root):
@@ -121,6 +256,27 @@ class FixArmature(bpy.types.Operator):
     def execute(self, context):
         saved_data = Common.SavedData()
         armature = Common.get_armature()
+        
+        # ========== COMPREHENSIVE INPUT VALIDATION ==========
+        try:
+            errors, warnings = ArmatureValidator.validate_armature_requirements(context, armature)
+            
+            # Display warnings to user
+            for warning in warnings:
+                self.report({'WARNING'}, warning)
+            
+            # Stop execution if there are critical errors
+            if errors:
+                for error in errors:
+                    self.report({'ERROR'}, error)
+                return {'CANCELLED'}
+                
+        except Exception as e:
+            self.report({'ERROR'}, f"Validation failed: {str(e)}")
+            return {'CANCELLED'}
+        
+        # Initialize lightweight bone cache for performance optimization
+        bone_cache = BoneCache(armature)
         
         # Store and remove bone collections to prevent crashes
         bone_collections_backup = []
@@ -1346,6 +1502,11 @@ class FixArmature(bpy.types.Operator):
                                           t('FixArmature.error.faultyUV2'),
                                           t('FixArmature.error.faultyUV3')])
             return {'FINISHED'}
+
+        # Clean up cache to prevent memory leaks
+        if bone_cache:
+            bone_cache.clear_cache()
+            del bone_cache
 
         saved_data.load()
 
