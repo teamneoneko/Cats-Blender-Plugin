@@ -842,6 +842,14 @@ def apply_transforms(armature_name=None):
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
 
+def apply_transforms_to_mesh(mesh):
+    """Apply transforms to a single mesh object."""
+    unselect_all()
+    set_active(mesh)
+    switch('OBJECT')
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+
 def apply_all_transforms():
 
     def apply_transforms_with_children(parent):
