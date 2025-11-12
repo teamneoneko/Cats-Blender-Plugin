@@ -13,18 +13,17 @@ from ..tools.translations import t
 class SearchMenuOperatorBoneHead(bpy.types.Operator):
     bl_idname = "scene.search_menu_head"
     bl_label = ""
+    bl_description = t('Scene.head.desc')
     bl_property = "my_enum"
 
     def items_callback(self, context):
         items = Common.get_bones_head(self, context)
-        print("Debug bone names:", [item[0] for item in items])
         return items
 
     my_enum: bpy.props.EnumProperty(name="shapekeys", items=items_callback)
 
 
     def execute(self, context):
-        print("Selected bone name:", self.my_enum)
         context.scene.head = self.my_enum
         return {'FINISHED'}
 
@@ -198,7 +197,7 @@ class SDK3EyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         # Actions section
         row = col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         row.operator(Eyetracking.RotateEyeBonesForAv3Button.bl_idname, icon='CON_ROTLIMIT')
 
 
@@ -229,7 +228,7 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         # Troubleshooting Guide
         box = col.box()
         help_col = box.column(align=True)
-        help_col.scale_y = 0.75
+        help_col.scale_y = 0.85
         help_col.label(text=t('EyeTrackingPanel.troubleshooting.title'), icon='QUESTION')
         help_col.label(text=t('EyeTrackingPanel.troubleshooting.vertexGroups'), icon='GROUP_VERTEX')
         help_col.label(text=t('EyeTrackingPanel.troubleshooting.shapeKeys'), icon='SHAPEKEY_DATA')
@@ -287,8 +286,6 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_mesh_selector(self, context, col):
         col.separator()
-        col.separator()
-        sub = col.column(align=True)
         row = col.row(align=True)
         row.scale_y = 1.1
         row.prop(context.scene, 'mesh_name_eye', icon='MESH_DATA')
@@ -383,20 +380,20 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
     def draw_creation_button(self, box):
         col = box.column(align=True)
         row = col.row(align=True)
+        row.scale_y = 1.3
         row.operator(Eyetracking.CreateEyesButton.bl_idname, icon='TRIA_RIGHT')
 
     def draw_testing_start(self, col):
         col.separator()
         row = col.row(align=True)
-        row.scale_y = 1.5
+        row.scale_y = 1.3
         row.operator(Eyetracking.StartTestingButton.bl_idname, icon='TRIA_RIGHT')
 
         row = col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.0
         row.operator(Eyetracking.ResetEyeTrackingButton.bl_idname, icon='FILE_REFRESH')
 
     def draw_testing_controls(self, context, col, armature):
-        col.separator()
         col.separator()
         
         # Eye rotation controls
@@ -409,14 +406,12 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         # Eye distance controls
         col.separator()
-        col.separator()
         row = col.row(align=True)
         row.prop(context.scene, 'eye_distance')
         row = col.row(align=True)
         row.operator(Eyetracking.AdjustEyesButton.bl_idname, icon='CURVE_NCIRCLE')
 
         # Blinking controls
-        col.separator()
         col.separator()
         row = col.row(align=True)
         row.prop(context.scene, 'eye_blink_shape')
@@ -430,13 +425,15 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         # Warnings
         self.draw_testing_warnings(context, col, armature)
 
+        col.separator()
+        
         # Testing controls
         row = col.row(align=True)
-        row.scale_y = 1.5
+        row.scale_y = 1.3
         row.operator(Eyetracking.StopTestingButton.bl_idname, icon='PAUSE')
         
         row = col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.0
         row.operator(Eyetracking.ResetEyeTrackingButton.bl_idname, icon='FILE_REFRESH')
 
         # Eye Movement Preview at bottom
@@ -462,37 +459,25 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         indicator_row.label(text=direction)
 
     def draw_testing_warnings(self, context, col, armature):
+        col.separator()
+        
         if armature.name != 'Armature':
+            draw_error_box(col, [
+                t('EyeTrackingPanel.error.wrongNameArm1'),
+                t('EyeTrackingPanel.error.wrongNameArm2'),
+                t('EyeTrackingPanel.error.wrongNameArm3') + armature.name + "')"
+            ])
             col.separator()
-            col.separator()
-            col.separator()
-            row = col.row(align=True)
-            row.scale_y = 0.3
-            row.label(text=t('EyeTrackingPanel.error.wrongNameArm1'), icon='ERROR')
-            row = col.row(align=True)
-            row.label(text=t('EyeTrackingPanel.error.wrongNameArm2'))
-            row = col.row(align=True)
-            row.scale_y = 0.3
-            row.label(text=t('EyeTrackingPanel.error.wrongNameArm3') + armature.name + "')")
 
         if context.scene.mesh_name_eye != 'Body':
+            draw_error_box(col, [
+                t('EyeTrackingPanel.error.wrongNameBody1'),
+                t('EyeTrackingPanel.error.wrongNameBody2'),
+                t('EyeTrackingPanel.error.wrongNameBody3') + context.scene.mesh_name_eye + "')"
+            ])
             col.separator()
-            col.separator()
-            col.separator()
-            row = col.row(align=True)
-            row.scale_y = 0.3
-            row.label(text=t('EyeTrackingPanel.error.wrongNameBody1'), icon='ERROR')
-            row = col.row(align=True)
-            row.label(text=t('EyeTrackingPanel.error.wrongNameBody2'))
-            row = col.row(align=True)
-            row.scale_y = 0.3
-            row.label(text=t('EyeTrackingPanel.error.wrongNameBody3') + context.scene.mesh_name_eye + "')")
 
-        col.separator()
-        col.separator()
-        col.separator()
-        row = col.row(align=True)
-        row.scale_y = 0.3
-        row.label(text=t('EyeTrackingPanel.warn.assignEyes1'), icon='INFO')
-        row = col.row(align=True)
-        row.label(text=t('EyeTrackingPanel.warn.assignEyes2'))
+        draw_info_box(col, [
+            t('EyeTrackingPanel.warn.assignEyes1'),
+            t('EyeTrackingPanel.warn.assignEyes2')
+        ])

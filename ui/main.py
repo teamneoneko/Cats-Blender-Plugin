@@ -10,6 +10,31 @@ class ToolPanel(object):
     bl_region_type = 'UI'
 
 
+class SearchMenuOperatorBase(object):
+    """Base class for search menu operators that set scene properties.
+    
+    Subclasses should define:
+    - bl_idname: The operator identifier
+    - bl_label: The operator label
+    - bl_description: Description of what the operator does
+    - scene_property: The name of the scene property to set (as string)
+    - my_enum: The EnumProperty with items callback
+    """
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+    bl_property = "my_enum"
+    scene_property = None  # Override in subclass
+    
+    def execute(self, context):
+        if self.scene_property:
+            setattr(context.scene, self.scene_property, self.my_enum)
+        return {'FINISHED'}
+    
+    def invoke(self, context, event):
+        wm = context.window_manager
+        wm.invoke_search_popup(self)
+        return {'FINISHED'}
+
+
 def layout_split(layout, factor=0.0, align=False):
     return layout.split(factor=factor, align=align)
 
@@ -53,3 +78,15 @@ def draw_error_box(layout, messages):
 def draw_info_box(layout, messages):
     """Draw an info box"""
     return draw_warning_box(layout, messages, icon='INFO')
+
+
+# Export commonly used classes and functions for easy import
+__all__ = [
+    'ToolPanel',
+    'SearchMenuOperatorBase',
+    'layout_split',
+    'add_button_with_small_button',
+    'draw_warning_box',
+    'draw_error_box',
+    'draw_info_box',
+]

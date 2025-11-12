@@ -1,18 +1,18 @@
 # MIT License
 
 import bpy
-from .main import ToolPanel, draw_error_box
+from .main import ToolPanel, SearchMenuOperatorBase, draw_error_box
 from ..tools import common as Common
 from ..tools import viseme as Viseme
 from ..tools.register import register_wrap
 from ..tools.translations import t
 
 @register_wrap
-class SearchMenuOperatorMouthA(bpy.types.Operator):
+class SearchMenuOperatorMouthA(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.mouth_a.desc')
     bl_idname = "scene.search_menu_mouth_a"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "mouth_a"
     
     my_enum: bpy.props.EnumProperty(
         name="shapekeys",
@@ -20,22 +20,12 @@ class SearchMenuOperatorMouthA(bpy.types.Operator):
         items=Common.wrap_dynamic_enum_items(Common.get_shapekeys_mouth_ah, bl_idname, sort=False, is_holder=False),
     )
 
-    def execute(self, context):
-        context.scene.mouth_a = self.my_enum
-        print(context.scene.mouth_a)
-        return {'FINISHED'}
-    
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
-
 @register_wrap
-class SearchMenuOperatorMouthO(bpy.types.Operator):
+class SearchMenuOperatorMouthO(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.mouth_o.desc')
     bl_idname = "scene.search_menu_mouth_o"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "mouth_o"
     
     my_enum: bpy.props.EnumProperty(
         name="shapekeys",
@@ -43,38 +33,18 @@ class SearchMenuOperatorMouthO(bpy.types.Operator):
         items=Common.wrap_dynamic_enum_items(Common.get_shapekeys_mouth_oh, bl_idname, sort=False, is_holder=False),
     )
 
-    def execute(self, context):
-        context.scene.mouth_o = self.my_enum
-        print(context.scene.mouth_o)
-        return {'FINISHED'}
-    
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
-
 @register_wrap
-class SearchMenuOperatorMouthCH(bpy.types.Operator):
+class SearchMenuOperatorMouthCH(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.mouth_ch.desc')
     bl_idname = "scene.search_menu_mouth_ch"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "mouth_ch"
     
     my_enum: bpy.props.EnumProperty(
         name="shapekeys",
         description=t('Scene.mouth_ch.desc'),
         items=Common.wrap_dynamic_enum_items(Common.get_shapekeys_mouth_ch, bl_idname, sort=False, is_holder=False),
     )
-
-    def execute(self, context):
-        context.scene.mouth_ch = self.my_enum
-        print(context.scene.mouth_ch)
-        return {'FINISHED'}
-    
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
 
 @register_wrap
 class VisemePanel(ToolPanel, bpy.types.Panel):
@@ -103,7 +73,7 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
 
         # Preview section
         row = box_col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         if context.scene.viseme_preview_mode:
             row.operator(Viseme.VisemePreviewOperator.bl_idname, text="Stop Preview", icon='PAUSE')
             row = box_col.row(align=True)
@@ -145,5 +115,5 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
 
         # Auto viseme button
         row = box_col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         row.operator(Viseme.AutoVisemeButton.bl_idname, icon='TRIA_RIGHT')
