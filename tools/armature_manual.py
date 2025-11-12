@@ -234,7 +234,7 @@ def stop_pose_mode(reset_pose=True):
     # Make all objects visible
     bpy.ops.object.hide_view_clear()
 
-    for pb in armature.data.bones:
+    for pb in armature.pose.bones:
         pb.hide = False
         pb.select = True
 
@@ -243,7 +243,7 @@ def stop_pose_mode(reset_pose=True):
         bpy.ops.pose.scale_clear()
         bpy.ops.pose.transforms_clear()
 
-    for pb in armature.data.bones:
+    for pb in armature.pose.bones:
         pb.select = False
 
     armature = Common.set_default_stage()

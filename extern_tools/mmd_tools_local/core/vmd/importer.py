@@ -7,6 +7,7 @@ import os
 from typing import Union
 
 import bpy
+from bpy_extras import anim_utils
 from mathutils import Quaternion, Vector
 
 from ... import utils
@@ -296,14 +297,14 @@ class VMDImporter:
         kp.handle_right = kp.co + Vector((1, 0))
 
     @staticmethod
-    def __keyframe_insert_inner(fcurves: bpy.types.ActionFCurves, path: str, index: int, frame: float, value: float):
+    def __keyframe_insert_inner(fcurves, path: str, index: int, frame: float, value: float):
         fcurve = fcurves.find(path, index=index)
         if fcurve is None:
             fcurve = fcurves.new(path, index=index)
         fcurve.keyframe_points.insert(frame, value, options={"FAST"})
 
     @staticmethod
-    def __keyframe_insert(fcurves: bpy.types.ActionFCurves, path: str, frame: float, value: Union[int, float, Vector]):
+    def __keyframe_insert(fcurves, path: str, frame: float, value: Union[int, float, Vector]):
         if isinstance(value, (int, float)):
             VMDImporter.__keyframe_insert_inner(fcurves, path, 0, frame, value)
 
@@ -373,6 +374,17 @@ class VMDImporter:
         action_name = action_name or armObj.name
         action = bpy.data.actions.new(name=action_name)
 
+        # Get action slot and channelbag for Blender 5.0
+        action_slot = None
+        for slot in action.slots:
+            if slot.target_id_type == 'ARMATURE':
+                action_slot = slot
+                break
+        if action_slot is None and len(action.slots) > 0:
+            action_slot = action.slots[0]
+        
+        channelbag = anim_utils.action_ensure_channelbag_for_slot(action, action_slot)
+
         extra_frame = 1 if self.__frame_margin > 1 else 0
 
         pose_bones = armObj.pose.bones
@@ -409,10 +421,10 @@ class VMDImporter:
             default_values = list(bone.location) + list(bone_rotation)
             data_path = 'pose.bones["%s"].location' % bone.name
             for axis_i in range(3):
-                fcurves[axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
+                fcurves[axis_i] = channelbag.fcurves.new(data_path=data_path, index=axis_i, group_name=bone.name)
             data_path = 'pose.bones["%s"].%s' % (bone.name, data_path_rot)
             for axis_i in range(len(bone_rotation)):
-                fcurves[3 + axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
+                fcurves[3 + axis_i] = channelbag.fcurves.new(data_path=data_path, index=axis_i, group_name=bone.name)
 
             for i in range(len(default_values)):
                 c = fcurves[i]
@@ -454,7 +466,8 @@ class VMDImporter:
                         self.__setInterpolation(interp[idx : idx + 16 : 4], prev_kp, kp)
                 prev_kps = curr_kps
 
-        for c in action.fcurves:
+        # Iterate over fcurves in the channelbag
+        for c in channelbag.fcurves:
             self.__fixFcurveHandles(c)
 
         # property animation
@@ -469,7 +482,7 @@ class VMDImporter:
                     if not bone:
                         continue
 
-                    self.__keyframe_insert(action.fcurves, f'pose.bones["{bone.name}"].mmd_ik_toggle', frame, enable)
+                    self.__keyframe_insert(channelbag.fcurves, f'pose.bones["{bone.name}"].mmd_ik_toggle', frame, enable)
 
         self.__assign_action(armObj, action)
 
@@ -503,6 +516,17 @@ class VMDImporter:
         action_name = action_name or meshObj.name
         action = bpy.data.actions.new(name=action_name)
 
+        # Get action slot and channelbag for Blender 5.0
+        action_slot = None
+        for slot in action.slots:
+            if slot.target_id_type == 'KEY':
+                action_slot = slot
+                break
+        if action_slot is None and len(action.slots) > 0:
+            action_slot = action.slots[0]
+        
+        channelbag = anim_utils.action_ensure_channelbag_for_slot(action, action_slot)
+
         mirror_map = _MirrorMapper(meshObj.data.shape_keys.key_blocks) if self.__mirror else {}
         shapeKeyDict = {k: mirror_map.get(k, v) for k, v in meshObj.data.shape_keys.key_blocks.items()}
 
@@ -532,7 +556,7 @@ class VMDImporter:
                 continue
             logging.info("(mesh) frames:%5d  name: %s", len(keyFrames), name)
             shapeKey = shapeKeyDict[name]
-            fcurve = action.fcurves.new(data_path='key_blocks["%s"].value' % shapeKey.name)
+            fcurve = channelbag.fcurves.new(data_path='key_blocks["%s"].value' % shapeKey.name)
             fcurve.keyframe_points.add(len(keyFrames))
             keyFrames.sort(key=lambda x: x.frame_number)
             for k, v in zip(keyFrames, fcurve.keyframe_points):
@@ -553,9 +577,20 @@ class VMDImporter:
         action_name = action_name or rootObj.name
         action = bpy.data.actions.new(name=action_name)
 
+        # Get action slot and channelbag for Blender 5.0
+        action_slot = None
+        for slot in action.slots:
+            if slot.target_id_type in ('EMPTY', 'OBJECT'):
+                action_slot = slot
+                break
+        if action_slot is None and len(action.slots) > 0:
+            action_slot = action.slots[0]
+        
+        channelbag = anim_utils.action_ensure_channelbag_for_slot(action, action_slot)
+
         logging.debug("(Display) list(frame, show): %s", [(keyFrame.frame_number, bool(keyFrame.visible)) for keyFrame in propertyAnim])
         for keyFrame in propertyAnim:
-            self.__keyframe_insert(action.fcurves, "mmd_root.show_meshes", keyFrame.frame_number + self.__frame_margin, float(keyFrame.visible))
+            self.__keyframe_insert(channelbag.fcurves, "mmd_root.show_meshes", keyFrame.frame_number + self.__frame_margin, float(keyFrame.visible))
 
         self.__assign_action(rootObj, action)
 
@@ -584,18 +619,32 @@ class VMDImporter:
         parent_action = bpy.data.actions.new(name=action_name)
         distance_action = bpy.data.actions.new(name=action_name + "_dis")
 
+        # Get channelbags for both actions (Blender 5.0)
+        def get_channelbag_for_action(action, target_type='EMPTY'):
+            action_slot = None
+            for slot in action.slots:
+                if slot.target_id_type in (target_type, 'OBJECT'):
+                    action_slot = slot
+                    break
+            if action_slot is None and len(action.slots) > 0:
+                action_slot = action.slots[0]
+            return anim_utils.action_ensure_channelbag_for_slot(action, action_slot)
+        
+        parent_channelbag = get_channelbag_for_action(parent_action)
+        distance_channelbag = get_channelbag_for_action(distance_action)
+
         _loc = _rot = lambda i: i
         if self.__mirror:
             _loc, _rot = _MirrorMapper.get_location, _MirrorMapper.get_rotation3
 
         fcurves = []
         for i in range(3):
-            fcurves.append(parent_action.fcurves.new(data_path="location", index=i))  # x, y, z
+            fcurves.append(parent_channelbag.fcurves.new(data_path="location", index=i))  # x, y, z
         for i in range(3):
-            fcurves.append(parent_action.fcurves.new(data_path="rotation_euler", index=i))  # rx, ry, rz
-        fcurves.append(parent_action.fcurves.new(data_path="mmd_camera.angle"))  # fov
-        fcurves.append(parent_action.fcurves.new(data_path="mmd_camera.is_perspective"))  # persp
-        fcurves.append(distance_action.fcurves.new(data_path="location", index=1))  # dis
+            fcurves.append(parent_channelbag.fcurves.new(data_path="rotation_euler", index=i))  # rx, ry, rz
+        fcurves.append(parent_channelbag.fcurves.new(data_path="mmd_camera.angle"))  # fov
+        fcurves.append(parent_channelbag.fcurves.new(data_path="mmd_camera.is_perspective"))  # persp
+        fcurves.append(distance_channelbag.fcurves.new(data_path="location", index=1))  # dis
         for c in fcurves:
             c.keyframe_points.add(len(cameraAnim))
 
