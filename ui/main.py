@@ -24,14 +24,7 @@ def add_button_with_small_button(layout, button_1_idname, button_1_icon, button_
 
 
 def draw_warning_box(layout, messages, icon='INFO'):
-    """
-    Draw a warning/info box with consistent styling for Blender 5.0
-    
-    Args:
-        layout: The layout to draw in
-        messages: List of message strings or single message string
-        icon: Icon to use ('INFO', 'ERROR', 'WARNING')
-    """
+    """Draw a warning/info box with consistent styling for Blender 5.0"""
     if isinstance(messages, str):
         messages = [messages]
     

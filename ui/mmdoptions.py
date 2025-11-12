@@ -52,22 +52,16 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
         split.operator(FixArmatureWarning.bl_idname, icon=globs.ICON_FIX_MODEL)
         split.operator(ModelSettings.bl_idname, text="", icon='MODIFIER')
 
-        # Material section
-        material_box = box.box()
-        material_col = material_box.column(align=True)
-        
         # Rigidbodies section
         rigid_box = box.box()
         rigid_col = rigid_box.column(align=True)
-        
-        rigid_col.separator(factor=1.5)
         
         info_col = rigid_col.column(align=True)
         info_col.scale_y = 0.75
         info_col.label(text=t("MMDOptions.RemoveRigidBodiesManaulInfo1"), icon='INFO')
         info_col.label(text=t("MMDOptions.RemoveRigidBodiesManaulInfo2"), icon='BLANK1')
         
-        rigid_col.separator(factor=1.5)
+        rigid_col.separator(factor=0.5)
 
         row = rigid_col.row(align=True)
         row.scale_y = 1.5
