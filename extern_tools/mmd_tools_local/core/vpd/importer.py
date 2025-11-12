@@ -4,6 +4,7 @@
 import logging
 
 import bpy
+from bpy_extras import anim_utils
 from mathutils import Matrix
 
 from ...bpyutils import FnContext
@@ -51,10 +52,22 @@ class VPDImporter:
         else:
             action = armObj.animation_data.action
 
+        # Get the action slot for this object (Blender 5.0)
+        action_slot = None
+        for slot in action.slots:
+            if slot.target_id_type == 'ARMATURE':
+                action_slot = slot
+                break
+        if action_slot is None and len(action.slots) > 0:
+            action_slot = action.slots[0]
+
         # Get the current frame
         current_frame = bpy.context.scene.frame_current
 
         prop_rot_map = {"QUATERNION": "rotation_quaternion", "AXIS_ANGLE": "rotation_axis_angle"}
+
+        # Get channelbag for accessing fcurves (Blender 5.0)
+        channelbag = anim_utils.action_ensure_channelbag_for_slot(action, action_slot)
 
         # Update and keyframe only the bones affected by the current VPD file
         for bone in armObj.pose.bones:
@@ -68,15 +81,15 @@ class VPDImporter:
                 
                 data_path = 'pose.bones["%s"].location' % bone.name
                 for axis_i in range(3):
-                    fcurves[axis_i] = action.fcurves.find(data_path, index=axis_i)
+                    fcurves[axis_i] = channelbag.fcurves.find(data_path, index=axis_i)
                     if fcurves[axis_i] is None:
-                        fcurves[axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
+                        fcurves[axis_i] = channelbag.fcurves.new(data_path=data_path, index=axis_i, group_name=bone.name)
                 
                 data_path = 'pose.bones["%s"].%s' % (bone.name, data_path_rot)
                 for axis_i in range(len(bone_rotation)):
-                    fcurves[3 + axis_i] = action.fcurves.find(data_path, index=axis_i) 
+                    fcurves[3 + axis_i] = channelbag.fcurves.find(data_path, index=axis_i) 
                     if fcurves[3 + axis_i] is None:
-                        fcurves[3 + axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
+                        fcurves[3 + axis_i] = channelbag.fcurves.new(data_path=data_path, index=axis_i, group_name=bone.name)
                 
                 for axis_i in range(3):
                     fcurves[axis_i].keyframe_points.insert(current_frame, bone.location[axis_i])
@@ -111,6 +124,18 @@ class VPDImporter:
         else:
             action = meshObj.data.shape_keys.animation_data.action
 
+        # Get the action slot for shape keys (Blender 5.0)
+        action_slot = None
+        for slot in action.slots:
+            if slot.target_id_type == 'KEY':
+                action_slot = slot
+                break
+        if action_slot is None and len(action.slots) > 0:
+            action_slot = action.slots[0]
+
+        # Get channelbag (Blender 5.0)
+        channelbag = anim_utils.action_ensure_channelbag_for_slot(action, action_slot)
+
         # Get current frame
         current_frame = bpy.context.scene.frame_current
 
@@ -127,9 +152,9 @@ class VPDImporter:
             
             # Create or get FCurve
             data_path = 'key_blocks["%s"].value' % shape_key.name
-            fcurve = action.fcurves.find(data_path)
+            fcurve = channelbag.fcurves.find(data_path)
             if fcurve is None:
-                fcurve = action.fcurves.new(data_path=data_path)
+                fcurve = channelbag.fcurves.new(data_path=data_path)
             
             # Add keyframe
             fcurve.keyframe_points.insert(current_frame, m.weight)

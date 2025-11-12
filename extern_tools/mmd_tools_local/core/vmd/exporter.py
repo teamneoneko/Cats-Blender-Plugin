@@ -7,6 +7,7 @@ import re
 from typing import List, Optional, Set
 
 import bpy
+from bpy_extras import anim_utils
 import mathutils
 
 from .. import vmd
@@ -134,6 +135,20 @@ class VMDExporter:
         self.__bone_converter_cls = vmd.importer.BoneConverter
         self.__ik_fcurves = {}
 
+    @staticmethod
+    def __get_fcurves_from_action(action, target_id_type='ARMATURE'):
+        """Get fcurves from action using Blender 5.0 channelbag API"""
+        action_slot = None
+        for slot in action.slots:
+            if slot.target_id_type == target_id_type:
+                action_slot = slot
+                break
+        if action_slot is None and len(action.slots) > 0:
+            action_slot = action.slots[0]
+        
+        channelbag = anim_utils.action_get_channelbag_for_slot(action, action_slot)
+        return channelbag.fcurves if channelbag else []
+
     def __allFrameKeys(self, curves: List[_FCurve]):
         all_frames = set()
         for i in curves:
@@ -235,7 +250,11 @@ class VMDExporter:
         anim_bones = {}
         rePath = re.compile(r'^pose\.bones\["(.+)"\]\.([a-z_]+)$')
         prop_rotation_map = {"QUATERNION": "rotation_quaternion", "AXIS_ANGLE": "rotation_axis_angle"}
-        for fcurve in animation_data.action.fcurves:
+        
+        # Get fcurves from channelbag (Blender 5.0)
+        fcurves_to_iterate = self.__get_fcurves_from_action(animation_data.action, 'ARMATURE')
+        
+        for fcurve in fcurves_to_iterate:
             m = rePath.match(fcurve.data_path)
             if m is None:
                 continue
@@ -322,8 +341,11 @@ class VMDExporter:
                     return None
             return key_blocks.get(eval(key), None)
 
+        # Get fcurves from channelbag (Blender 5.0)
+        fcurves_to_iterate = self.__get_fcurves_from_action(animation_data.action, 'KEY')
+
         rePath = re.compile(r"^key_blocks\[(.+)\]\.value$")
-        for fcurve in animation_data.action.fcurves:
+        for fcurve in fcurves_to_iterate:
             m = rePath.match(fcurve.data_path)
             if m is None:
                 continue
@@ -402,9 +424,10 @@ class VMDExporter:
         data.append(camera.location.y)
         cam_curves = [_FCurve(i) for i in data]  # x, y, z, rx, ry, rz, fov, persp, distance
 
-        animation_data = mmd_cam.animation_data
+        animation_data = mmd_lamp.animation_data
         if animation_data and animation_data.action:
-            for fcurve in animation_data.action.fcurves:
+            fcurves_to_iterate = self.__get_fcurves_from_action(animation_data.action, 'LIGHT')
+            for fcurve in fcurves_to_iterate:
                 if fcurve.data_path == "location":  # x, y, z
                     cam_curves[fcurve.array_index].setFCurve(fcurve)
                 elif fcurve.data_path == "rotation_euler":  # rx, ry, rz
@@ -414,9 +437,10 @@ class VMDExporter:
                 elif fcurve.data_path == "mmd_camera.is_perspective":  # persp
                     cam_curves[7].setFCurve(fcurve)
 
-        animation_data = camera.animation_data
+        animation_data = parent.animation_data
         if animation_data and animation_data.action:
-            for fcurve in animation_data.action.fcurves:
+            fcurves_to_iterate = self.__get_fcurves_from_action(animation_data.action, 'EMPTY')
+            for fcurve in fcurves_to_iterate:
                 if fcurve.data_path == "location" and fcurve.array_index == 1:  # distance
                     cam_curves[8].setFCurve(fcurve)
 
@@ -463,15 +487,17 @@ class VMDExporter:
         data = list(lamp.data.color) + list(lamp.location)
         lamp_curves = [_FCurve(i) for i in data]  # r, g, b, x, y, z
 
-        animation_data = lamp.data.animation_data
+        animation_data = lamp.animation_data
         if animation_data and animation_data.action:
-            for fcurve in animation_data.action.fcurves:
+            fcurves_to_iterate = self.__get_fcurves_from_action(animation_data.action, 'LIGHT')
+            for fcurve in fcurves_to_iterate:
                 if fcurve.data_path == "color":  # r, g, b
                     lamp_curves[fcurve.array_index].setFCurve(fcurve)
 
-        animation_data = lamp.animation_data
+        animation_data = camera.animation_data
         if animation_data and animation_data.action:
-            for fcurve in animation_data.action.fcurves:
+            fcurves_to_iterate = self.__get_fcurves_from_action(animation_data.action, 'CAMERA')
+            for fcurve in fcurves_to_iterate:
                 if fcurve.data_path == "location":  # x, y, z
                     lamp_curves[3 + fcurve.array_index].setFCurve(fcurve)
 

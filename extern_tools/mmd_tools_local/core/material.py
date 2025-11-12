@@ -437,7 +437,7 @@ class FnMaterial:
 
             preferred_output_node_target = {
                 "CYCLES": "CYCLES",
-                "BLENDER_EEVEE_NEXT": "EEVEE",
+                "BLENDER_EEVEE": "EEVEE",
             }.get(active_render_engine, "ALL")
 
             tex_node = None

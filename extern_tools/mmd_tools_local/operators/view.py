@@ -29,11 +29,13 @@ class _SetShadingBase:
             for s in i.material_slots:
                 if s.material is None:
                     continue
-                s.material.use_nodes = False
+                # Note: material.use_nodes is deprecated in Blender 5.0+ and will be removed in 6.0
+                # It always returns True now and setting it has no effect
+                # s.material.use_nodes = False  # Deprecated
                 s.material.use_shadeless = use_shadeless
 
     def execute(self, context):
-        context.scene.render.engine = "BLENDER_EEVEE_NEXT"
+        context.scene.render.engine = "BLENDER_EEVEE"
 
         shading_mode = getattr(self, "_shading_mode", None)
         for space in self._get_view3d_spaces(context):

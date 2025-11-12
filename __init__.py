@@ -164,13 +164,13 @@ def remove_corrupted_files():
 
 def check_unsupported_blender_versions():
     # Don't allow Blender versions older than 4.5
-    if bpy.app.version < (4, 5):
+    if bpy.app.version < (5, 0):
         unregister()
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.29unsupportedVersion'))
      
-    # Don't allow 4.5+
-    if bpy.app.version >= (4, 6):
+    # Don't allow 5.0+
+    if bpy.app.version >= (5, 1):
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.40unsupportedVersion'))
 
