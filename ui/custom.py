@@ -2,7 +2,7 @@
 
 import bpy
 
-from .main import ToolPanel
+from .main import ToolPanel, draw_info_box
 from .. import globs
 from ..tools import common as Common
 from ..tools import iconloader as Iconloader
@@ -112,61 +112,58 @@ class CustomPanel(ToolPanel, bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        box = layout.box()
+        col = layout.column(align=True)
 
         # Tutorial button
-        tutorial_col = box.column(align=True)
-        tutorial_col.scale_y = 1.2
-        tutorial_col.operator(Armature_custom.CustomModelTutorialButton.bl_idname, icon='FORWARD')
+        row = col.row(align=True)
+        row.scale_y = 1.2
+        row.operator(Armature_custom.CustomModelTutorialButton.bl_idname, icon='FORWARD')
 
-        # Mode selector as tabs
-        row = box.row(align=True)
-        row.prop(context.scene, 'merge_mode', expand=True)
 
-        # Content based on mode
-        content_box = box.box()
-        if context.scene.merge_mode == 'ARMATURE':
-            self.draw_armature_section(content_box, context)
-        elif context.scene.merge_mode == "MESH":
-            self.draw_mesh_section(content_box, context)
+@register_wrap
+class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
+    bl_idname = 'VIEW3D_PT_custom_armature_v3'
+    bl_label = t('CustomPanel.armature.label')
+    bl_parent_id = 'VIEW3D_PT_custom_v3'
+    bl_options = set()
 
-    def draw_armature_section(self, box, context):
-        col = box.column(align=True)
-        
-        # Header
-        header_col = col.column(align=True)
-        header_col.scale_y = 1.05
-        header_col.label(text=t('CustomPanel.mergeArmatures'))
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+        self.draw_armature_section(col, context)
 
+    def draw_armature_section(self, col, context):
         if len(Common.get_armature_objects()) <= 1:
-            info_col = col.column(align=True)
-            info_col.scale_y = 1.05
-            info_col.label(text=t('CustomPanel.warn.twoArmatures'), icon='INFO')
+            draw_info_box(col, t('CustomPanel.warn.twoArmatures'))
             return
 
+        col.separator()
+
         # Settings
-        settings_box = box.box()
-        settings_col = settings_box.column(align=True)
-        settings_col.scale_y = 0.95
+        box = col.box()
+        box_col = box.column(align=True)
+        box_col.scale_y = 0.9
         
-        settings_col.prop(context.scene, 'merge_same_bones')
-        settings_col.prop(context.scene, 'apply_transforms')
-        settings_col.prop(context.scene, 'merge_armatures_join_meshes')
-        settings_col.prop(context.scene, 'merge_armatures_remove_zero_weight_bones')
-        settings_col.prop(context.scene, 'merge_armatures_cleanup_shape_keys')
+        box_col.prop(context.scene, 'merge_same_bones')
+        box_col.prop(context.scene, 'apply_transforms')
+        box_col.prop(context.scene, 'merge_armatures_join_meshes')
+        box_col.prop(context.scene, 'merge_armatures_remove_zero_weight_bones')
+        box_col.prop(context.scene, 'merge_armatures_cleanup_shape_keys')
+
+        col.separator()
 
         # Merge selection
-        merge_box = box.box()
-        merge_col = merge_box.column(align=True)
-        merge_col.scale_y = 1.05
+        box = col.box()
+        box_col = box.column(align=True)
+        box_col.scale_y = 1.0
 
-        row = merge_col.row(align=True)
+        row = box_col.row(align=True)
         row.label(text=t('CustomPanel.mergeInto'))
         row.operator(SearchMenuOperator_merge_armature_into.bl_idname,
                     text=context.scene.merge_armature_into, 
                     icon=globs.ICON_MOD_ARMATURE)
 
-        row = merge_col.row(align=True)
+        row = box_col.row(align=True)
         row.label(text=t('CustomPanel.toMerge'))
         row.operator(SearchMenuOperator_merge_armature.bl_idname,
                     text=context.scene.merge_armature, 
@@ -185,68 +182,79 @@ class CustomPanel(ToolPanel, bpy.types.Panel):
                         break
 
             if not found:
-                row = merge_col.row(align=True)
+                row = box_col.row(align=True)
                 row.label(text=t('CustomPanel.attachToBone'))
                 row.operator(SearchMenuOperator_attach_to_bone.bl_idname, 
                            text=context.scene.attach_to_bone, 
                            icon='BONE_DATA')
             else:
-                row = merge_col.row(align=True)
+                row = box_col.row(align=True)
                 row.label(text=t('CustomPanel.armaturesCanMerge'))
 
+        col.separator()
+
         # Merge button
-        merge_button = box.column(align=True)
-        merge_button.scale_y = 1.2
-        merge_button.operator(Armature_custom.MergeArmature.bl_idname, icon='ARMATURE_DATA')
+        row = col.row(align=True)
+        row.scale_y = 1.2
+        row.operator(Armature_custom.MergeArmature.bl_idname, icon='ARMATURE_DATA')
 
-    def draw_mesh_section(self, box, context):
-        col = box.column(align=True)
-        
-        # Header
-        header_col = col.column(align=True)
-        header_col.scale_y = 1.05
-        header_col.label(text=t('CustomPanel.attachMesh1'))
 
+@register_wrap
+class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
+    bl_idname = 'VIEW3D_PT_custom_mesh_v3'
+    bl_label = t('CustomPanel.mesh.label')
+    bl_parent_id = 'VIEW3D_PT_custom_v3'
+    bl_options = set()
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+        self.draw_mesh_section(col, context)
+
+    def draw_mesh_section(self, col, context):
         if len(Common.get_armature_objects()) == 0 or len(Common.get_meshes_objects(mode=1, check=False)) == 0:
-            warning_col = col.column(align=True)
-            warning_col.scale_y = 1.05
-            warning_col.label(text=t('CustomPanel.warn.noArmOrMesh1'), icon='INFO')
-            
-            info_col = col.column(align=True)
-            info_col.scale_y = 0.75
-            info_col.label(text=t('CustomPanel.warn.noArmOrMesh2'), icon='BLANK1')
+            draw_info_box(col, [
+                t('CustomPanel.warn.noArmOrMesh1'),
+                t('CustomPanel.warn.noArmOrMesh2')
+            ])
             return
 
+        col.separator()
+
         # Settings
-        settings_box = box.box()
-        settings_col = settings_box.column(align=True)
-        settings_col.scale_y = 0.95
-        settings_col.prop(context.scene, 'merge_armatures_join_meshes')
+        box = col.box()
+        box_col = box.column(align=True)
+        box_col.scale_y = 0.9
+        box_col.prop(context.scene, 'merge_armatures_join_meshes')
+
+        col.separator()
 
         # Merge selection
-        merge_box = box.box()
-        merge_col = merge_box.column(align=True)
-        merge_col.scale_y = 1.05
+        box = col.box()
+        box_col = box.column(align=True)
+        box_col.scale_y = 1.0
 
-        row = merge_col.row(align=True)
+        row = box_col.row(align=True)
         row.label(text=t('CustomPanel.mergeInto'))
         row.operator(SearchMenuOperator_merge_armature_into.bl_idname,
                     text=context.scene.merge_armature_into, 
                     icon=globs.ICON_MOD_ARMATURE)
 
-        row = merge_col.row(align=True)
+        row = box_col.row(align=True)
         row.label(text=t('CustomPanel.attachMesh2'))
         row.operator(SearchMenuOperator_attach_mesh.bl_idname,
                     text=context.scene.attach_mesh,
                     icon_value=Iconloader.preview_collections["custom_icons"]["UP_ARROW"].icon_id)
 
-        row = merge_col.row(align=True)
+        row = box_col.row(align=True)
         row.label(text=t('CustomPanel.attachToBone'))
         row.operator(SearchMenuOperator_attach_to_bone.bl_idname,
                     text=context.scene.attach_to_bone,
                     icon='BONE_DATA')
 
+        col.separator()
+
         # Attach button
-        attach_button = box.column(align=True)
-        attach_button.scale_y = 1.2
-        attach_button.operator(Armature_custom.AttachMesh.bl_idname, icon='ARMATURE_DATA')
+        row = col.row(align=True)
+        row.scale_y = 1.2
+        row.operator(Armature_custom.AttachMesh.bl_idname, icon='MESH_DATA')

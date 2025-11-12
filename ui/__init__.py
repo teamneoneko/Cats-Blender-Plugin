@@ -11,7 +11,6 @@ if "bpy" not in locals():
     from . import otheroptions
     from . import visemes
     from . import bone_root
-    from . import optimization
     from . import scale
     from . import eye_tracking
     from . import settings_updates

@@ -21,3 +21,42 @@ def add_button_with_small_button(layout, button_1_idname, button_1_icon, button_
     subcol.operator(button_1_idname, icon=button_1_icon)
     subcol = layout_split(row, factor=0, align=True)
     subcol.operator(button_2_idname, text="", icon=button_2_icon)
+
+
+def draw_warning_box(layout, messages, icon='INFO'):
+    """
+    Draw a warning/info box with consistent styling for Blender 5.0
+    
+    Args:
+        layout: The layout to draw in
+        messages: List of message strings or single message string
+        icon: Icon to use ('INFO', 'ERROR', 'WARNING')
+    """
+    if isinstance(messages, str):
+        messages = [messages]
+    
+    box = layout.box()
+    col = box.column(align=True)
+    col.scale_y = 0.75
+    
+    for i, msg in enumerate(messages):
+        row = col.row(align=True)
+        if i == 0:
+            # First line gets alert styling and icon for errors/warnings
+            if icon in ('ERROR', 'WARNING'):
+                row.alert = True
+            row.label(text=msg, icon=icon if i == 0 else 'BLANK1')
+        else:
+            row.label(text=msg, icon='BLANK1')
+    
+    return box
+
+
+def draw_error_box(layout, messages):
+    """Draw an error box with alert styling"""
+    return draw_warning_box(layout, messages, icon='ERROR')
+
+
+def draw_info_box(layout, messages):
+    """Draw an info box"""
+    return draw_warning_box(layout, messages, icon='INFO')
