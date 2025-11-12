@@ -11,15 +11,7 @@ class ToolPanel(object):
 
 
 class SearchMenuOperatorBase(object):
-    """Base class for search menu operators that set scene properties.
-    
-    Subclasses should define:
-    - bl_idname: The operator identifier
-    - bl_label: The operator label
-    - bl_description: Description of what the operator does
-    - scene_property: The name of the scene property to set (as string)
-    - my_enum: The EnumProperty with items callback
-    """
+    """Base class for search menu operators that set scene properties."""
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     bl_property = "my_enum"
     scene_property = None  # Override in subclass
