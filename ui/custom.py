@@ -2,7 +2,7 @@
 
 import bpy
 
-from .main import ToolPanel, draw_info_box
+from .main import ToolPanel, SearchMenuOperatorBase, draw_info_box
 from .. import globs
 from ..tools import common as Common
 from ..tools import iconloader as Iconloader
@@ -13,11 +13,11 @@ from ..tools.translations import t
 
 
 @register_wrap
-class SearchMenuOperator_merge_armature_into(bpy.types.Operator):
+class SearchMenuOperator_merge_armature_into(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.merge_armature_into.desc')
     bl_idname = "scene.search_menu_merge_armature_into"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "merge_armature_into"
 
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.merge_armature_into.label'),
@@ -25,22 +25,12 @@ class SearchMenuOperator_merge_armature_into(bpy.types.Operator):
         items=Common.wrap_dynamic_enum_items(Common.get_armature_list, bl_idname, is_holder=False),
     )
 
-    def execute(self, context):
-        context.scene.merge_armature_into = self.my_enum
-        print(context.scene.root_bone)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
-
 @register_wrap
-class SearchMenuOperator_merge_armature(bpy.types.Operator):
+class SearchMenuOperator_merge_armature(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.merge_armature.desc')
     bl_idname = "scene.search_menu_merge_armature"
     bl_label = t('Scene.root_bone.label')
-    bl_property = "my_enum"
+    scene_property = "merge_armature"
 
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.merge_armature.label'),
@@ -48,22 +38,12 @@ class SearchMenuOperator_merge_armature(bpy.types.Operator):
         items=Common.wrap_dynamic_enum_items(Common.get_armature_merge_list, bl_idname, is_holder=False),
     )
 
-    def execute(self, context):
-        context.scene.merge_armature = self.my_enum
-        print(context.scene.root_bone)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
-
 @register_wrap
-class SearchMenuOperator_attach_to_bone(bpy.types.Operator):
+class SearchMenuOperator_attach_to_bone(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.attach_to_bone.desc')
     bl_idname = "scene.search_menu_attach_to_bone"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "attach_to_bone"
 
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.attach_to_bone.label'),
@@ -71,33 +51,18 @@ class SearchMenuOperator_attach_to_bone(bpy.types.Operator):
         items=Common.wrap_dynamic_enum_items(Common.get_bones_merge, bl_idname, sort=False, is_holder=False),
     )
 
-    def execute(self, context):
-        context.scene.attach_to_bone = self.my_enum
-        print(context.scene.root_bone)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
-
 @register_wrap
-class SearchMenuOperator_attach_mesh(bpy.types.Operator):
+class SearchMenuOperator_attach_mesh(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.attach_mesh.desc')
     bl_idname = "scene.search_menu_attach_mesh"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "attach_mesh"
 
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.attach_mesh.label'),
         description=t('Scene.attach_mesh.desc'),
         items=Common.wrap_dynamic_enum_items(Common.get_top_meshes, bl_idname, is_holder=False),
     )
-
-    def execute(self, context):
-        context.scene.attach_mesh = self.my_enum
-        print(context.scene.root_bone)
-        return {'FINISHED'}
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -116,7 +81,7 @@ class CustomPanel(ToolPanel, bpy.types.Panel):
 
         # Tutorial button
         row = col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         row.operator(Armature_custom.CustomModelTutorialButton.bl_idname, icon='FORWARD')
 
 
@@ -142,7 +107,7 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
         # Settings
         box = col.box()
         box_col = box.column(align=True)
-        box_col.scale_y = 0.9
+        box_col.scale_y = 0.85
         
         box_col.prop(context.scene, 'merge_same_bones')
         box_col.prop(context.scene, 'apply_transforms')
@@ -195,7 +160,7 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
 
         # Merge button
         row = col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         row.operator(Armature_custom.MergeArmature.bl_idname, icon='ARMATURE_DATA')
 
 
@@ -224,7 +189,7 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
         # Settings
         box = col.box()
         box_col = box.column(align=True)
-        box_col.scale_y = 0.9
+        box_col.scale_y = 0.85
         box_col.prop(context.scene, 'merge_armatures_join_meshes')
 
         col.separator()
@@ -256,5 +221,5 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
 
         # Attach button
         row = col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         row.operator(Armature_custom.AttachMesh.bl_idname, icon='MESH_DATA')

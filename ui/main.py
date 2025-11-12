@@ -10,6 +10,23 @@ class ToolPanel(object):
     bl_region_type = 'UI'
 
 
+class SearchMenuOperatorBase(object):
+    """Base class for search menu operators that set scene properties."""
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+    bl_property = "my_enum"
+    scene_property = None  # Override in subclass
+    
+    def execute(self, context):
+        if self.scene_property:
+            setattr(context.scene, self.scene_property, self.my_enum)
+        return {'FINISHED'}
+    
+    def invoke(self, context, event):
+        wm = context.window_manager
+        wm.invoke_search_popup(self)
+        return {'FINISHED'}
+
+
 def layout_split(layout, factor=0.0, align=False):
     return layout.split(factor=factor, align=align)
 
@@ -24,14 +41,7 @@ def add_button_with_small_button(layout, button_1_idname, button_1_icon, button_
 
 
 def draw_warning_box(layout, messages, icon='INFO'):
-    """
-    Draw a warning/info box with consistent styling for Blender 5.0
-    
-    Args:
-        layout: The layout to draw in
-        messages: List of message strings or single message string
-        icon: Icon to use ('INFO', 'ERROR', 'WARNING')
-    """
+    """Draw a warning/info box with consistent styling for Blender 5.0"""
     if isinstance(messages, str):
         messages = [messages]
     
@@ -60,3 +70,15 @@ def draw_error_box(layout, messages):
 def draw_info_box(layout, messages):
     """Draw an info box"""
     return draw_warning_box(layout, messages, icon='INFO')
+
+
+# Export commonly used classes and functions for easy import
+__all__ = [
+    'ToolPanel',
+    'SearchMenuOperatorBase',
+    'layout_split',
+    'add_button_with_small_button',
+    'draw_warning_box',
+    'draw_error_box',
+    'draw_info_box',
+]

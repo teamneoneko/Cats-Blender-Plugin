@@ -78,14 +78,14 @@ def custom_draw_smc_ui(context, m_col):
                     type="DEFAULT",
                 )
             col = m_col.column(align=True)
-            col.scale_y = 1.2
+            col.scale_y = 1.3
             col.operator(
                 "smc.refresh_ob_data",
                 text="Update Material List" if hasattr(context.scene, 'smc_ob_data') and context.scene.smc_ob_data else "Generate Material List",
                 icon='FILE_REFRESH'
             )
             col = m_col.column()
-            col.scale_y = 1.5
+            col.scale_y = 1.3
             col.operator("smc.combiner", text="Save Atlas to..", icon='TEXTURE').cats = True
             
         elif globs_module.pil_install_attempted:
@@ -104,7 +104,7 @@ def custom_draw_smc_ui(context, m_col):
                 col.label(text="Python Imaging Library Required", icon='ERROR')
                 col.separator()
                 row = col.row()
-                row.scale_y = 1.5
+                row.scale_y = 1.3
                 row.operator('smc.get_pillow', text='Install Pillow', icon='IMPORT')
             
     except Exception as e:
@@ -170,7 +170,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
 
         # Atlas description
         desc_col = col.column(align=True)
-        desc_col.scale_y = 0.75
+        desc_col.scale_y = 0.85
         desc_col.label(text=t('OptimizePanel.atlasDesc'))
 
         col.separator()
@@ -178,7 +178,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
         # Author credit
         box = col.box()
         row = box.row(align=True)
-        row.scale_y = 0.9
+        row.scale_y = 0.85
         split = row.split(factor=0.7)
         split.label(text=t('OptimizePanel.atlasAuthor'), 
                    icon_value=Iconloader.preview_collections["custom_icons"]["heart1"].icon_id)
@@ -248,7 +248,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
         if button_operator:
             col.separator()
             row = col.row(align=True)
-            row.scale_y = 1.2
+            row.scale_y = 1.3
             row.operator(button_operator, icon=button_icon)
 
 
@@ -268,7 +268,7 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
         # Material operations
         box = col.box()
         box_col = box.column(align=True)
-        box_col.scale_y = 1.2
+        box_col.scale_y = 1.3
         box_col.operator(Material.CombineMaterialsButton.bl_idname, icon='MATERIAL')
         box_col.operator(Material.ConvertAllToPngButton.bl_idname, icon='IMAGE_RGB_ALPHA')
         
@@ -283,7 +283,7 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
         header_row.label(text=t('OtherOptionsPanel.joinMeshes'), icon='AUTOMERGE_ON')
         
         ops_row = box_col.row(align=True)
-        ops_row.scale_y = 1.2
+        ops_row.scale_y = 1.3
         ops_row.operator(Armature_manual.JoinMeshes.bl_idname, text=t('OtherOptionsPanel.JoinMeshes.label'))
         ops_row.operator(Armature_manual.JoinMeshesSelected.bl_idname, text=t('OtherOptionsPanel.JoinMeshesSelected.label'))
         
@@ -299,7 +299,7 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
 
         box_col.prop(context.scene, 'remove_doubles_threshold')
         row = box_col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         row.operator(Armature_manual.RemoveDoubles.bl_idname, icon='X')
 
 
@@ -330,7 +330,7 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
         
         # Actions row
         actions_row = box_col.row(align=True)
-        actions_row.scale_y = 1.2
+        actions_row.scale_y = 1.3
         actions_row.operator(Rootbone.RefreshRootButton.bl_idname, icon='FILE_REFRESH')
         actions_row.operator(Bonemerge.BoneMergeButton.bl_idname, icon='AUTOMERGE_ON')
         
@@ -345,13 +345,13 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
         header_row.label(text=t('OtherOptionsPanel.mergeWeights'), icon='BONE_DATA')
         
         ops_row = box_col.row(align=True)
-        ops_row.scale_y = 1.2
+        ops_row.scale_y = 1.3
         ops_row.operator(Armature_manual.MergeWeights.bl_idname, text=t('OtherOptionsPanel.MergeWeights.label'))
         ops_row.operator(Armature_manual.MergeWeightsToActive.bl_idname, text=t('OtherOptionsPanel.MergeWeightsToActive.label'))
         
         # Options
         options_col = box_col.column(align=True)
-        options_col.scale_y = 0.75
+        options_col.scale_y = 0.85
         options_col.separator()
         options_col.prop(context.scene, 'keep_merged_bones')
         options_col.prop(context.scene, 'merge_visible_meshes_only')
@@ -367,14 +367,14 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
         header_row.label(text=t('OtherOptionsPanel.delete'), icon='X')
         
         ops_col = box_col.column(align=True)
-        ops_col.scale_y = 1.2
+        ops_col.scale_y = 1.3
         row = ops_col.row(align=True)
         row.operator(Armature_manual.RemoveZeroWeightBones.bl_idname, text=t('OtherOptionsPanel.RemoveZeroWeightBones.label'))
         row.operator(Armature_manual.RemoveConstraints.bl_idname, text=t('OtherOptionsPanel.RemoveConstraints'))
         row.operator(Armature_manual.RemoveZeroWeightGroups.bl_idname, text=t('OtherOptionsPanel.RemoveZeroWeightGroups'))
         
         options_col = box_col.column(align=True)
-        options_col.scale_y = 0.75
+        options_col.scale_y = 0.85
         options_col.separator()
         options_col.prop(context.scene, "delete_zero_weight_keep_twists")
         options_col.prop(context.scene, "delete_zero_weight_keep_empty_parents")
@@ -385,7 +385,7 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
         # Extra operations box
         box = col.box()
         box_col = box.column(align=True)
-        box_col.scale_y = 1.2
+        box_col.scale_y = 1.3
         box_col.operator(Armature_manual.DuplicateBonesButton.bl_idname, icon='GROUP_BONE')
         box_col.operator(Armature_manual.ConnectBonesButton.bl_idname, icon='CONSTRAINT_BONE')
 

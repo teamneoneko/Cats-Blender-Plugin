@@ -4,7 +4,7 @@ import bpy
 
 from .. import globs
 from .. import updater
-from .main import ToolPanel
+from .main import ToolPanel, draw_info_box, draw_error_box
 from ..tools import common as Common
 from ..tools import armature as Armature
 from ..tools import importer as Importer
@@ -38,7 +38,7 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
 
         # Import/Export row
         row = col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         split = row.split(factor=0.85, align=True)
         sub_row = split.row(align=True)
         sub_row.operator(Importer.ImportAnyModel.bl_idname, 
@@ -69,16 +69,16 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         quick_col = box.column(align=True)
         
         # Info text
-        info_col = quick_col.column(align=True)
-        info_col.scale_y = 0.75
-        info_col.label(text=t("FixLegacy.info1"), icon='INFO')
-        info_col.label(text=t("FixLegacy.info2"), icon='BLANK1')
+        draw_info_box(quick_col, [
+            t("FixLegacy.info1"),
+            t("FixLegacy.info2")
+        ])
 
         quick_col.separator()
 
         # Material and mesh buttons
         row = quick_col.row(align=True)
-        row.scale_y = 1.2
+        row.scale_y = 1.3
         row.operator(Material.CombineMaterialsButton.bl_idname, 
                     text=t('QuickAccess.CombineMats.label'), 
                     icon='MATERIAL')
@@ -93,19 +93,11 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
     def draw_version_warnings(self, col, context):
         # Blender 5.0+ only - just check for dictionary
         if not globs.dict_found:
-            self.draw_warning(col, "QuickAccess.warn.noDict", 3)
-
-    def draw_warning(self, col, text_key, lines):
-        warning_col = col.column(align=True)
-        warning_col.scale_y = 0.75
-        
-        row = warning_col.row(align=True)
-        row.alert = True
-        row.label(text=t(f'{text_key}1'), icon='ERROR')
-        
-        for i in range(2, lines + 1):
-            row = warning_col.row(align=True)
-            row.label(text=t(f'{text_key}{i}'), icon='BLANK1')
+            draw_error_box(col, [
+                t("QuickAccess.warn.noDict1"),
+                t("QuickAccess.warn.noDict2"),
+                t("QuickAccess.warn.noDict3")
+            ])
 
     def draw_pose_section(self, col, context):
         box = col.box()
@@ -114,13 +106,13 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         
         if not armature_obj or armature_obj.mode != 'POSE':
             row = box_col.row(align=True)
-            row.scale_y = 1.2
+            row.scale_y = 1.3
             split = row.split(factor=0.85, align=True)
             split.operator(Armature_manual.StartPoseMode.bl_idname, icon='POSE_HLT')
             split.operator(Armature_manual.StartPoseModeNoReset.bl_idname, text="", icon='POSE_HLT')
         else:
             row = box_col.row(align=True)
-            row.scale_y = 1.2
+            row.scale_y = 1.3
             split = row.split(factor=0.85, align=True)
             split.operator(Armature_manual.StopPoseMode.bl_idname, icon=globs.ICON_POSE_MODE)
             split.operator(Armature_manual.StopPoseModeNoReset.bl_idname, text="", icon=globs.ICON_POSE_MODE)

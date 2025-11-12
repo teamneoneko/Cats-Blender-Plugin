@@ -1,15 +1,11 @@
 # MIT License
 
-# (global-set-key (kbd "C-c m") (lambda () (interactive) (shell-command "zip -r ../../cats-dev.zip ../../cats-blender-plugin")))
-
-# MIT License
-
 import bpy
 import addon_utils
 from importlib import import_module
 from importlib.util import find_spec
 
-from .main import ToolPanel
+from .main import ToolPanel, draw_error_box
 from ..tools import scale as Scaler
 
 from ..tools.translations import t
@@ -54,72 +50,58 @@ class ScalingPanel(ToolPanel, bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         box = layout.box()
+        col = box.column(align=True)
 
         # Help button section
-        help_box = box.box()
-        help_col = help_box.column(align=True)
-        help_col.scale_y = 1.2
-        help_col.operator(Scaler.ImmersiveScalerHelpButton.bl_idname, icon='QUESTION')
+        col.scale_y = 1.3
+        col.operator(Scaler.ImmersiveScalerHelpButton.bl_idname, icon='QUESTION')
+
+        col.separator()
 
         # Status section
         if imscale_is_disabled:
-            self.draw_disabled_message(box)
+            self.draw_disabled_message(col)
         elif old_imscale_version:
-            self.draw_outdated_message(box)
+            self.draw_outdated_message(col)
         elif not draw_imscale_ui:
-            self.draw_not_installed_message(box)
+            self.draw_not_installed_message(col)
         else:
             return draw_imscale_ui(context, layout)
 
         check_for_imscale()
 
-    def draw_disabled_message(self, box):
-        message_box = box.box()
-        message_col = message_box.column(align=True)
+    def draw_disabled_message(self, col):
+        draw_error_box(col, [
+            t('ScalingPanel.imscaleDisabled1'),
+            t('ScalingPanel.imscaleDisabled2')
+        ])
         
-        message_col.separator(factor=1.5)
+        col.separator()
         
-        info_col = message_col.column(align=True)
-        info_col.scale_y = 0.75
-        info_col.label(text=t('ScalingPanel.imscaleDisabled1'), icon='ERROR')
-        info_col.label(text=t('ScalingPanel.imscaleDisabled2'), icon='BLANK1')
-        
-        message_col.separator(factor=1.5)
-        
-        row = message_col.row(align=True)
-        row.scale_y = 1.2
+        row = col.row(align=True)
+        row.scale_y = 1.3
         row.operator(Scaler.EnableIMScale.bl_idname, icon='CHECKBOX_HLT')
 
-    def draw_outdated_message(self, box):
-        message_box = box.box()
-        message_col = message_box.column(align=True)
+    def draw_outdated_message(self, col):
+        draw_error_box(col, [
+            t('ScalingPanel.imscaleOldVersion1'),
+            t('ScalingPanel.imscaleNotInstalled2')
+        ])
         
-        message_col.separator(factor=1.5)
+        col.separator()
         
-        info_col = message_col.column(align=True)
-        info_col.scale_y = 0.75
-        info_col.label(text=t('ScalingPanel.imscaleOldVersion1'), icon='ERROR')
-        info_col.label(text=t('ScalingPanel.imscaleNotInstalled2'), icon='BLANK1')
-        
-        message_col.separator(factor=1.5)
-        
-        row = message_col.row(align=True)
-        row.scale_y = 1.2
+        row = col.row(align=True)
+        row.scale_y = 1.3
         row.operator(Scaler.ImmersiveScalerButton.bl_idname, icon='CHECKBOX_HLT')
 
-    def draw_not_installed_message(self, box):
-        message_box = box.box()
-        message_col = message_box.column(align=True)
+    def draw_not_installed_message(self, col):
+        draw_error_box(col, [
+            t('ScalingPanel.imscaleNotInstalled1'),
+            t('ScalingPanel.imscaleNotInstalled2')
+        ])
         
-        message_col.separator(factor=1.5)
+        col.separator()
         
-        info_col = message_col.column(align=True)
-        info_col.scale_y = 0.75
-        info_col.label(text=t('ScalingPanel.imscaleNotInstalled1'), icon='ERROR')
-        info_col.label(text=t('ScalingPanel.imscaleNotInstalled2'), icon='BLANK1')
-        
-        message_col.separator(factor=1.5)
-        
-        row = message_col.row(align=True)
-        row.scale_y = 1.2
+        row = col.row(align=True)
+        row.scale_y = 1.3
         row.operator(Scaler.ImmersiveScalerButton.bl_idname, icon='CHECKBOX_HLT')

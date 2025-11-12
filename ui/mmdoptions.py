@@ -5,7 +5,7 @@ import webbrowser
 
 from .. import globs
 from .. import updater
-from .main import ToolPanel
+from .main import ToolPanel, draw_info_box
 from ..tools import common as Common
 from ..tools import armature as Armature
 from ..tools import importer as Importer
@@ -26,65 +26,53 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
         scene = context.scene
         layout = self.layout
         box = layout.box()
+        col = box.column(align=True)
 
         # Info section
-        info_box = box.box()
-        info_box.separator(factor=0.2)
+        draw_info_box(col, [
+            t("MMDOptions.info1"),
+            t("MMDOptions.info2"),
+            t("MMDOptions.info3"),
+            t("MMDOptions.info4"),
+            t("MMDOptions.info5"),
+            t("MMDOptions.info6")
+        ])
         
-        info_col = info_box.column(align=True)
-        info_col.scale_y = 0.75
-        info_col.label(text=t("MMDOptions.info1"), icon='INFO')
-        info_col.label(text=t("MMDOptions.info2"), icon='BLANK1')
-        info_col.label(text=t("MMDOptions.info3"), icon='BLANK1')
-        info_col.label(text=t("MMDOptions.info4"), icon='BLANK1')
-        info_col.label(text=t("MMDOptions.info5"), icon='BLANK1')
-        info_col.label(text=t("MMDOptions.info6"), icon='BLANK1')
-        
-        info_box.separator(factor=0.5)
+        col.separator()
 
         # Fix Model section
-        model_box = box.box()
-        model_col = model_box.column(align=True)
-        
-        row = model_col.row(align=True)
-        row.scale_y = 1.5
+        row = col.row(align=True)
+        row.scale_y = 1.3
         split = row.split(factor=0.85, align=True)
         split.operator(FixArmatureWarning.bl_idname, icon=globs.ICON_FIX_MODEL)
         split.operator(ModelSettings.bl_idname, text="", icon='MODIFIER')
 
-        # Material section
-        material_box = box.box()
-        material_col = material_box.column(align=True)
-        
-        # Rigidbodies section
-        rigid_box = box.box()
-        rigid_col = rigid_box.column(align=True)
-        
-        rigid_col.separator(factor=1.5)
-        
-        info_col = rigid_col.column(align=True)
-        info_col.scale_y = 0.75
-        info_col.label(text=t("MMDOptions.RemoveRigidBodiesManaulInfo1"), icon='INFO')
-        info_col.label(text=t("MMDOptions.RemoveRigidBodiesManaulInfo2"), icon='BLANK1')
-        
-        rigid_col.separator(factor=1.5)
+        col.separator()
 
-        row = rigid_col.row(align=True)
-        row.scale_y = 1.5
+        # Rigidbodies section
+        draw_info_box(col, [
+            t("MMDOptions.RemoveRigidBodiesManaulInfo1"),
+            t("MMDOptions.RemoveRigidBodiesManaulInfo2")
+        ])
+        
+        col.separator()
+
+        row = col.row(align=True)
+        row.scale_y = 1.3
         row.operator(Armature_manual.RemoveRigidbodiesJointsOperator.bl_idname, icon='RIGID_BODY')
 
+        col.separator()
+
         # Help section
-        help_box = box.box()
-        help_col = help_box.column(align=True)
-        
-        row = help_col.row(align=True)
-        row.scale_y = 1.5
+        row = col.row(align=True)
+        row.scale_y = 1.3
         row.operator(MMDOptionswiki.bl_idname, icon_value=Iconloader.preview_collections["custom_icons"]["help1"].icon_id)
 
 @register_wrap
 class MMDOptionswiki(bpy.types.Operator):
     bl_idname = 'mmdoptionwiki_read.help'
     bl_label = t('MMDOptionswiki.label')
+    bl_description = t('MMDOptionswiki.desc')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
@@ -96,6 +84,7 @@ class MMDOptionswiki(bpy.types.Operator):
 class ModelSettings(bpy.types.Operator):
     bl_idname = "cats_armature.settings"
     bl_label = t('ModelSettings.label')
+    bl_description = t('ModelSettings.desc')
 
     def execute(self, context):
         return {'FINISHED'}
@@ -136,7 +125,7 @@ class ModelSettings(bpy.types.Operator):
 class FixArmatureWarning(bpy.types.Operator):
     bl_idname = "cats_armature.fix_armature_warning"
     bl_label = t('FixArmature.label')
-    bl_description = t('FixArmature.description')
+    bl_description = t('FixArmature.desc')
     bl_options = {'REGISTER', 'INTERNAL', 'UNDO'}
 
     def execute(self, context):

@@ -1,7 +1,6 @@
 # MIT License
 
 if "bpy" not in locals():
-    # print('STARTUP UI!!')
     import bpy
     from . import main
     from . import quickaccess
@@ -16,7 +15,6 @@ if "bpy" not in locals():
     from . import settings_updates
     from . import credits
 else:
-    # print('RELOAD UI!!')
     import importlib
     importlib.reload(main)
     importlib.reload(quickaccess)
