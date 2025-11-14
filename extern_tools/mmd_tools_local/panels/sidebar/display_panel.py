@@ -77,7 +77,7 @@ class MMDDisplayItemsPanel(PT_ProductionPanelBase, bpy.types.Panel):
 class MMD_ROOT_UL_display_item_frames(bpy.types.UIList):
     def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname, _index):
         frame = item
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             row = layout.split(factor=0.5, align=True)
             if frame.is_special:
                 row.label(text=frame.name, translate=False)
@@ -87,9 +87,9 @@ class MMD_ROOT_UL_display_item_frames(bpy.types.UIList):
             else:
                 row.prop(frame, "name", text="", emboss=False)
                 row.prop(frame, "name_e", text="", emboss=True)
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 
@@ -125,7 +125,7 @@ class MMD_ROOT_UL_display_items(bpy.types.UIList):
     )
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             if item.type == "BONE":
                 row = layout.split(factor=0.5, align=True)
                 row.prop(item, "name", text="", emboss=False, icon="BONE_DATA")
@@ -137,9 +137,9 @@ class MMD_ROOT_UL_display_items(bpy.types.UIList):
                 row.prop(item, "morph_type", text="", emboss=False)
                 if item.name not in getattr(item.id_data.mmd_root, item.morph_type):
                     row.label(icon="ERROR")
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 

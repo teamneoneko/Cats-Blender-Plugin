@@ -10,13 +10,45 @@ class InvalidFileError(Exception):
     pass
 
 
-## vmd仕様の文字列をstringに変換
-def _toShiftJisString(byteString):
-    return byteString.split(b"\x00")[0].decode("shift_jis", errors="replace")
+def _decodeCp932String(byteString):
+    r"""Convert a VMD format byte string to a regular string.
+    If the first byte is replaced with b"\x00" during encoding, add � at the beginning during decoding
+    and replace ? with � to ensure replacement character consistency between UnicodeEncodeError and UnicodeDecodeError.
+    - UnicodeEncodeError: Bone/Morph name has characters not supported by cp932 encoding. Default replacement character: ?
+    - UnicodeDecodeError: Bone/Morph name was truncated at 15 bytes, breaking character boundaries. Default replacement character: �(U+FFFD)
+    Example:
+        original = "左带_0_1調整"
+        byteString = b"\x00\xb6\x3f\x5f\x30\x5f\x31\x92\xb2\x90\xae\x00\x00\x00\x00"
+        decoded = "�ｶ�_0_1調整"
+    """
+    # Truncate at null terminator (skip first byte) to remove trailing padding
+    # Trailing padding may vary across different VMD files. (\x00, \xfd, etc.)
+    # Before:
+    #     byteString = b"\x00\xb6\x3f\x5f\x30\x5f\x31\x92\xb2\x90\xae\x00\xfd\xfd\xfd"
+    # After:
+    #     byteString = b"\x00\xb6\x3f\x5f\x30\x5f\x31\x92\xb2\x90\xae"
+    if len(byteString) > 1:
+        terminator_pos = byteString.find(b"\x00", 1)
+        if terminator_pos != -1:
+            byteString = byteString[:terminator_pos]
+
+    # If flag indicates encoding error, replace the encoding replacement character from ? to � for consistency,
+    # avoiding two different replacement characters appearing in console simultaneously
+    # The first character masked by flag is also represented with replacement character
+    if byteString[:1] == b"\x00":
+        decoded = "\ufffd" + byteString[1:].decode("cp932", errors="replace").replace("?", "\ufffd")
+    else:
+        decoded = byteString.decode("cp932", errors="replace")
+    return decoded
 
 
-def _toShiftJisBytes(string):
-    return string.encode("shift_jis", errors="replace")
+def _encodeCp932String(string):
+    """Convert a regular string to a VMD format byte string."""
+    try:
+        return string.encode("cp932")
+    except UnicodeEncodeError:
+        # Match MikuMikuDance's behavior: replace first byte with b"\x00" to indicate encoding failures
+        return b"\x00" + string.encode("cp932", errors="replace")[1:]
 
 
 class Header:
@@ -29,18 +61,27 @@ class Header:
     def load(self, fin):
         (self.signature,) = struct.unpack("<30s", fin.read(30))
         if self.signature[: len(self.VMD_SIGN)] != self.VMD_SIGN:
-            raise InvalidFileError('File signature "%s" is invalid.' % self.signature)
-        self.model_name = _toShiftJisString(struct.unpack("<20s", fin.read(20))[0])
+            raise InvalidFileError(f'File signature "{self.signature}" is invalid.')
+        self.model_name = _decodeCp932String(struct.unpack("<20s", fin.read(20))[0])
 
     def save(self, fin):
         fin.write(struct.pack("<30s", self.VMD_SIGN))
-        fin.write(struct.pack("<20s", _toShiftJisBytes(self.model_name)))
+        fin.write(struct.pack("<20s", _encodeCp932String(self.model_name)))
 
     def __repr__(self):
-        return "<Header model_name %s>" % (self.model_name)
+        return f"<Header model_name {self.model_name}>"
 
 
 class BoneFrameKey:
+    """
+    VMD bone keyframe data structure.
+
+    TODO: Optimize this bottleneck. Large VMD files may instantiate millions of BoneFrameKey objects, significantly impacting performance.
+    """
+
+    # Use __slots__ for better performance
+    __slots__ = ("frame_number", "location", "rotation", "interp")
+
     def __init__(self):
         self.frame_number = 0
         self.location = []
@@ -49,11 +90,11 @@ class BoneFrameKey:
 
     def load(self, fin):
         (self.frame_number,) = struct.unpack("<L", fin.read(4))
-        self.location = list(struct.unpack("<fff", fin.read(4 * 3)))
-        self.rotation = list(struct.unpack("<ffff", fin.read(4 * 4)))
+        self.location = tuple(struct.unpack("<fff", fin.read(4 * 3)))
+        self.rotation = tuple(struct.unpack("<ffff", fin.read(4 * 4)))
         if not any(self.rotation):
             self.rotation = (0, 0, 0, 1)
-        self.interp = list(struct.unpack("<64b", fin.read(64)))
+        self.interp = tuple(struct.unpack("<64b", fin.read(64)))
 
     def save(self, fin):
         fin.write(struct.pack("<L", self.frame_number))
@@ -62,14 +103,13 @@ class BoneFrameKey:
         fin.write(struct.pack("<64b", *self.interp))
 
     def __repr__(self):
-        return "<BoneFrameKey frame %s, loa %s, rot %s>" % (
-            str(self.frame_number),
-            str(self.location),
-            str(self.rotation),
-        )
+        return f"<BoneFrameKey frame {str(self.frame_number)}, loa {str(self.location)}, rot {str(self.rotation)}>"
 
 
 class ShapeKeyFrameKey:
+    # Use __slots__ for better performance
+    __slots__ = ("frame_number", "weight")
+
     def __init__(self):
         self.frame_number = 0
         self.weight = 0.0
@@ -83,13 +123,13 @@ class ShapeKeyFrameKey:
         fin.write(struct.pack("<f", self.weight))
 
     def __repr__(self):
-        return "<ShapeKeyFrameKey frame %s, weight %s>" % (
-            str(self.frame_number),
-            str(self.weight),
-        )
+        return f"<ShapeKeyFrameKey frame {str(self.frame_number)}, weight {str(self.weight)}>"
 
 
 class CameraKeyFrameKey:
+    # Use __slots__ for better performance
+    __slots__ = ("frame_number", "distance", "location", "rotation", "interp", "angle", "persp")
+
     def __init__(self):
         self.frame_number = 0
         self.distance = 0.0
@@ -102,9 +142,9 @@ class CameraKeyFrameKey:
     def load(self, fin):
         (self.frame_number,) = struct.unpack("<L", fin.read(4))
         (self.distance,) = struct.unpack("<f", fin.read(4))
-        self.location = list(struct.unpack("<fff", fin.read(4 * 3)))
-        self.rotation = list(struct.unpack("<fff", fin.read(4 * 3)))
-        self.interp = list(struct.unpack("<24b", fin.read(24)))
+        self.location = tuple(struct.unpack("<fff", fin.read(4 * 3)))
+        self.rotation = tuple(struct.unpack("<fff", fin.read(4 * 3)))
+        self.interp = tuple(struct.unpack("<24b", fin.read(24)))
         (self.angle,) = struct.unpack("<L", fin.read(4))
         (self.persp,) = struct.unpack("<b", fin.read(1))
         self.persp = self.persp == 0
@@ -119,17 +159,13 @@ class CameraKeyFrameKey:
         fin.write(struct.pack("<b", 0 if self.persp else 1))
 
     def __repr__(self):
-        return "<CameraKeyFrameKey frame %s, distance %s, loc %s, rot %s, angle %s, persp %s>" % (
-            str(self.frame_number),
-            str(self.distance),
-            str(self.location),
-            str(self.rotation),
-            str(self.angle),
-            str(self.persp),
-        )
+        return f"<CameraKeyFrameKey frame {str(self.frame_number)}, distance {str(self.distance)}, loc {str(self.location)}, rot {str(self.rotation)}, angle {str(self.angle)}, persp {str(self.persp)}>"
 
 
 class LampKeyFrameKey:
+    # Use __slots__ for better performance
+    __slots__ = ("frame_number", "color", "direction")
+
     def __init__(self):
         self.frame_number = 0
         self.color = []
@@ -137,8 +173,8 @@ class LampKeyFrameKey:
 
     def load(self, fin):
         (self.frame_number,) = struct.unpack("<L", fin.read(4))
-        self.color = list(struct.unpack("<fff", fin.read(4 * 3)))
-        self.direction = list(struct.unpack("<fff", fin.read(4 * 3)))
+        self.color = tuple(struct.unpack("<fff", fin.read(4 * 3)))
+        self.direction = tuple(struct.unpack("<fff", fin.read(4 * 3)))
 
     def save(self, fin):
         fin.write(struct.pack("<L", self.frame_number))
@@ -146,14 +182,13 @@ class LampKeyFrameKey:
         fin.write(struct.pack("<fff", *self.direction))
 
     def __repr__(self):
-        return "<LampKeyFrameKey frame %s, color %s, direction %s>" % (
-            str(self.frame_number),
-            str(self.color),
-            str(self.direction),
-        )
+        return f"<LampKeyFrameKey frame {str(self.frame_number)}, color {str(self.color)}, direction {str(self.direction)}>"
 
 
 class SelfShadowFrameKey:
+    # Use __slots__ for better performance
+    __slots__ = ("frame_number", "mode", "distance")
+
     def __init__(self):
         self.frame_number = 0
         self.mode = 0  # 0: none, 1: mode1, 2: mode2
@@ -176,14 +211,13 @@ class SelfShadowFrameKey:
         fin.write(struct.pack("<f", distance))
 
     def __repr__(self):
-        return "<SelfShadowFrameKey frame %s, mode %s, distance %s>" % (
-            str(self.frame_number),
-            str(self.mode),
-            str(self.distance),
-        )
+        return f"<SelfShadowFrameKey frame {str(self.frame_number)}, mode {str(self.mode)}, distance {str(self.distance)}>"
 
 
 class PropertyFrameKey:
+    # Use __slots__ for better performance
+    __slots__ = ("frame_number", "visible", "ik_states")
+
     def __init__(self):
         self.frame_number = 0
         self.visible = True
@@ -194,7 +228,7 @@ class PropertyFrameKey:
         (self.visible,) = struct.unpack("<b", fin.read(1))
         (count,) = struct.unpack("<L", fin.read(4))
         for i in range(count):
-            ik_name = _toShiftJisString(struct.unpack("<20s", fin.read(20))[0])
+            ik_name = _decodeCp932String(struct.unpack("<15s", fin.read(20)[:15])[0])  # MMD format: only the first 15 bytes are valid
             (state,) = struct.unpack("<b", fin.read(1))
             self.ik_states.append((ik_name, state))
 
@@ -203,15 +237,11 @@ class PropertyFrameKey:
         fin.write(struct.pack("<b", 1 if self.visible else 0))
         fin.write(struct.pack("<L", len(self.ik_states)))
         for ik_name, state in self.ik_states:
-            fin.write(struct.pack("<20s", _toShiftJisBytes(ik_name)))
+            fin.write(struct.pack("<20s", _encodeCp932String(ik_name)))
             fin.write(struct.pack("<b", 1 if state else 0))
 
     def __repr__(self):
-        return "<PropertyFrameKey frame %s, visible %s, ik_states %s>" % (
-            str(self.frame_number),
-            str(self.visible),
-            str(self.ik_states),
-        )
+        return f"<PropertyFrameKey frame {str(self.frame_number)}, visible {str(self.visible)}, ik_states {str(self.ik_states)}>"
 
 
 class _AnimationBase(collections.defaultdict):
@@ -226,17 +256,17 @@ class _AnimationBase(collections.defaultdict):
         (count,) = struct.unpack("<L", fin.read(4))
         logging.info("loading %s... %d", self.__class__.__name__, count)
         for i in range(count):
-            name = _toShiftJisString(struct.unpack("<15s", fin.read(15))[0])
+            name = _decodeCp932String(struct.unpack("<15s", fin.read(15))[0])
             cls = self.frameClass()
             frameKey = cls()
             frameKey.load(fin)
             self[name].append(frameKey)
 
     def save(self, fin):
-        count = sum([len(i) for i in self.values()])
+        count = sum(len(i) for i in self.values())
         fin.write(struct.pack("<L", count))
         for name, frameKeys in self.items():
-            name_data = struct.pack("<15s", _toShiftJisBytes(name))
+            name_data = struct.pack("<15s", _encodeCp932String(name))
             for frameKey in frameKeys:
                 fin.write(name_data)
                 frameKey.save(fin)

@@ -7,7 +7,7 @@ import re
 from typing import List, Optional, Set
 
 import bpy
-import mathutils
+from mathutils import Euler, Quaternion
 
 from .. import vmd
 from ..camera import MMDCamera
@@ -20,15 +20,19 @@ class _FCurve:
     def __x_co_0(x: bpy.types.Keyframe):
         return x.co[0]
 
-    def __init__(self, default_value):
+    def __init__(self, default_value, preserve_curves=False):
         self.__default_value = default_value
         self.__fcurve: Optional[bpy.types.FCurve] = None
         self.__sorted_keyframe_points: Optional[List[bpy.types.Keyframe]] = None
+        self.__preserve_curves = preserve_curves
 
     def setFCurve(self, fcurve: bpy.types.FCurve):
         assert fcurve.is_valid and self.__fcurve is None
         self.__fcurve = fcurve
         self.__sorted_keyframe_points: List[bpy.types.Keyframe] = sorted(self.__fcurve.keyframe_points, key=self.__x_co_0)
+
+    def set_preserve_curves(self, value):
+        self.__preserve_curves = value
 
     def frameNumbers(self):
         sorted_keyframe_points = self.__sorted_keyframe_points
@@ -40,18 +44,17 @@ class _FCurve:
             return result
 
         kp1 = sorted_keyframe_points[0]
-        result.add(int(kp1.co[0] + 0.5))
+        result.add(round(kp1.co[0]))
 
         kp0 = kp1
         for kp1 in sorted_keyframe_points[1:]:
-            result.add(int(kp1.co[0] + 0.5))
-            if kp0.interpolation != "LINEAR" and kp1.co.x - kp0.co.x > 2.5:
+            result.add(round(kp1.co[0]))
+            if self.__preserve_curves and kp0.interpolation != "LINEAR" and kp1.co.x - kp0.co.x > 2.5:
                 if kp0.interpolation == "CONSTANT":
-                    result.add(int(kp1.co[0] - 0.5))
+                    result.add(max(0, round(kp1.co[0]) - 1))
                 elif kp0.interpolation == "BEZIER":
                     bz = _FnBezier.from_fcurve(kp0, kp1)
-                    for t in bz.find_critical():
-                        result.add(int(bz.evaluate(t).x + 0.5))
+                    result.update(round(bz.evaluate(t).x) for t in bz.find_critical())
             kp0 = kp1
 
         return result
@@ -65,17 +68,20 @@ class _FCurve:
     @staticmethod
     def __toVMDControlPoints(bezier):
         p0, p1, p2, p3 = bezier.points
-
         dx, dy = p3 - p0
-        if abs(dy) < 1e-6 or abs(dx) < 1.5:
-            return ((20, 20), (107, 107))
-
         x1, y1 = p1 - p0
         x2, y2 = p2 - p0
-        x1 = max(0, min(127, int(0.5 + x1 * 127.0 / dx)))
-        x2 = max(0, min(127, int(0.5 + x2 * 127.0 / dx)))
-        y1 = max(0, min(127, int(0.5 + y1 * 127.0 / dy)))
-        y2 = max(0, min(127, int(0.5 + y2 * 127.0 / dy)))
+
+        # When dy is too small, restoring (y1, y2) is impossible and the curve is meaningless in MMD
+        if abs(dy) < 1e-4:
+            return ((20, 20), (107, 107))
+        y1 = max(0, min(127, round(y1 * 127.0 / dy)))
+        y2 = max(0, min(127, round(y2 * 127.0 / dy)))
+        if abs(dx) < 1e-4:
+            (x1, x2) = (20, 107)
+        else:
+            x1 = max(0, min(127, round(x1 * 127.0 / dx)))
+            x2 = max(0, min(127, round(x2 * 127.0 / dx)))
         return ((x1, y1), (x2, y2))
 
     def sampleFrames(self, frame_numbers: List[int]):
@@ -84,7 +90,7 @@ class _FCurve:
         if fcurve is None or len(fcurve.keyframe_points) == 0:  # no key frames
             return [[self.__default_value, ((20, 20), (107, 107))] for _ in frame_numbers]
 
-        result = list()
+        result = []
 
         evaluate = fcurve.evaluate
         frame_iter = iter(frame_numbers)
@@ -92,7 +98,7 @@ class _FCurve:
         prev_i = None
         kp: bpy.types.Keyframe
         for kp in self.__sorted_keyframe_points:
-            i = int(kp.co[0] + 0.5)
+            i = round(kp.co[0])
             if i == prev_i:
                 prev_kp = kp
                 continue
@@ -105,8 +111,8 @@ class _FCurve:
                     break
             assert len(frames) >= 1 and frames[-1] == i
             if prev_kp is None:
-                for f in frames:  # starting key frames
-                    result.append([kp.co[1], ((20, 20), (107, 107))])
+                # starting key frames
+                result.extend([kp.co[1], ((20, 20), (107, 107))] for f in frames)
             elif len(frames) == 1:
                 result.append([kp.co[1], self.getVMDControlPoints(prev_kp, kp)])
             elif prev_kp.interpolation == "BEZIER":
@@ -116,8 +122,7 @@ class _FCurve:
                     result.append([pt.y, self.__toVMDControlPoints(b1)])
                 result.append([bz.points[-1].y, self.__toVMDControlPoints(bz)])
             else:
-                for f in frames:
-                    result.append([evaluate(f), ((20, 20), (107, 107))])
+                result.extend([evaluate(f), ((20, 20), (107, 107))] for f in frames)
             prev_kp = kp
 
         prev_kp_co_1 = prev_kp.co[1]
@@ -129,14 +134,16 @@ class _FCurve:
 class VMDExporter:
     def __init__(self):
         self.__scale = 1
-        self.__frame_start = 1
+        self.__frame_start = min(1, bpy.context.scene.frame_start)  # handle frame_start == 0
         self.__frame_end = float("inf")
         self.__bone_converter_cls = vmd.importer.BoneConverter
         self.__ik_fcurves = {}
+        self.__preserve_curves = False
 
     def __allFrameKeys(self, curves: List[_FCurve]):
         all_frames = set()
         for i in curves:
+            i.set_preserve_curves(self.__preserve_curves)
             all_frames |= i.frameNumbers()
 
         if len(all_frames) == 0:
@@ -155,7 +162,7 @@ class VMDExporter:
         all_frames = sorted(all_frames)
         all_keys = [i.sampleFrames(all_frames) for i in curves]
         # return zip(all_frames, *all_keys)
-        for data in zip(all_frames, *all_keys):
+        for data in zip(all_frames, *all_keys, strict=False):
             frame_number = data[0]
             if frame_number < frame_start:
                 continue
@@ -188,8 +195,8 @@ class VMDExporter:
         #    z_x1, 0, 0, 0, z_y1, 0, 0, 0, z_x2, 0, 0, 0, z_y2, 0, 0, 0,
         #    r_x1, 0, 0, 0, r_y1, 0, 0, 0, r_x2, 0, 0, 0, r_y2, 0, 0, 0,
         #    ]
-        return [ # full data, indices in [2, 3, 31, 46, 47, 61, 62, 63] are unclear
-            x_x1, y_x1, z_x1, r_x1, x_y1, y_y1, z_y1, r_y1, x_x2, y_x2, z_x2, r_x2, x_y2, y_y2, z_y2, r_y2,
+        return [  # full data, indices in [2, 3, 31, 46, 47, 61, 62, 63] are unclear
+            x_x1, y_x1,    0,    0, x_y1, y_y1, z_y1, r_y1, x_x2, y_x2, z_x2, r_x2, x_y2, y_y2, z_y2, r_y2,
             y_x1, z_x1, r_x1, x_y1, y_y1, z_y1, r_y1, x_x2, y_x2, z_x2, r_x2, x_y2, y_y2, z_y2, r_y2,    0,
             z_x1, r_x1, x_y1, y_y1, z_y1, r_y1, x_x2, y_x2, z_x2, r_x2, x_y2, y_y2, z_y2, r_y2,    0,    0,
             r_x1, x_y1, y_y1, z_y1, r_y1, x_x2, y_x2, z_x2, r_x2, x_y2, y_y2, z_y2, r_y2,    0,    0,    0,
@@ -211,13 +218,13 @@ class VMDExporter:
         if mode == "AXIS_ANGLE":
 
             def __xyzw_from_axis_angle(xyzw):
-                q = mathutils.Quaternion(xyzw[:3], xyzw[3])
+                q = Quaternion(xyzw[:3], xyzw[3])
                 return [q.x, q.y, q.z, q.w]
 
             return __xyzw_from_axis_angle
 
         def __xyzw_from_euler(xyzw):
-            q = mathutils.Euler(xyzw[:3], xyzw[3]).to_quaternion()
+            q = Euler(xyzw[:3], xyzw[3]).to_quaternion()
             return [q.x, q.y, q.z, q.w]
 
         return __xyzw_from_euler
@@ -377,8 +384,8 @@ class VMDExporter:
         for data in self.__allFrameKeys(prop_curves):
             key = vmd.PropertyFrameKey()
             key.frame_number = data[0] - self.__frame_start
-            key.visible = int(0.5 + data[1][0])
-            key.ik_states = [(ik_name, int(0.5 + on_off[0])) for ik_name, on_off in zip(ik_name_list, data[2:])]
+            key.visible = round(data[1][0])
+            key.ik_states = [(ik_name, round(on_off[0])) for ik_name, on_off in zip(ik_name_list, data[2:], strict=False)]
             vmd_prop_anim.append(key)
         logging.info("(property) frames:%5d  name: %s", len(vmd_prop_anim), root.name if root else armObj.name)
         return vmd_prop_anim
@@ -425,9 +432,9 @@ class VMDExporter:
             key.frame_number = frame_number - self.__frame_start
             key.location = [x[0] * self.__scale, z[0] * self.__scale, y[0] * self.__scale]
             key.rotation = [rx[0], rz[0], ry[0]]  # euler
-            key.angle = int(0.5 + math.degrees(fov[0]))
+            key.angle = round(math.degrees(fov[0]))
             key.distance = distance[0] * self.__scale
-            key.persp = True if persp[0] else False
+            key.persp = bool(persp[0])
 
             # FIXME we can only choose one interpolation from (rx, ry, rz) for camera's rotation
             ir = self.__pickRotationInterpolation([rx[1], ry[1], rz[1]])
@@ -485,10 +492,10 @@ class VMDExporter:
         return vmd_lamp_anim
 
     def export(self, **args):
-        armature = args.get("armature", None)
-        mesh = args.get("mesh", None)
-        camera = args.get("camera", None)
-        lamp = args.get("lamp", None)
+        armature = args.get("armature")
+        mesh = args.get("mesh")
+        camera = args.get("camera")
+        lamp = args.get("lamp")
         filepath = args.get("filepath", "")
 
         self.__scale = args.get("scale", 1.0)
@@ -499,6 +506,8 @@ class VMDExporter:
 
         if args.get("use_pose_mode", False):
             self.__bone_converter_cls = vmd.importer.BoneConverterPoseMode
+
+        self.__preserve_curves = args.get("preserve_curves", False)
 
         if armature or mesh:
             vmdFile = vmd.File()

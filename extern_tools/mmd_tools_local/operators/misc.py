@@ -42,7 +42,7 @@ class MoveObject(bpy.types.Operator, utils.ItemMoveOp):
     def set_index(cls, obj, index):
         m = cls.__PREFIX_REGEXP.match(obj.name)
         name = m.group("name") if m else obj.name
-        obj.name = "%s_%s" % (utils.int2base(index, 36, 3), name)
+        obj.name = f"{utils.int2base(index, 36, 3)}_{name}"
 
     @classmethod
     def get_name(cls, obj, prefix=None):
@@ -57,13 +57,13 @@ class MoveObject(bpy.types.Operator, utils.ItemMoveOp):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object
+        return context.active_object is not None
 
     def execute(self, context):
         obj = context.active_object
         objects = self.__get_objects(obj)
         if obj not in objects:
-            self.report({"ERROR"}, 'Can not move object "%s"' % obj.name)
+            self.report({"ERROR"}, f'Can not move object "{obj.name}"')
             return {"CANCELLED"}
 
         objects.sort(key=lambda x: x.name)
@@ -105,7 +105,7 @@ class CleanShapeKeys(bpy.types.Operator):
     def __can_remove(key_block):
         if key_block.relative_key == key_block:
             return False  # Basis
-        for v0, v1 in zip(key_block.relative_key.data, key_block.data):
+        for v0, v1 in zip(key_block.relative_key.data, key_block.data, strict=False):
             if v0.co != v1.co:
                 return False
         return True
@@ -130,7 +130,8 @@ class CleanShapeKeys(bpy.types.Operator):
 
 class SeparateByMaterials(bpy.types.Operator):
     bl_idname = "mmd_tools_local.separate_by_materials"
-    bl_label = "Separate By Materials"
+    bl_label = "Sep by Mat(High Risk)"
+    bl_description = "Separate by Materials (High Risk)\nSeparate the mesh into multiple objects based on materials.\nHIGH RISK & BUGGY: This operation is not reversible and may cause various issues. It splits adjacent geometry by material, and merging later will not reconnect shared edges.\nKnown issues include potential mesh corruption, UV mapping problems, and other unpredictable behaviors. Use with extreme caution and backup your work first."
     bl_options = {"REGISTER", "UNDO"}
 
     clean_shape_keys: bpy.props.BoolProperty(
@@ -139,19 +140,29 @@ class SeparateByMaterials(bpy.types.Operator):
         default=True,
     )
 
+    keep_normals: bpy.props.BoolProperty(
+        name="Keep Normals",
+        default=True,
+    )
+
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj and obj.type == "MESH"
+        return obj is not None and obj.type == "MESH"
 
     def __separate_by_materials(self, obj):
-        utils.separateByMaterials(obj)
+        utils.separateByMaterials(obj, self.keep_normals)
         if self.clean_shape_keys:
             bpy.ops.mmd_tools_local.clean_shape_keys()
 
     def execute(self, context):
         obj = context.active_object
         root = FnModel.find_root_object(obj)
+
+        # Sep by Mat crashes Blender if used after morph assembly
+        rig = Model(root)
+        rig.morph_slider.unbind()
+
         if root is None:
             self.__separate_by_materials(obj)
         else:
@@ -265,7 +276,8 @@ class ChangeMMDIKLoopFactor(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return FnModel.find_root_object(context.active_object) is not None
+        root = FnModel.find_root_object(context.active_object)
+        return root is not None
 
     def invoke(self, context, event):
         root_object = FnModel.find_root_object(context.active_object)
@@ -288,7 +300,7 @@ class RecalculateBoneRoll(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj and obj.type == "ARMATURE"
+        return obj is not None and obj.type == "ARMATURE"
 
     def invoke(self, context, event):
         vm = context.window_manager

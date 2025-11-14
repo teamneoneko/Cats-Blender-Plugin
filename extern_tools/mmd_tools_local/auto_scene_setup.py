@@ -5,22 +5,32 @@ import bpy
 
 
 def setupFrameRanges():
-    s, e = 1, 1
-    for i in bpy.data.actions:
-        ts, te = i.frame_range
-        s = min(s, ts)
-        e = max(e, te)
-    bpy.context.scene.frame_start = int(s)
-    bpy.context.scene.frame_end = int(e)
+    base = min(bpy.context.scene.frame_current, bpy.context.scene.frame_start)
+    s = base
+    e = base
+
+    for action in bpy.data.actions:
+        # Skip orphaned actions
+        if action.users == 0:
+            continue
+
+        # When create_new_action=False, multiple VMDs share the same action
+        # Need to toggle use_frame_range to access frame ranges from both VMDs:
+        # use_frame_range = True: gets range from the first imported VMD
+        # use_frame_range = False: gets range from the newly imported VMD
+        # By toggling twice, we ensure both ranges are captured regardless of initial state
+        ts, te = action.frame_range
+        s, e = min(s, ts), max(e, te)
+        action.use_frame_range = not action.use_frame_range  # Toggle to access the other VMD's range
+        ts, te = action.frame_range
+        s, e = min(s, ts), max(e, te)
+        action.use_frame_range = not action.use_frame_range  # Restore to original state
+
+    bpy.context.scene.frame_start = round(s)
+    bpy.context.scene.frame_end = round(e)
     if bpy.context.scene.rigidbody_world is not None:
-        bpy.context.scene.rigidbody_world.point_cache.frame_start = int(s)
-        bpy.context.scene.rigidbody_world.point_cache.frame_end = int(e)
-
-
-def setupLighting():
-    bpy.context.scene.world.light_settings.use_ambient_occlusion = True
-    bpy.context.scene.world.light_settings.use_environment_light = True
-    bpy.context.scene.world.light_settings.use_indirect_light = True
+        bpy.context.scene.rigidbody_world.point_cache.frame_start = round(s)
+        bpy.context.scene.rigidbody_world.point_cache.frame_end = round(e)
 
 
 def setupFps():

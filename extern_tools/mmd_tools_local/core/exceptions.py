@@ -8,5 +8,5 @@ class MaterialNotFoundError(KeyError):
     """Exception raised when a material is not found in the scene"""
 
     def __init__(self, *args: object) -> None:
-        """Constructor for MaterialNotFoundError"""
+        """Initialize MaterialNotFoundError"""
         super().__init__(*args)

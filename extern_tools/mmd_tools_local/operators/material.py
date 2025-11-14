@@ -1,6 +1,8 @@
 # Copyright 2014 MMD Tools authors
 # This file is part of MMD Tools.
 
+from collections import defaultdict
+
 import bpy
 from bpy.props import BoolProperty, StringProperty
 from bpy.types import Operator
@@ -33,7 +35,7 @@ class ConvertMaterialsForCycles(Operator):
 
     @classmethod
     def poll(cls, context):
-        return next((x for x in context.selected_objects if x.type == "MESH"), None)
+        return any(x.type == "MESH" for x in context.selected_objects)
 
     def draw(self, context):
         layout = self.layout
@@ -43,7 +45,7 @@ class ConvertMaterialsForCycles(Operator):
     def execute(self, context):
         try:
             context.scene.render.engine = "CYCLES"
-        except:
+        except Exception:
             self.report({"ERROR"}, " * Failed to change to Cycles render engine.")
             return {"CANCELLED"}
         for obj in (x for x in context.selected_objects if x.type == "MESH"):
@@ -82,7 +84,7 @@ class ConvertMaterials(Operator):
 
     @classmethod
     def poll(cls, context):
-        return next((x for x in context.selected_objects if x.type == "MESH"), None)
+        return any(x.type == "MESH" for x in context.selected_objects)
 
     def execute(self, context):
         for obj in context.selected_objects:
@@ -91,22 +93,114 @@ class ConvertMaterials(Operator):
             cycles_converter.convertToBlenderShader(obj, use_principled=self.use_principled, clean_nodes=self.clean_nodes, subsurface=self.subsurface)
         return {"FINISHED"}
 
-class ConvertBSDFMaterials(Operator):
-    bl_idname = 'mmd_tools_local.convert_bsdf_materials'
-    bl_label = 'Convert Blender Materials'
-    bl_description = 'Convert materials of selected objects.'
-    bl_options = {'REGISTER', 'UNDO'}
+
+class MergeMaterials(Operator):
+    bl_idname = "mmd_tools_local.merge_materials"
+    bl_label = "Merge Materials"
+    bl_description = "Merge materials with the same texture in selected objects. Only merges materials with exactly one texture node. Materials with no texture or with multiple textures are not merged. Please convert to Blender materials first."
+    bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(cls, context):
-        return next((x for x in context.selected_objects if x.type == 'MESH'), None)
+        return any(x.type == "MESH" for x in context.selected_objects)
+
+    def execute(self, context):
+        # Process all selected mesh objects
+        for obj in context.selected_objects:
+            if obj.type != "MESH":
+                continue
+
+            self.merge_materials_for_object(context, obj)
+
+        return {"FINISHED"}
+
+    def merge_materials_for_object(self, context, obj):
+        """Merge materials with same texture for a single object"""
+        if not obj.data.materials:
+            self.report({"INFO"}, f"Object '{obj.name}' has no materials")
+            return
+
+        # Map texture paths to material indices and names
+        texture_to_materials = defaultdict(list)
+
+        # Check each material
+        for i, material in enumerate(obj.data.materials):
+            if not material or not material.use_nodes:
+                continue
+
+            # 1. Check texture node count (must be exactly 1)
+            texture_nodes = [node for node in material.node_tree.nodes if node.type == "TEX_IMAGE"]
+            if len(texture_nodes) != 1:
+                continue
+
+            # 2. Record texture path and material info
+            texture_node = texture_nodes[0]
+            if texture_node.image:
+                texture_path = bpy.path.abspath(texture_node.image.filepath)
+                texture_to_materials[texture_path].append({"index": i, "name": material.name})
+
+        # Find material groups that need merging
+        materials_to_merge = {path: materials for path, materials in texture_to_materials.items() if len(materials) > 1}
+
+        if not materials_to_merge:
+            self.report({"INFO"}, f"No materials to merge in object '{obj.name}'")
+            return
+
+        # Process each texture group
+        context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode="EDIT")
+        merge_details = []
+        for texture_path, materials in materials_to_merge.items():
+            # Use first material as target
+            target_material = materials[0]
+            target_index = target_material["index"]
+            target_name = target_material["name"]
+
+            source_materials = []
+
+            # Reassign faces from other materials to target material
+            for source_material in materials[1:]:
+                source_index = source_material["index"]
+                source_name = source_material["name"]
+                source_materials.append(source_name)
+
+                bpy.ops.mesh.select_all(action="DESELECT")
+                obj.active_material_index = source_index
+                bpy.ops.object.material_slot_select()
+                obj.active_material_index = target_index
+                bpy.ops.object.material_slot_assign()
+
+            # Record merge details
+            texture_name = bpy.path.basename(texture_path)
+            merge_details.append({"texture": texture_name, "target": target_name, "sources": source_materials})
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.material_slot_remove_unused()
+
+        merged_count = sum(len(details["sources"]) for details in merge_details)
+        self.report({"INFO"}, f"Object '{obj.name}': Merged {merged_count} materials")
+
+        for details in merge_details:
+            sources_text = ", ".join(details["sources"])
+            self.report({"INFO"}, f"Same Texture '{details['texture']}': Merged materials [{sources_text}] into '{details['target']}'")
+
+
+class ConvertBSDFMaterials(Operator):
+    bl_idname = "mmd_tools_local.convert_bsdf_materials"
+    bl_label = "Convert Blender Materials"
+    bl_description = "Convert materials of selected objects."
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return any(x.type == "MESH" for x in context.selected_objects)
 
     def execute(self, context):
         for obj in context.selected_objects:
-            if obj.type != 'MESH':
+            if obj.type != "MESH":
                 continue
             cycles_converter.convertToMMDShader(obj)
-        return {'FINISHED'}
+        return {"FINISHED"}
+
 
 class _OpenTextureBase:
     """Create a texture for mmd model material."""
@@ -195,8 +289,7 @@ class MoveMaterialUp(Operator):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        valid_mesh = obj and obj.type == "MESH" and obj.mmd_type == "NONE"
-        return valid_mesh and obj.active_material_index > 0
+        return obj is not None and obj.type == "MESH" and obj.mmd_type == "NONE" and obj.active_material_index > 0
 
     def execute(self, context):
         obj = context.active_object
@@ -221,8 +314,7 @@ class MoveMaterialDown(Operator):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        valid_mesh = obj and obj.type == "MESH" and obj.mmd_type == "NONE"
-        return valid_mesh and obj.active_material_index < len(obj.material_slots) - 1
+        return obj is not None and obj.type == "MESH" and obj.mmd_type == "NONE" and obj.active_material_index < len(obj.material_slots) - 1
 
     def execute(self, context):
         obj = context.active_object
@@ -365,8 +457,8 @@ class EdgePreviewSetup(Operator):
 
         ng = _NodeGroupUtils(shader)
 
-        node_input = ng.new_node("NodeGroupInput", (-5, 0))
-        node_output = ng.new_node("NodeGroupOutput", (3, 0))
+        ng.new_node("NodeGroupInput", (-5, 0))
+        ng.new_node("NodeGroupOutput", (3, 0))
 
         ############################################################################
         node_color = ng.new_node("ShaderNodeMixRGB", (-1, -1.5))
