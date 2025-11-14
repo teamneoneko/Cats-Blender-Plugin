@@ -13,7 +13,7 @@ translations_tuple = (
         ((), ()),
         (
             "ja_JP",
-            "Project-Id-Version: MMD Tools 4.3.3 (0)\n",
+            "Project-Id-Version: MMD Tools 4.5.1 (0)\n",
             (
                 False,
                 (
@@ -26,7 +26,7 @@ translations_tuple = (
         ),
         (
             "zh_HANS",
-            "Project-Id-Version: MMD Tools 4.3.3 (0)\n",
+            "Project-Id-Version: MMD Tools 4.5.1 (0)\n",
             (
                 False,
                 (
@@ -47,8 +47,80 @@ translations_tuple = (
     (
         ("*", "Path for textures shared between models"),
         (("bpy.types.MMDToolsAddonPreferences.base_texture_folder",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "モデル間で共有するテクスチャのパス", (False, ())),
         ("zh_HANS", "模型间共用纹理的路径", (False, ())),
+    ),
+    (
+        ("*", "Default PMX Export Operator Preset"),
+        (("bpy.types.MMDToolsAddonPreferences.default_pmx_export_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认PMX导出操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default preset to use for PMX export operations"),
+        (("bpy.types.MMDToolsAddonPreferences.default_pmx_export_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认PMX导出操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default PMX Import Operator Preset"),
+        (("bpy.types.MMDToolsAddonPreferences.default_pmx_import_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认PMX导入操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default preset to use for PMX import operations"),
+        (("bpy.types.MMDToolsAddonPreferences.default_pmx_import_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认PMX导入操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default VMD Export Operator Preset"),
+        (("bpy.types.MMDToolsAddonPreferences.default_vmd_export_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认VMD导出操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default preset to use for VMD export operations"),
+        (("bpy.types.MMDToolsAddonPreferences.default_vmd_export_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认VMD导出操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default VMD Import Operator Preset"),
+        (("bpy.types.MMDToolsAddonPreferences.default_vmd_import_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认VMD导入操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default preset to use for VMD import operations"),
+        (("bpy.types.MMDToolsAddonPreferences.default_vmd_import_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认VMD导入操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default VPD Export Operator Preset"),
+        (("bpy.types.MMDToolsAddonPreferences.default_vpd_export_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认VPD导出操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default preset to use for VPD export operations"),
+        (("bpy.types.MMDToolsAddonPreferences.default_vpd_export_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认VPD导出操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default VPD Import Operator Preset"),
+        (("bpy.types.MMDToolsAddonPreferences.default_vpd_import_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认VPD导入操作项预设", (False, ())),
+    ),
+    (
+        ("*", "Default preset to use for VPD import operations"),
+        (("bpy.types.MMDToolsAddonPreferences.default_vpd_import_preset",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认VPD导入操作项预设", (False, ())),
     ),
     (
         ("*", "Dictionary Folder"),
@@ -59,7 +131,7 @@ translations_tuple = (
     (
         ("*", "Path for searching csv dictionaries"),
         (("bpy.types.MMDToolsAddonPreferences.dictionary_folder",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "CSV辞書を検索するためのパス", (False, ())),
         ("zh_HANS", "搜索 CSV 词典的路径", (False, ())),
     ),
     (
@@ -85,7 +157,11 @@ translations_tuple = (
             'Directory path to toon textures. This is normally the "Data" directory within of your MikuMikuDance directory',
         ),
         (("bpy.types.MMDToolsAddonPreferences.shared_toon_folder",), ()),
-        ("ja_JP", "", (False, ())),
+        (
+            "ja_JP",
+            "トゥーンテクスチャのパス. 通常は MikuMikuDance の Data ディレクトリ内にあります",
+            (False, ()),
+        ),
         (
             "zh_HANS",
             "卡通纹理路径. 通常是 MikuMikuDance 安装路径下的 Data 目录",
@@ -96,7 +172,7 @@ translations_tuple = (
         ("*", "Internal MMD type of this object (DO NOT CHANGE IT DIRECTLY)"),
         (("bpy.types.Object.mmd_type",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "该物体的内部 MMD 类型（切勿直接改动）", (False, ())),
+        ("zh_HANS", "该物体的内部 MMD 类型(切勿直接改动)", (False, ())),
     ),
     (
         ("*", "Rigid Body Grp Empty"),
@@ -127,7 +203,7 @@ translations_tuple = (
         (
             (
                 "bpy.types.Object.mmd_type:'JOINT'",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:53",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:52",
             ),
             (),
         ),
@@ -137,13 +213,13 @@ translations_tuple = (
     (
         ("*", "Rigid body"),
         (("bpy.types.Object.mmd_type:'RIGID_BODY'",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "剛体", (False, ())),
         ("zh_HANS", "刚体", (False, ())),
     ),
     (
         ("*", "Track Target"),
         (("bpy.types.Object.mmd_type:'TRACK_TARGET'",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "追跡対象", (False, ())),
         ("zh_HANS", "追踪目标", (False, ())),
     ),
     (
@@ -155,7 +231,7 @@ translations_tuple = (
     (
         ("*", "Spring Constraint"),
         (("bpy.types.Object.mmd_type:'SPRING_CONSTRAINT'",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "ばねコンストレイント", (False, ())),
         ("zh_HANS", "弹簧约束", (False, ())),
     ),
     (
@@ -163,6 +239,12 @@ translations_tuple = (
         (("bpy.types.Object.mmd_type:'SPRING_GOAL'",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "弹簧目标", (False, ())),
+    ),
+    (
+        ("*", "Validation Results"),
+        (("bpy.types.Scene.mmd_validation_results",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "检测结果", (False, ())),
     ),
     (
         ("*", "Bone Order Menu"),
@@ -179,32 +261,32 @@ translations_tuple = (
     (
         ("*", "Display Item Menu"),
         (("bpy.types.OBJECT_MT_mmd_tools_local_display_item_menu",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "表示枠项目", (True, ())),
+        ("ja_JP", "表示枠", (False, ())),
+        ("zh_HANS", "表示枠", (False, ())),
     ),
     (
         ("*", "Joint Menu"),
         (("bpy.types.OBJECT_MT_mmd_tools_local_joint_menu",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "", (False, ())),
+        ("ja_JP", "関節", (False, ())),
+        ("zh_HANS", "关节", (False, ())),
     ),
     (
         ("*", "Morph Menu"),
         (("bpy.types.OBJECT_MT_mmd_tools_local_morph_menu",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "", (False, ())),
+        ("ja_JP", "モーフ", (False, ())),
+        ("zh_HANS", "变形", (False, ())),
     ),
     (
         ("*", "Rigidbody Menu"),
         (("bpy.types.OBJECT_MT_mmd_tools_local_rigidbody_menu",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "刚体", (True, ())),
+        ("ja_JP", "剛体", (False, ())),
+        ("zh_HANS", "刚体", (False, ())),
     ),
     (
         ("*", "Rigidbody Select Menu"),
         (("bpy.types.OBJECT_MT_mmd_tools_local_rigidbody_select_menu",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "", (False, ())),
+        ("ja_JP", "剛体選択", (False, ())),
+        ("zh_HANS", "刚体选择", (False, ())),
     ),
     (
         ("*", "MMD UuuNyaa"),
@@ -220,42 +302,8 @@ translations_tuple = (
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "", (False, ())),
-    ),
-    (
-        ("Operator", "Add Missing Vertex Groups from Bones"),
-        (("bpy.types.mmd_tools_local_OT_add_missing_vertex_groups_from_bones",), ()),
-        ("ja_JP", "ボーンから不足している頂点グループを追加", (False, ())),
-        ("zh_HANS", "从骨骼中添加缺失的顶点组", (False, ())),
-    ),
-    (
-        ("*", "Add the missing vertex groups to the selected mesh"),
-        (("bpy.types.mmd_tools_local_OT_add_missing_vertex_groups_from_bones",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "将丢失的顶点组添加至选中的网格", (False, ())),
-    ),
-    (
-        ("*", "Search in all meshes"),
-        (
-            (
-                "bpy.types.mmd_tools_local_OT_add_missing_vertex_groups_from_bones.search_in_all_meshes",
-            ),
-            (),
-        ),
-        ("ja_JP", "全てのメッシュで検索", (False, ())),
-        ("zh_HANS", "在所有网格中搜索", (False, ())),
-    ),
-    (
-        ("*", "Search for vertex groups in all meshes"),
-        (
-            (
-                "bpy.types.mmd_tools_local_OT_add_missing_vertex_groups_from_bones.search_in_all_meshes",
-            ),
-            (),
-        ),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "在所有网格中搜索顶点组", (False, ())),
+        ("ja_JP", "MMD UuuNyaa", (False, ())),
+        ("zh_HANS", "MMD UuuNyaa", (False, ())),
     ),
     (
         ("Operator", "Apply Additional Transform"),
@@ -489,10 +537,17 @@ translations_tuple = (
         ("zh_HANS", "建立骨架", (False, ())),
     ),
     (
-        ("*", "Translate physics of selected object into format usable by Blender"),
+        (
+            "*",
+            "Translate physics of selected object into format usable by Blender\n\nWarning: May cause crashes and performance issues. Consider using mmdbridge instead for better stability and accurate physics simulation.",
+        ),
         (("bpy.types.mmd_tools_local_OT_build_rig",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "将选中物体的物理转译为 Blender 可用的形式", (False, ())),
+        (
+            "zh_HANS",
+            "将选中物体的物理转译为 Blender 可用的形式\n\n警告:可能导致崩溃和性能问题。建议使用 MMDBridge 以获得更好的稳定性和准确的物理模拟。",
+            (False, ()),
+        ),
     ),
     (
         (
@@ -523,8 +578,8 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_change_mmd_ik_loop_factor",
-                "extensions/user_default/mmd_tools_local/panels/prop_object.py:34",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:161",
+                "extensions/blender_org/mmd_tools_local/panels/prop_object.py:34",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:163",
             ),
             (),
         ),
@@ -590,6 +645,21 @@ translations_tuple = (
         ("zh_HANS", "清理重复的材质变形", (False, ())),
     ),
     (
+        ("Operator", "Clean Invalid Bone References"),
+        (("bpy.types.mmd_tools_local_OT_clean_invalid_bone_id_references",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "清理无效骨骼引用", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Scans the active MMD model for any references to bone_ids that no longer exist, then cleans them up. This is useful after deleting bones to maintain data integrity.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_clean_invalid_bone_id_references",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("Operator", "Clean Rig"),
         (("bpy.types.mmd_tools_local_OT_clean_rig",), ()),
         ("ja_JP", "", (False, ())),
@@ -613,7 +683,7 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_clean_shape_keys",
-                "extensions/user_default/mmd_tools_local/menus.py:87",
+                "extensions/blender_org/mmd_tools_local/menus.py:83",
             ),
             (),
         ),
@@ -663,6 +733,29 @@ translations_tuple = (
         ("zh_HANS", "清除所有 UV 变形的临时数据", (False, ())),
     ),
     (
+        ("Operator", "Convert To Vertex Morph"),
+        (
+            (
+                "bpy.types.mmd_tools_local_OT_convert_bone_morph_to_vertex_morph",
+                "bpy.types.mmd_tools_local_OT_convert_group_morph_to_vertex_morph",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:191",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:234",
+            ),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "转换到顶点变形", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Convert a bone morph into a single vertex morph by applying the bone transformations.\nIf a corresponding vertex morph already exists, it will be updated.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_convert_bone_morph_to_vertex_morph",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("Operator", "Convert Blender Materials"),
         (("bpy.types.mmd_tools_local_OT_convert_bsdf_materials",), ()),
         ("ja_JP", "マテリアルノードを変換", (True, ())),
@@ -679,6 +772,15 @@ translations_tuple = (
         ),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "转换选中物体的材质", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Convert a group morph into a single vertex morph by merging only the vertex morphs within the group.\nIf a corresponding vertex morph already exists, it will be updated.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_convert_group_morph_to_vertex_morph",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("Operator", "Convert Materials"),
@@ -1132,10 +1234,13 @@ translations_tuple = (
         ("zh_HANS", "移动显示项目", (False, ())),
     ),
     (
-        ("*", "Move active display item up/dowm in the list"),
+        (
+            "*",
+            "Move active display item up/down in the list. This will also affect the morph order in exported PMX files.",
+        ),
         (("bpy.types.mmd_tools_local_OT_display_item_move",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "将活动的表示上移或下移", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("Operator", "Display Item Quick Setup"),
@@ -1319,16 +1424,52 @@ translations_tuple = (
         ("zh_HANS", "将选中的 MMD 模型导出至 PMX 文件 (.pmx)", (False, ())),
     ),
     (
-        ("*", "Copy textures"),
-        (
-            (
-                "bpy.types.mmd_tools_local_OT_export_pmx.copy_textures",
-                "bpy.types.mmd_tools_local_OT_export_pmx.copy_textures",
-            ),
-            (),
-        ),
+        ("*", "Copy Textures"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.copy_textures_mode",), ()),
         ("ja_JP", "テクスチャをコピー", (False, ())),
         ("zh_HANS", "复制纹理", (False, ())),
+    ),
+    (
+        ("*", "Choose how to handle texture files during export"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.copy_textures_mode",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Don't Copy"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.copy_textures_mode:'NONE'",), ()),
+        ("ja_JP", "コピーしない", (False, ())),
+        ("zh_HANS", "不复制", (False, ())),
+    ),
+    (
+        ("*", "Don't copy texture files"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.copy_textures_mode:'NONE'",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Copy (Skip Existing)"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.copy_textures_mode:'SKIP_EXISTING'",), ()),
+        ("ja_JP", "コピー(既存をスキップ)", (False, ())),
+        ("zh_HANS", "复制(跳过已存在)", (False, ())),
+    ),
+    (
+        ("*", "Copy textures but skip files that already exist"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.copy_textures_mode:'SKIP_EXISTING'",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Copy (Overwrite)"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.copy_textures_mode:'OVERWRITE'",), ()),
+        ("ja_JP", "コピー(上書き)", (False, ())),
+        ("zh_HANS", "复制(覆盖)", (False, ())),
+    ),
+    (
+        ("*", "Copy textures and overwrite existing files"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.copy_textures_mode:'OVERWRITE'",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Disable SPH/SPA"),
@@ -1346,11 +1487,123 @@ translations_tuple = (
         ("zh_HANS", "禁用所有高光材质 部分 MME 着色器必须禁用高光材质", (False, ())),
     ),
     (
+        (
+            "*",
+            "Export vertex colors as ADD UV2 data. This allows vertex color data to be preserved in the PMX file format. When enabled, existing ADD UV2 data on the model will be skipped during export.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.export_vertex_colors_as_adduv2",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Filepath used for exporting the file"),
+        (
+            (
+                "bpy.types.mmd_tools_local_OT_export_pmx.filepath",
+                "bpy.types.mmd_tools_local_OT_export_vmd.filepath",
+                "bpy.types.mmd_tools_local_OT_export_vpd.filepath",
+            ),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Fix Bone Order"),
+        (
+            (
+                "bpy.types.mmd_tools_local_OT_export_pmx.fix_bone_order",
+                "bpy.types.mmd_tools_local_OT_import_model.fix_bone_order",
+            ),
+            (),
+        ),
+        ("ja_JP", "ボーン順序を修正", (False, ())),
+        ("zh_HANS", "修复骨骼顺序", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Automatically fix bone order before export. This ensures bones are ordered correctly for MMD compatibility.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.fix_bone_order",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "IK Angle Limits"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.ik_angle_limits",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "IK 角度限制", (False, ())),
+    ),
+    (
+        ("*", "Choose how to handle IK angle limits during export"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.ik_angle_limits",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Export All Limits"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.ik_angle_limits:'EXPORT_ALL'",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "导出所有限制", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Export all existing IK angle limits using current priority system: mmd_ik_limit_override -> Blender IK limits -> other sources. If mmd_ik_limit_override disables an axis but Blender IK limits exist for that axis, the Blender limits will still be exported. This maintains backward compatibility with existing workflows",
+        ),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.ik_angle_limits:'EXPORT_ALL'",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Ignore All Limits"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.ik_angle_limits:'IGNORE_ALL'",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "忽略所有限制", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Completely ignore all IK angle limits from any source during export. No angle restrictions will be written to the PMX file, regardless of mmd_ik_limit_override, Blender IK limits, or other constraint settings. Useful when you want to rely entirely on MMD v9.19+ fixed axis feature instead",
+        ),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.ik_angle_limits:'IGNORE_ALL'",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Override Controlled"),
+        (
+            (
+                "bpy.types.mmd_tools_local_OT_export_pmx.ik_angle_limits:'OVERRIDE_CONTROLLED'",
+            ),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "覆盖控制", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Use mmd_ik_limit_override constraints as the sole authority for IK limits. When mmd_ik_limit_override exists: only its enabled axes export limits, disabled axes export no limits (ignoring Blender IK limits). When mmd_ik_limit_override doesn't exist: fall back to Blender IK limits. This makes mmd_ik_limit_override act as a true 'override' that completely controls whether limits are exported, enabling fine-grained per-bone control",
+        ),
+        (
+            (
+                "bpy.types.mmd_tools_local_OT_export_pmx.ik_angle_limits:'OVERRIDE_CONTROLLED'",
+            ),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("*", "Log level"),
         (
             (
                 "bpy.types.mmd_tools_local_OT_export_pmx.log_level",
+                "bpy.types.mmd_tools_local_OT_export_vmd.log_level",
                 "bpy.types.mmd_tools_local_OT_import_model.log_level",
+                "bpy.types.mmd_tools_local_OT_import_vmd.log_level",
             ),
             (),
         ),
@@ -1362,7 +1615,9 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_export_pmx.log_level",
+                "bpy.types.mmd_tools_local_OT_export_vmd.log_level",
                 "bpy.types.mmd_tools_local_OT_import_model.log_level",
+                "bpy.types.mmd_tools_local_OT_import_vmd.log_level",
             ),
             (),
         ),
@@ -1374,7 +1629,9 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_export_pmx.log_level:'DEBUG'",
+                "bpy.types.mmd_tools_local_OT_export_vmd.log_level:'DEBUG'",
                 "bpy.types.mmd_tools_local_OT_import_model.log_level:'DEBUG'",
+                "bpy.types.mmd_tools_local_OT_import_vmd.log_level:'DEBUG'",
             ),
             (),
         ),
@@ -1386,7 +1643,9 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_export_pmx.log_level:'INFO'",
+                "bpy.types.mmd_tools_local_OT_export_vmd.log_level:'INFO'",
                 "bpy.types.mmd_tools_local_OT_import_model.log_level:'INFO'",
+                "bpy.types.mmd_tools_local_OT_import_vmd.log_level:'INFO'",
             ),
             (),
         ),
@@ -1398,7 +1657,9 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_export_pmx.log_level:'WARNING'",
+                "bpy.types.mmd_tools_local_OT_export_vmd.log_level:'WARNING'",
                 "bpy.types.mmd_tools_local_OT_import_model.log_level:'WARNING'",
+                "bpy.types.mmd_tools_local_OT_import_vmd.log_level:'WARNING'",
             ),
             (),
         ),
@@ -1410,12 +1671,100 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_export_pmx.log_level:'ERROR'",
+                "bpy.types.mmd_tools_local_OT_export_vmd.log_level:'ERROR'",
                 "bpy.types.mmd_tools_local_OT_import_model.log_level:'ERROR'",
+                "bpy.types.mmd_tools_local_OT_import_vmd.log_level:'ERROR'",
             ),
             (),
         ),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "1. ERROR", (False, ())),
+    ),
+    (
+        ("*", "Normal Handling"),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.normal_handling",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "法线处理", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Choose how to handle normals during export. This affects vertex count, edge count, and mesh topology by splitting vertices and edges to preserve split normals.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_export_pmx.normal_handling",), ()),
+        ("ja_JP", "", (False, ())),
+        (
+            "zh_HANS",
+            "选择导出时如何处理法线。这会影响顶点数量、边数量以及网格拓扑，通过拆分顶点和边来保留拆边法线。",
+            (False, ()),
+        ),
+    ),
+    (
+        ("*", "Preserve All Normals"),
+        (
+            (
+                "bpy.types.mmd_tools_local_OT_export_pmx.normal_handling:'PRESERVE_ALL_NORMALS'",
+            ),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "保留所有法线", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Export existing normals without any changes. This option performs NO automatic smoothing; only use it if you have already manually smoothed and perfected your normals. When using this option, please verify if the vertex count of the exported model has significantly increased or is within a reasonable range to prevent excessive geometry destruction and an overly fragmented model.",
+        ),
+        (
+            (
+                "bpy.types.mmd_tools_local_OT_export_pmx.normal_handling:'PRESERVE_ALL_NORMALS'",
+            ),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Smooth (Keep Sharp)"),
+        (
+            ("bpy.types.mmd_tools_local_OT_export_pmx.normal_handling:'SMOOTH_KEEP_SHARP'",),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "平滑(保留锐边)", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Shade smooth, keep sharp edges. Balances vertex count and normal preservation.",
+        ),
+        (
+            ("bpy.types.mmd_tools_local_OT_export_pmx.normal_handling:'SMOOTH_KEEP_SHARP'",),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Smooth All Normals"),
+        (
+            ("bpy.types.mmd_tools_local_OT_export_pmx.normal_handling:'SMOOTH_ALL_NORMALS'",),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "平滑所有法线", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Force smooths all normals, ignoring any sharp edges. This will result in a completely smooth-shaded model and minimum vertex count.",
+        ),
+        (
+            ("bpy.types.mmd_tools_local_OT_export_pmx.normal_handling:'SMOOTH_ALL_NORMALS'",),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Overwrite Bone Morphs"),
@@ -1449,8 +1798,12 @@ translations_tuple = (
             (
                 "bpy.types.mmd_tools_local_OT_export_pmx.save_log",
                 "bpy.types.mmd_tools_local_OT_export_pmx.save_log",
+                "bpy.types.mmd_tools_local_OT_export_vmd.save_log",
+                "bpy.types.mmd_tools_local_OT_export_vmd.save_log",
                 "bpy.types.mmd_tools_local_OT_import_model.save_log",
                 "bpy.types.mmd_tools_local_OT_import_model.save_log",
+                "bpy.types.mmd_tools_local_OT_import_vmd.save_log",
+                "bpy.types.mmd_tools_local_OT_import_vmd.save_log",
             ),
             (),
         ),
@@ -1537,16 +1890,52 @@ translations_tuple = (
         ("zh_HANS", "仅导出可见的网格", (False, ())),
     ),
     (
+        ("Operator", "Export Translation CSV"),
+        (("bpy.types.mmd_tools_local_OT_export_translation_csv",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Export CSV for external translation."),
+        (("bpy.types.mmd_tools_local_OT_export_translation_csv",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Path to save the translation CSV"),
+        (("bpy.types.mmd_tools_local_OT_export_translation_csv.filepath",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("Operator", "Export VMD File (.vmd)"),
         (("bpy.types.mmd_tools_local_OT_export_vmd",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "导出 VMD 文件 (.vmd)", (False, ())),
     ),
     (
-        ("*", "Export motion data of active object to a VMD file (.vmd)"),
+        (
+            "*",
+            "Export motion data of active object to a VMD file (.vmd)\nBehavior varies depending on the active object:\n- Active object is the root (cross under the model): exports both armature and morph animations\n- Active object is the model: exports only morph animation\n- Active object is the armature: exports only armature animation",
+        ),
         (("bpy.types.mmd_tools_local_OT_export_vmd",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "将活动物体的运动数据导出至 VMD 文件 (.vmd)", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Preserve Animation Curves"),
+        (("bpy.types.mmd_tools_local_OT_export_vmd.preserve_curves",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "保持动画曲线", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Add additional keyframes to accurately preserve animation curves. Blender's bezier handles are more flexible than the VMD format. Complex handle settings will be lost during export unless additional keyframes are added to approximate the original curves.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_export_vmd.preserve_curves",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Scaling factor for exporting the motion"),
@@ -1600,10 +1989,13 @@ translations_tuple = (
         ("zh_HANS", "导出 VPD 文件 (.vpd)", (False, ())),
     ),
     (
-        ("*", "Export active rig's Action Pose to VPD file(s) (.vpd)"),
+        (
+            "*",
+            "Export active rig's Action Pose to VPD file(s) (.vpd)\nBehavior varies depending on the active object:\n- Active object is the root (cross under the model): exports both armature pose and morphs\n- Active object is the model: exports only morphs\n- Active object is the armature: exports only armature pose",
+        ),
         (("bpy.types.mmd_tools_local_OT_export_vpd",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "导出活动骨架的动作姿态至 VPD 文件 (.vpd)", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Pose Type"),
@@ -1676,6 +2068,18 @@ translations_tuple = (
         ),
     ),
     (
+        ("Operator", "Fix Bone Issues"),
+        (("bpy.types.mmd_tools_local_OT_fix_bone_issues",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "修复骨骼问题", (False, ())),
+    ),
+    (
+        ("*", "Fix bone name encoding issues automatically"),
+        (("bpy.types.mmd_tools_local_OT_fix_bone_issues",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("Operator", "Realign Bone IDs"),
         (("bpy.types.mmd_tools_local_OT_fix_bone_order",), ()),
         ("ja_JP", "", (False, ())),
@@ -1684,11 +2088,35 @@ translations_tuple = (
     (
         (
             "*",
-            "Realign bone IDs to be sequential without gaps and apply additional transforms",
+            "Realign bone IDs to be sequential without gaps. Sorted primarily by hierarchy depth (ensuring parents have lower IDs than children), then by bone_id (valid ones prioritized), then by bone name. Apply additional transforms afterward (Assembly -> Bone button).",
         ),
         (("bpy.types.mmd_tools_local_OT_fix_bone_order",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "将骨骼 ID 重新对其为连续的序列并应用额外的变换", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("Operator", "Fix Morph Issues"),
+        (("bpy.types.mmd_tools_local_OT_fix_morph_issues",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "修复变形问题", (False, ())),
+    ),
+    (
+        ("*", "Fix morph name issues automatically"),
+        (("bpy.types.mmd_tools_local_OT_fix_morph_issues",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("Operator", "Fix Texture Issues"),
+        (("bpy.types.mmd_tools_local_OT_fix_texture_issues",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "修复贴图问题", (False, ())),
+    ),
+    (
+        ("*", "Fix texture name and path issues automatically"),
+        (("bpy.types.mmd_tools_local_OT_fix_texture_issues",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("Operator", "Flip Pose"),
@@ -1724,6 +2152,21 @@ translations_tuple = (
         ("zh_HANS", "导入模型文件 (.pmd, .pmx)", (False, ())),
     ),
     (
+        ("*", "Add Rigid Body World"),
+        (("bpy.types.mmd_tools_local_OT_import_model.add_rigid_body_world",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "更新刚体世界", (True, ())),
+    ),
+    (
+        (
+            "*",
+            "Automatically add Rigid Body World to the scene when importing physics.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_import_model.add_rigid_body_world",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("*", "Apply Bone Fixed Axis"),
         (("bpy.types.mmd_tools_local_OT_import_model.apply_bone_fixed_axis",), ()),
         ("ja_JP", "ボーン修正回転軸を適用", (False, ())),
@@ -1734,6 +2177,18 @@ translations_tuple = (
         (("bpy.types.mmd_tools_local_OT_import_model.apply_bone_fixed_axis",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "应用骨骼的固定坐标轴，使其适合被 Blender 处理", (False, ())),
+    ),
+    (
+        ("*", "Bone Display Mode"),
+        (("bpy.types.mmd_tools_local_OT_import_model.bone_disp_mode",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "骨骼显示样式", (False, ())),
+    ),
+    (
+        ("*", "Change how bones look in viewport."),
+        (("bpy.types.mmd_tools_local_OT_import_model.bone_disp_mode",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Clean Model"),
@@ -1777,14 +2232,23 @@ translations_tuple = (
         ("zh_HANS", "使用选中的词典将骨骼名从日语翻译为英语", (False, ())),
     ),
     (
+        (
+            "*",
+            "Automatically fix bone order after import. This ensures bones are ordered correctly for MMD compatibility.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_import_model.fix_bone_order",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("*", "Fix IK Links"),
-        (("bpy.types.mmd_tools_local_OT_import_model.fix_IK_links",), ()),
+        (("bpy.types.mmd_tools_local_OT_import_model.fix_ik_links",), ()),
         ("ja_JP", "IKリンクを修正", (False, ())),
         ("zh_HANS", "修复IK关联", (False, ())),
     ),
     (
         ("*", "Fix IK links to be blender suitable"),
-        (("bpy.types.mmd_tools_local_OT_import_model.fix_IK_links",), ()),
+        (("bpy.types.mmd_tools_local_OT_import_model.fix_ik_links",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "修复逆向运动学关联，使其适合被 Blender 处理", (False, ())),
     ),
@@ -1795,16 +2259,34 @@ translations_tuple = (
         ("zh_HANS", "逆向运动学循环系数", (False, ())),
     ),
     (
+        ("*", "Import Vertex Colors"),
+        (("bpy.types.mmd_tools_local_OT_import_model.import_adduv2_as_vertex_colors",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "导入顶点色", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Import ADD UV2 data as vertex colors. When enabled, the UV2 layer will still be created.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_import_model.import_adduv2_as_vertex_colors",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("*", "Remove Doubles"),
         (("bpy.types.mmd_tools_local_OT_import_model.remove_doubles",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "去重", (False, ())),
     ),
     (
-        ("*", "Merge duplicated vertices and faces"),
+        (
+            "*",
+            "Merge duplicated vertices and faces.\nWarning: This will perform global vertex merging instead of per-material vertex merging which may break mesh geometry, material boundaries, and distort the UV map. Use with caution.",
+        ),
         (("bpy.types.mmd_tools_local_OT_import_model.remove_doubles",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "合并重复的顶点和面", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Rename Bones - L / R Suffix"),
@@ -1820,7 +2302,10 @@ translations_tuple = (
         ("zh_HANS", "将骨骼重命名 - L / R后缀", (False, ())),
     ),
     (
-        ("*", "Use Blender naming conventions for Left / Right paired bones"),
+        (
+            "*",
+            "Use Blender naming conventions for Left / Right paired bones. Required for features like mirror editing and pose mirroring to function properly.",
+        ),
         (
             (
                 "bpy.types.mmd_tools_local_OT_import_model.rename_bones",
@@ -1830,7 +2315,7 @@ translations_tuple = (
             (),
         ),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "为左右成对的骨骼应用 Blender 命名约定", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Scaling factor for importing the model"),
@@ -1954,16 +2439,58 @@ translations_tuple = (
         ("zh_HANS", "不使用点. 例如，重命名骨骼时使用 _R 而非 .R", (False, ())),
     ),
     (
+        ("Operator", "Import Translation CSV"),
+        (("bpy.types.mmd_tools_local_OT_import_translation_csv",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Import translated CSV."),
+        (("bpy.types.mmd_tools_local_OT_import_translation_csv",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Path to import the translation CSV"),
+        (("bpy.types.mmd_tools_local_OT_import_translation_csv.filepath",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Only Update English Name"),
+        (
+            ("bpy.types.mmd_tools_local_OT_import_translation_csv.only_update_english_name",),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "(Enabled by default) Only update English name (name_e). otherwise, update all names when different",
+        ),
+        (
+            ("bpy.types.mmd_tools_local_OT_import_translation_csv.only_update_english_name",),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("Operator", "Import VMD File (.vmd)"),
         (("bpy.types.mmd_tools_local_OT_import_vmd",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "导入 VMD 文件 (.vmd)", (False, ())),
     ),
     (
-        ("*", "Import a VMD file to selected objects (.vmd)"),
+        (
+            "*",
+            "Import a VMD file to selected objects (.vmd)\nBehavior varies depending on the selected object:\n- Select the root (cross under the model): imports both armature and morph animations\n- Select the model: imports only morph animation\n- Select the armature: imports only armature animation",
+        ),
         (("bpy.types.mmd_tools_local_OT_import_vmd",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "向选中物体导入 VMD 文件 (.vmd)", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Bone Mapper"),
@@ -2032,10 +2559,52 @@ translations_tuple = (
         ("zh_HANS", "重命名动作数据中的骨骼，使其适于被 Blender 处理", (False, ())),
     ),
     (
-        ("*", "How many frames added before motion starting"),
+        (
+            "*",
+            "Create a new action when importing VMD, otherwise add keyframes to existing actions if available. Note: This option is ignored when 'Use NLA' is enabled.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_import_vmd.create_new_action",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Detect Camera Cut"),
+        (("bpy.types.mmd_tools_local_OT_import_vmd.detect_camera_changes",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "检测镜头切换", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "When the interval between camera keyframes is 1 frame, change the interpolation to CONSTANT. This is useful when making a 60fps video, as it helps prevent unwanted smoothing between rapid camera cuts.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_import_vmd.detect_camera_changes",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Detect Light Cut"),
+        (("bpy.types.mmd_tools_local_OT_import_vmd.detect_lamp_changes",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "检测灯光切换", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "When the interval between light keyframes is 1 frame, change the interpolation to CONSTANT. This is useful when making a 60fps video, as it helps prevent unwanted smoothing during sudden lighting changes.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_import_vmd.detect_lamp_changes",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Number of frames to add before the motion starts (only applies if current frame is 0 or 1)",
+        ),
         (("bpy.types.mmd_tools_local_OT_import_vmd.margin",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "动作开始前的帧数", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Scaling factor for importing the motion"),
@@ -2056,18 +2625,6 @@ translations_tuple = (
         ("zh_HANS", "更新帧范围与帧率 (30 FPS)", (False, ())),
     ),
     (
-        ("*", "Use NLA"),
-        (("bpy.types.mmd_tools_local_OT_import_vmd.use_NLA",), ()),
-        ("ja_JP", "NLAを使用", (False, ())),
-        ("zh_HANS", "使用NLA", (False, ())),
-    ),
-    (
-        ("*", "Import the motion as NLA strips"),
-        (("bpy.types.mmd_tools_local_OT_import_vmd.use_NLA",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "将动作导入为非线性动作片段", (False, ())),
-    ),
-    (
         ("*", "Mirror Motion"),
         (("bpy.types.mmd_tools_local_OT_import_vmd.use_mirror",), ()),
         ("ja_JP", "モーションをミラー", (False, ())),
@@ -2078,6 +2635,18 @@ translations_tuple = (
         (("bpy.types.mmd_tools_local_OT_import_vmd.use_mirror",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "导入动作时使用X轴镜像", (False, ())),
+    ),
+    (
+        ("*", "Use NLA"),
+        (("bpy.types.mmd_tools_local_OT_import_vmd.use_nla",), ()),
+        ("ja_JP", "NLAを使用", (False, ())),
+        ("zh_HANS", "使用NLA", (False, ())),
+    ),
+    (
+        ("*", "Import the motion as NLA strips"),
+        (("bpy.types.mmd_tools_local_OT_import_vmd.use_nla",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "将动作导入为非线性动作片段", (False, ())),
     ),
     (
         (
@@ -2099,10 +2668,13 @@ translations_tuple = (
         ("zh_HANS", "导入 VPD 文件 (.vpd)", (False, ())),
     ),
     (
-        ("*", "Import VPD file(s) to selected rig's Action Pose (.vpd)"),
+        (
+            "*",
+            "Import VPD file(s) to selected rig's Action Pose (.vpd)\nBehavior varies depending on the selected object:\n- Select the root (cross under the model): applies both armature pose and morphs\n- Select the model: applies only morphs\n- Select the armature: applies only armature pose",
+        ),
         (("bpy.types.mmd_tools_local_OT_import_vpd",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "向选中骨架的动作姿态导入 VPD 文件 (.vpd)", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Rename the bone of pose data to be blender suitable"),
@@ -2300,13 +2872,13 @@ translations_tuple = (
     (
         ("*", "Target Value"),
         (("bpy.types.mmd_tools_local_OT_material_morph_offset_init.target_value",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "ターゲット値", (False, ())),
         ("zh_HANS", "目标值", (False, ())),
     ),
     (
         ("*", "Target value"),
         (("bpy.types.mmd_tools_local_OT_material_morph_offset_init.target_value",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "ターゲット値", (False, ())),
         ("zh_HANS", "目标值", (False, ())),
     ),
     (
@@ -2358,10 +2930,34 @@ translations_tuple = (
         ("zh_HANS", "移除活动材质的主纹理", (False, ())),
     ),
     (
+        ("Operator", "Merge Materials"),
+        (("bpy.types.mmd_tools_local_OT_merge_materials",), ()),
+        ("ja_JP", "マテリアルを統合", (False, ())),
+        ("zh_HANS", "合併材质", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Merge materials with the same texture in selected objects. Only merges materials with exactly one texture node. Materials with no texture or with multiple textures are not merged. Please convert to Blender materials first.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_merge_materials",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("Operator", "Model Join by Bones"),
         (("bpy.types.mmd_tools_local_OT_model_join_by_bones",), ()),
         ("ja_JP", "モデルをボーンで統合", (False, ())),
         ("zh_HANS", "用骨骼合并模型", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Join multiple MMD models into one.\n\nWARNING: To align models before joining, only adjust the root (cross under the model) transformation. Do not move armatures, meshes, rigid bodies, or joints directly as they will not move together.\n\nIMPORTANT: Don't use any of the 'Assembly' functions before using this function. This function requires the models to be in a clean state.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_model_join_by_bones",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Join Type"),
@@ -2374,6 +2970,15 @@ translations_tuple = (
         (("bpy.types.mmd_tools_local_OT_model_separate_by_bones",), ()),
         ("ja_JP", "モデルをボーンで分離", (False, ())),
         ("zh_HANS", "用骨骼分离模型", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Separate MMD model into multiple models based on selected bones.\n\nWARNING: This operation will split meshes, armatures, rigid bodies and joints. To move models before separating, only adjust the root (cross under the model) transformation. Do not move armatures, meshes, rigid bodies, or joints directly before separating as they will not move together.\n\nIMPORTANT: Don't use any of the 'Assembly' functions before using this function. This function requires the model to be in a clean state.",
+        ),
+        (("bpy.types.mmd_tools_local_OT_model_separate_by_bones",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Boundary Joint Owner"),
@@ -2457,10 +3062,13 @@ translations_tuple = (
         ("zh_HANS", "移动变形", (False, ())),
     ),
     (
-        ("*", "Move active morph item up/down in the list"),
+        (
+            "*",
+            "Move active morph item up/down in the list. This will not affect the morph order in exported PMX files (use Display Panel order instead).",
+        ),
         (("bpy.types.mmd_tools_local_OT_morph_move",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "在列表中上移或下移活动的变形", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("Operator", "Add Morph Offset"),
@@ -2617,7 +3225,7 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_ptcache_rigid_body_delete_bake",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:76",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:75",
             ),
             (),
         ),
@@ -2629,7 +3237,7 @@ translations_tuple = (
         (
             (
                 "bpy.types.mmd_tools_local_OT_recalculate_bone_roll",
-                "extensions/user_default/mmd_tools_local/panels/prop_object.py:35",
+                "extensions/blender_org/mmd_tools_local/panels/prop_object.py:35",
             ),
             (),
         ),
@@ -2840,7 +3448,7 @@ translations_tuple = (
     (
         ("Operator", "Select Rigid Body"),
         (("bpy.types.mmd_tools_local_OT_rigid_body_select",), ()),
-        ("ja_JP", "MMDリジッドボディ選択", (True, ())),
+        ("ja_JP", "MMD剛体選択", (True, ())),
         ("zh_HANS", "选择刚体", (False, ())),
     ),
     (
@@ -3036,10 +3644,25 @@ translations_tuple = (
         ("zh_HANS", "在骨架中选中与此偏移相关的骨骼", (False, ())),
     ),
     (
-        ("Operator", "Separate By Materials"),
+        ("Operator", "Sep by Mat(High Risk)"),
+        (
+            (
+                "bpy.types.mmd_tools_local_OT_separate_by_materials",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:139",
+            ),
+            (),
+        ),
+        ("ja_JP", "マテリアルで分離(高リスク)", (False, ())),
+        ("zh_HANS", "按材质分开(高风险)", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Separate by Materials (High Risk)\nSeparate the mesh into multiple objects based on materials.\nHIGH RISK & BUGGY: This operation is not reversible and may cause various issues. It splits adjacent geometry by material, and merging later will not reconnect shared edges.\nKnown issues include potential mesh corruption, UV mapping problems, and other unpredictable behaviors. Use with extreme caution and backup your work first.",
+        ),
         (("bpy.types.mmd_tools_local_OT_separate_by_materials",), ()),
-        ("ja_JP", "マテリアルで分解", (True, ())),
-        ("zh_HANS", "按材质分离", (False, ())),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Clean Shape Keys"),
@@ -3226,6 +3849,42 @@ translations_tuple = (
         ("zh_HANS", "添加或删除变形英文名的前缀", (False, ())),
     ),
     (
+        ("Operator", "Validate Bone Limits"),
+        (("bpy.types.mmd_tools_local_OT_validate_bone_limits",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Check for bone name encoding issues"),
+        (("bpy.types.mmd_tools_local_OT_validate_bone_limits",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("Operator", "Validate Morphs"),
+        (("bpy.types.mmd_tools_local_OT_validate_morphs",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Check for morph name issues and duplicates"),
+        (("bpy.types.mmd_tools_local_OT_validate_morphs",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("Operator", "Validate Textures"),
+        (("bpy.types.mmd_tools_local_OT_validate_textures",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Check for texture path and name issues"),
+        (("bpy.types.mmd_tools_local_OT_validate_textures",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
         ("Operator", "View Bone Morph"),
         (("bpy.types.mmd_tools_local_OT_view_bone_morph",), ()),
         ("ja_JP", "", (False, ())),
@@ -3252,26 +3911,26 @@ translations_tuple = (
     (
         ("*", "MMD Bone Tools"),
         (("bpy.types.BONE_PT_mmd_tools_local_bone",), ()),
-        ("ja_JP", "MMDボーンツール", (True, ())),
-        ("zh_HANS", "MMD Tools", (True, ())),
+        ("ja_JP", "MMDボーンツール", (False, ())),
+        ("zh_HANS", "MMD 骨骼工具", (False, ())),
     ),
     (
         ("*", "MMD Joint"),
         (("bpy.types.JOINT_PT_mmd_tools_local_bone",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "", (False, ())),
+        ("zh_HANS", "MMD 关节", (False, ())),
     ),
     (
         ("*", "MMD Material"),
         (("bpy.types.MATERIAL_PT_mmd_tools_local_material",), ()),
-        ("ja_JP", "マテリアル:", (True, ())),
-        ("zh_HANS", "材质:", (True, ())),
+        ("ja_JP", "MMD マテリアル", (False, ())),
+        ("zh_HANS", "MMD 材质", (False, ())),
     ),
     (
         ("*", "MMD Texture"),
         (("bpy.types.MATERIAL_PT_mmd_tools_local_texture",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "", (False, ())),
+        ("ja_JP", "MMD テクスチャ", (False, ())),
+        ("zh_HANS", "MMD 纹理", (False, ())),
     ),
     (
         ("*", "MMD"),
@@ -3282,6 +3941,7 @@ translations_tuple = (
                 "bpy.types.OBJECT_PT_mmd_tools_local_joint_list",
                 "bpy.types.OBJECT_PT_mmd_tools_local_material_sorter",
                 "bpy.types.OBJECT_PT_mmd_tools_local_meshes_sorter",
+                "bpy.types.OBJECT_PT_mmd_tools_local_model_debug",
                 "bpy.types.OBJECT_PT_mmd_tools_local_model_production",
                 "bpy.types.OBJECT_PT_mmd_tools_local_model_setup",
                 "bpy.types.OBJECT_PT_mmd_tools_local_morph_tools",
@@ -3303,7 +3963,7 @@ translations_tuple = (
         ("*", "MMD Camera Tools"),
         (("bpy.types.OBJECT_PT_mmd_tools_local_camera",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "", (False, ())),
+        ("zh_HANS", "MMD 相机工具", (False, ())),
     ),
     (
         ("*", "Display Panel"),
@@ -3320,8 +3980,8 @@ translations_tuple = (
     (
         ("*", "MMD Light Tools"),
         (("bpy.types.OBJECT_PT_mmd_tools_local_light",), ()),
-        ("ja_JP", "MMDボーンツール", (True, ())),
-        ("zh_HANS", "MMD Tools", (True, ())),
+        ("ja_JP", "MMDライトツール", (False, ())),
+        ("zh_HANS", "MMD灯光工具", (False, ())),
     ),
     (
         ("*", "Material Sorter"),
@@ -3334,6 +3994,12 @@ translations_tuple = (
         (("bpy.types.OBJECT_PT_mmd_tools_local_meshes_sorter",), ()),
         ("ja_JP", "メッシュ順序", (False, ())),
         ("zh_HANS", "网格顺序", (False, ())),
+    ),
+    (
+        ("*", "Model Debug"),
+        (("bpy.types.OBJECT_PT_mmd_tools_local_model_debug",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "模型调试", (False, ())),
     ),
     (
         ("*", "Model Production"),
@@ -3356,7 +4022,7 @@ translations_tuple = (
     (
         ("*", "Rigid Bodies"),
         (("bpy.types.OBJECT_PT_mmd_tools_local_rigidbody_list",), ()),
-        ("ja_JP", "リジッドボディ", (False, ())),
+        ("ja_JP", "剛体", (False, ())),
         ("zh_HANS", "刚体", (False, ())),
     ),
     (
@@ -3368,8 +4034,8 @@ translations_tuple = (
     (
         ("*", "MMD Rigid Body"),
         (("bpy.types.RIGID_PT_mmd_tools_local_bone",), ()),
-        ("ja_JP", "MMDリジッドボディ選択", (True, ())),
-        ("zh_HANS", "刚体", (True, ())),
+        ("ja_JP", "MMD剛体", (False, ())),
+        ("zh_HANS", "MMD刚体", (False, ())),
     ),
     (
         ("*", "MMD IK Toggle"),
@@ -3382,6 +4048,15 @@ translations_tuple = (
         (("bpy.types.PoseBone.mmd_ik_toggle",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "在启用或关闭逆向运动学的情况下导入或导出动画", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Pose bone selection state (compatibility layer for Blender 4.x, forwards to bone.select)",
+        ),
+        (("bpy.types.PoseBone.select",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Bone Morph"),
@@ -3696,18 +4371,6 @@ translations_tuple = (
         ("zh_HANS", "显示连接 (PMX displayConnection) 使用的骨骼 ID", (False, ())),
     ),
     (
-        ("*", "Display Connection Offset"),
-        (("bpy.types.MMDBone.display_connection_offset",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "显示联系偏移", (False, ())),
-    ),
-    (
-        ("*", "Offset vector for display connection"),
-        (("bpy.types.MMDBone.display_connection_offset",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "显示连接使用的偏移向量", (False, ())),
-    ),
-    (
         ("*", "Display Connection Type"),
         (("bpy.types.MMDBone.display_connection_type",), ()),
         ("ja_JP", "", (False, ())),
@@ -3730,12 +4393,6 @@ translations_tuple = (
         (("bpy.types.MMDBone.display_connection_type:'OFFSET'",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "连接至加偏移的位置", (False, ())),
-    ),
-    (
-        ("*", "No connection"),
-        (("bpy.types.MMDBone.display_connection_type:'NONE'",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "没有连接", (False, ())),
     ),
     (
         ("*", "Fixed Axis"),
@@ -3885,7 +4542,7 @@ translations_tuple = (
         ("*", "PMX 表示項目(表示枠内の1項目)"),
         (("bpy.types.MMDDisplayItem",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "PMX 表示（表示枠中的一项）", (False, ())),
+        ("zh_HANS", "PMX 表示(表示枠中的一项)", (False, ())),
     ),
     (
         ("*", "Select item type"),
@@ -4152,7 +4809,7 @@ translations_tuple = (
         (
             (
                 "bpy.types.MMDMaterial.toon_texture",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:147",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:148",
             ),
             (),
         ),
@@ -4287,6 +4944,30 @@ translations_tuple = (
         (("bpy.types.MMDRoot.show_armature",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "显示MMD模型的骨架物体", (False, ())),
+    ),
+    (
+        ("*", "English name"),
+        (("bpy.types.MMDRoot.show_english_name",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "英文名", (False, ())),
+    ),
+    (
+        ("*", "Toggle English name display"),
+        (("bpy.types.MMDRoot.show_english_name",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Japanese name"),
+        (("bpy.types.MMDRoot.show_japanese_name",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "日文名", (False, ())),
+    ),
+    (
+        ("*", "Toggle Japanese name display"),
+        (("bpy.types.MMDRoot.show_japanese_name",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Show Joints"),
@@ -4563,7 +5244,7 @@ translations_tuple = (
     (
         ("*", "Operation Target"),
         (("bpy.types.MMDTranslation.batch_operation_target",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "操作対象", (False, ())),
         ("zh_HANS", "操作目标", (False, ())),
     ),
     (
@@ -4587,13 +5268,13 @@ translations_tuple = (
     (
         ("*", "English Blank"),
         (("bpy.types.MMDTranslation.filter_english_blank",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "英語空白", (False, ())),
         ("zh_HANS", "英语为空", (False, ())),
     ),
     (
         ("*", "Japanese Blank"),
         (("bpy.types.MMDTranslation.filter_japanese_blank",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "日本語空白", (False, ())),
         ("zh_HANS", "日语为空", (False, ())),
     ),
     (
@@ -4665,7 +5346,7 @@ translations_tuple = (
     (
         ("*", "Related Mesh Data"),
         (("bpy.types.MaterialMorphData.related_mesh_data",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "関連メッシュデータ", (False, ())),
         ("zh_HANS", "相关网格数据", (False, ())),
     ),
     (
@@ -4677,7 +5358,7 @@ translations_tuple = (
     (
         ("*", "Sphere texture factor"),
         (("bpy.types.MaterialMorphData.sphere_texture_factor",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "スフィアテクスチャ係数", (False, ())),
         ("zh_HANS", "球体纹理的系数", (False, ())),
     ),
     (
@@ -4701,13 +5382,13 @@ translations_tuple = (
     (
         ("*", "Toon texture factor"),
         (("bpy.types.MaterialMorphData.toon_texture_factor",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "トゥーンテクスチャ係数", (False, ())),
         ("zh_HANS", "卡通纹理的系数", (False, ())),
     ),
     (
         ("*", "UV Morph"),
         (("bpy.types.UVMorph",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "UVモーフ", (False, ())),
         ("zh_HANS", "UV形变", (False, ())),
     ),
     (
@@ -4737,19 +5418,19 @@ translations_tuple = (
     (
         ("*", "UV Index"),
         (("bpy.types.UVMorph.uv_index",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "UVインデックス", (False, ())),
         ("zh_HANS", "UV索引", (False, ())),
     ),
     (
         ("*", "UV index (UV, UV1 ~ UV4)"),
         (("bpy.types.UVMorph.uv_index",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "UV インデックス (UV, UV1 ~ UV4)", (False, ())),
         ("zh_HANS", "UV索引 (UV, UV1 ~ UV4)", (False, ())),
     ),
     (
         ("*", "Vertex Group Scale"),
         (("bpy.types.UVMorph.vertex_group_scale",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "頂点グループスケール", (False, ())),
         ("zh_HANS", "顶点组比例", (False, ())),
     ),
     (
@@ -4761,31 +5442,31 @@ translations_tuple = (
     (
         ("*", "UV Morph Offset"),
         (("bpy.types.UVMorphOffset",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "UVモーフオフセット", (False, ())),
         ("zh_HANS", "UV 形变偏移", (False, ())),
     ),
     (
         ("*", "Vertex Index"),
         (("bpy.types.UVMorphOffset.index",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "頂点インデックス", (False, ())),
         ("zh_HANS", "顶点索引", (False, ())),
     ),
     (
         ("*", "UV offset"),
         (("bpy.types.UVMorphOffset.offset",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "UVオフセット", (False, ())),
         ("zh_HANS", "UV偏移", (False, ())),
     ),
     (
         ("*", "Vertex Morph"),
         (("bpy.types.VertexMorph",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "頂点モーフ", (False, ())),
         ("zh_HANS", "顶点形变", (False, ())),
     ),
     (
         ("*", "MMD Name"),
         (("bpy.types.MMD_ROOT_UL_display_items.mmd_name",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "MMD名称", (False, ())),
         ("zh_HANS", "MMD名称", (False, ())),
     ),
     (
@@ -4797,19 +5478,19 @@ translations_tuple = (
     (
         ("*", "JP"),
         (("bpy.types.MMD_ROOT_UL_display_items.mmd_name:'name_j'",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "日本語", (False, ())),
         ("zh_HANS", "日文", (False, ())),
     ),
     (
         ("*", "EN"),
         (("bpy.types.MMD_ROOT_UL_display_items.mmd_name:'name_e'",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "英語", (False, ())),
         ("zh_HANS", "英文", (False, ())),
     ),
     (
         ("*", "Morph Filter"),
         (("bpy.types.MMD_ROOT_UL_display_items.morph_filter",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "モーフフィルタ", (False, ())),
         ("zh_HANS", "形变筛选", (False, ())),
     ),
     (
@@ -4827,7 +5508,7 @@ translations_tuple = (
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "モデルフィルタ", (False, ())),
         ("zh_HANS", "模型筛选", (False, ())),
     ),
     (
@@ -4875,346 +5556,522 @@ translations_tuple = (
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "可視のみ", (False, ())),
         ("zh_HANS", "仅显示可见项目", (False, ())),
     ),
     (
         ("Operator", "MikuMikuDance Model (.pmd, .pmx)"),
-        (("extensions/user_default/mmd_tools_local/menus.py:22",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/menus.py:18",), ()),
+        ("ja_JP", "MikuMikuDance モデル (.pmd, .pmx)", (False, ())),
         ("zh_HANS", "MikuMikuDance 模型 (.pmd, .pmx)", (False, ())),
     ),
     (
         ("Operator", "MikuMikuDance Motion (.vmd)"),
         (
             (
-                "extensions/user_default/mmd_tools_local/menus.py:23",
-                "extensions/user_default/mmd_tools_local/menus.py:45",
+                "extensions/blender_org/mmd_tools_local/menus.py:19",
+                "extensions/blender_org/mmd_tools_local/menus.py:41",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "MikuMikuDance モーション (.vmd)", (False, ())),
         ("zh_HANS", "MikuMikuDance 动作 (.vmd)", (False, ())),
     ),
     (
         ("Operator", "Vocaloid Pose Data (.vpd)"),
         (
             (
-                "extensions/user_default/mmd_tools_local/menus.py:24",
-                "extensions/user_default/mmd_tools_local/menus.py:46",
+                "extensions/blender_org/mmd_tools_local/menus.py:20",
+                "extensions/blender_org/mmd_tools_local/menus.py:42",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "Vocaloid ポーズデータ (.vpd)", (False, ())),
         ("zh_HANS", "Vocaloid 姿态数据 (.vpd)", (False, ())),
     ),
     (
         ("Operator", "MikuMikuDance Model (.pmx)"),
-        (("extensions/user_default/mmd_tools_local/menus.py:44",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/menus.py:40",), ()),
+        ("ja_JP", "MikuMikuDance モデル (.pmx)", (False, ())),
         ("zh_HANS", "MikuMikuDance 模型 (.pmx)", (False, ())),
     ),
     (
         ("Operator", "Create MMD Model"),
-        (("extensions/user_default/mmd_tools_local/menus.py:66",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/menus.py:62",), ()),
+        ("ja_JP", "MMDモデルを作成", (False, ())),
         ("zh_HANS", "创建 MMD 模型", (False, ())),
     ),
     (
         ("Operator", "MMD Flip Pose"),
-        (("extensions/user_default/mmd_tools_local/menus.py:129",), ()),
+        (("extensions/blender_org/mmd_tools_local/menus.py:125",), ()),
         ("ja_JP", "MMDポーズを反転", (False, ())),
         ("zh_HANS", "MMD翻转姿态", (False, ())),
     ),
     (
         ("Operator", "Select MMD Rigid Body"),
-        (("extensions/user_default/mmd_tools_local/menus.py:109",), ()),
-        ("ja_JP", "MMDリジッドボディ選択", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/menus.py:105",), ()),
+        ("ja_JP", "MMD剛体選択", (False, ())),
         ("zh_HANS", "选择MMD刚体", (False, ())),
     ),
     (
-        ("*", 'Imported MMD model from "%s"'),
-        (("extensions/user_default/mmd_tools_local/operators/fileio.py:210",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", '已从"%s"导入 MMD 模型', (False, ())),
+        ("*", 'Imported MMD model from ""'),
+        (("extensions/blender_org/mmd_tools_local/operators/fileio.py:396",), ()),
+        ("ja_JP", 'MMDモデルを "%s" からインポートしました', (True, ())),
+        ("zh_HANS", '已从"%s"导入 MMD 模型', (True, ())),
     ),
     (
-        ("*", '[Skipped] The armature object of MMD model "%s" can\'t be found'),
-        (("extensions/user_default/mmd_tools_local/operators/fileio.py:552",), ()),
+        ("*", '[Skipped] The armature object of MMD model "" can\'t be found'),
+        (("extensions/blender_org/mmd_tools_local/operators/fileio.py:963",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", '[跳过] 找不到 MMD 模型"%s"的骨架数据', (False, ())),
+        ("zh_HANS", '[跳过] 找不到 MMD 模型"%s"的骨架数据', (True, ())),
     ),
     (
-        ("*", 'Exported MMD model "%s" to "%s"'),
-        (("extensions/user_default/mmd_tools_local/operators/fileio.py:580",), ()),
+        ("*", 'Exported MMD model "" to ""'),
+        (("extensions/blender_org/mmd_tools_local/operators/fileio.py:995",), ()),
+        ("ja_JP", 'MMDモデル "%s" を "%s" にエクスポートしました', (True, ())),
+        ("zh_HANS", '已导出 MMD 模型"%s"至"%s"', (True, ())),
+    ),
+    (
+        ("*", "Object '': Merged  materials"),
+        (("extensions/blender_org/mmd_tools_local/operators/material.py:180",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", '已导出 MMD 模型"%s"至"%s"', (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Object '' has no materials"),
+        (("extensions/blender_org/mmd_tools_local/operators/material.py:120",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "No materials to merge in object ''"),
+        (("extensions/blender_org/mmd_tools_local/operators/material.py:146",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Same Texture '': Merged materials [] into ''"),
+        (("extensions/blender_org/mmd_tools_local/operators/material.py:184",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Select a MMD model"),
         (
             (
-                "extensions/user_default/mmd_tools_local/operators/material.py:262",
-                "extensions/user_default/mmd_tools_local/operators/misc.py:195",
-                "extensions/user_default/mmd_tools_local/operators/misc.py:241",
+                "extensions/blender_org/mmd_tools_local/operators/material.py:353",
+                "extensions/blender_org/mmd_tools_local/operators/misc.py:205",
+                "extensions/blender_org/mmd_tools_local/operators/misc.py:251",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "MMDモデルを選択する", (False, ())),
         ("zh_HANS", "选择 MMD 模型", (False, ())),
     ),
     (
         ("*", "Created %d toon edge(s)"),
-        (("extensions/user_default/mmd_tools_local/operators/material.py:273",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/material.py:364",), ()),
+        ("ja_JP", "トゥーンエッジを %d 作成しました ", (False, ())),
         ("zh_HANS", "已创建 %d 条卡通边缘", (False, ())),
     ),
     (
         ("*", " * Failed to change to Cycles render engine."),
-        (("extensions/user_default/mmd_tools_local/operators/material.py:48",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/material.py:49",), ()),
+        ("ja_JP", "Cycles に変更できませんでした", (False, ())),
         ("zh_HANS", " * 未能改变至 Cycles 渲染引擎", (False, ())),
     ),
     (
         ("*", "Materials not found"),
         (
             (
-                "extensions/user_default/mmd_tools_local/operators/material.py:209",
-                "extensions/user_default/mmd_tools_local/operators/material.py:235",
+                "extensions/blender_org/mmd_tools_local/operators/material.py:301",
+                "extensions/blender_org/mmd_tools_local/operators/material.py:326",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "マテリアルが見つかりません", (False, ())),
         ("zh_HANS", "找不到材质", (False, ())),
     ),
     (
         ("*", "This operation will break existing f-curve/action."),
-        (("extensions/user_default/mmd_tools_local/operators/misc.py:301",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/misc.py:312",), ()),
         ("ja_JP", "この操作は既存のFカーブ/アクションを破壊します", (False, ())),
         ("zh_HANS", "这一操作将破坏现有的函数曲线/动作", (False, ())),
     ),
     (
         ("*", "Click [OK] to run the operation."),
-        (("extensions/user_default/mmd_tools_local/operators/misc.py:302",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/misc.py:313",), ()),
         ("ja_JP", "[OK]をクリックして操作を実行してください", (False, ())),
         ("zh_HANS", "点击[确定]来运行操作", (False, ())),
     ),
     (
-        ("*", 'Can not move object "%s"'),
-        (("extensions/user_default/mmd_tools_local/operators/misc.py:67",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", '无法移动物体"%s"', (False, ())),
+        ("*", 'Can not move object ""'),
+        (("extensions/blender_org/mmd_tools_local/operators/misc.py:66",), ()),
+        ("ja_JP", 'オブジェクト "%s" を移動できません', (True, ())),
+        ("zh_HANS", '无法移动物体"%s"', (True, ())),
     ),
     (
         ("*", "The model does not have any meshes"),
-        (("extensions/user_default/mmd_tools_local/operators/misc.py:205",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/misc.py:215",), ()),
+        ("ja_JP", "このモデルにはメッシュがありません", (False, ())),
         ("zh_HANS", "该模型不具有任何网格", (False, ())),
     ),
     (
         ("*", "Model Armature not found"),
-        (("extensions/user_default/mmd_tools_local/operators/misc.py:246",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/misc.py:256",), ()),
+        ("ja_JP", "モデルのアーマチュアが見つかりません", (False, ())),
         ("zh_HANS", "找不到模型的骨架", (False, ())),
     ),
     (
         ("*", "Active object is not an armature object"),
         (
             (
-                "extensions/user_default/mmd_tools_local/operators/model.py:152",
-                "extensions/user_default/mmd_tools_local/operators/model.py:183",
+                "extensions/blender_org/mmd_tools_local/operators/model.py:151",
+                "extensions/blender_org/mmd_tools_local/operators/model.py:182",
+            ),
+            (),
+        ),
+        ("ja_JP", "選択中のオブジェクトはアーマチュアではありません", (False, ())),
+        ("zh_HANS", "选中的物体不是骨架物体", (False, ())),
+    ),
+    (
+        ("*", "No MMD model selected"),
+        (
+            (
+                "extensions/blender_org/mmd_tools_local/operators/model_validation.py:70",
+                "extensions/blender_org/mmd_tools_local/operators/model_validation.py:125",
+                "extensions/blender_org/mmd_tools_local/operators/model_validation.py:170",
+                "extensions/blender_org/mmd_tools_local/operators/model_validation.py:258",
+                "extensions/blender_org/mmd_tools_local/operators/model_validation.py:367",
+                "extensions/blender_org/mmd_tools_local/operators/model_validation.py:462",
             ),
             (),
         ),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "选中的物体不是骨架物体", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "No armature found in model"),
+        (
+            (
+                "extensions/blender_org/mmd_tools_local/operators/model_validation.py:76",
+                "extensions/blender_org/mmd_tools_local/operators/model_validation.py:264",
+            ),
+            (),
+        ),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Successfully converted vertex morphs in group to vertex morph '' and added to facial display frame",
+        ),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:1095",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "You need to choose a Related Mesh first"),
         (
             (
-                "extensions/user_default/mmd_tools_local/operators/morph.py:298",
-                "extensions/user_default/mmd_tools_local/operators/morph.py:362",
+                "extensions/blender_org/mmd_tools_local/operators/morph.py:295",
+                "extensions/blender_org/mmd_tools_local/operators/morph.py:359",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "まず関連するメッシュを選んでください", (False, ())),
         ("zh_HANS", "请首先选择关联的网格", (False, ())),
     ),
     (
         ("*", "The model mesh can't be found"),
         (
             (
-                "extensions/user_default/mmd_tools_local/operators/morph.py:302",
-                "extensions/user_default/mmd_tools_local/operators/morph.py:366",
+                "extensions/blender_org/mmd_tools_local/operators/morph.py:299",
+                "extensions/blender_org/mmd_tools_local/operators/morph.py:363",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "モデルのメッシュが見つかりません", (False, ())),
         ("zh_HANS", "找不到模型的网格", (False, ())),
     ),
     (
-        ("*", 'Material "%s" not found'),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:371",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", '找不到材质"%s"', (False, ())),
+        ("*", 'Material "" not found'),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:368",), ()),
+        ("ja_JP", 'マテリアル "%s" が見つかりません', (True, ())),
+        ("zh_HANS", '找不到材质"%s"', (True, ())),
     ),
     (
-        ("*", 'Temporary material "%s" is in use'),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:376",), ()),
+        ("*", 'Temporary material "" is in use'),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:373",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", '临时材质"%s"已占用', (False, ())),
+        ("zh_HANS", '临时材质"%s"已占用', (True, ())),
+    ),
+    (
+        ("*", "No active bone morph"),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:797",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Successfully converted bone morph '' to vertex morph ''. Created shape keys: ",
+        ),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:940",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "No active group morph"),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:976",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "The group morph does not contain any vertex morphs to convert"),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:987",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Material not found"),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:308",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:305",), ()),
+        ("ja_JP", "マテリアルが見つかりません", (False, ())),
         ("zh_HANS", "找不到材质", (False, ())),
     ),
     (
         ("*", "Please select a mesh object"),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:586",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:583",), ()),
+        ("ja_JP", "メッシュオブジェクトを選択してください", (False, ())),
         ("zh_HANS", "选择网格物体", (False, ())),
     ),
     (
         ("*", "Invalid uv index: %d"),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:600",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:597",), ()),
+        ("ja_JP", "無効なUVインデックス: %d", (False, ())),
         ("zh_HANS", "无效 UV 索引: %d", (False, ())),
     ),
     (
         ("*", "Failed to create a temporary uv layer"),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:610",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:607",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "无法创建临时 UV 层", (False, ())),
     ),
     (
-        ("*", ' * UV map "%s" not found'),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:734",), ()),
+        ("*", ' * UV map "" not found'),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:731",), ()),
+        ("ja_JP", ' * UVマップ "%s" が見つかりません', (True, ())),
+        ("zh_HANS", ' * 找不到 UV 贴图 "%s"', (True, ())),
+    ),
+    (
+        ("*", "Failed to create morph slider system"),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:823",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", ' * 找不到 UV 贴图 "%s"', (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Bone morph '' not found in morph sliders"),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:832",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Created shape key '' on mesh ''"),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:887",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Error during conversion: "),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:943",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "An unexpected error happened"),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:329",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:326",), ()),
+        ("ja_JP", "予期しないエラーが発生しました", (False, ())),
         ("zh_HANS", "发生了非预期的错误", (False, ())),
     ),
     (
-        ("*", "Base material for %s was not found"),
-        (("extensions/user_default/mmd_tools_local/operators/morph.py:435",), ()),
+        ("*", "No armature modifier found on mesh ''"),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:874",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "找不到 %s 的基础材质", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Base material for  was not found"),
+        (("extensions/blender_org/mmd_tools_local/operators/morph.py:432",), ()),
+        ("ja_JP", "%s のベースマテリアルが見つかりませんでした", (True, ())),
+        ("zh_HANS", "找不到 %s 的基础材质", (True, ())),
     ),
     (
         ("*", "The model root can't be found"),
-        (("extensions/user_default/mmd_tools_local/operators/rigid_body.py:55",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/rigid_body.py:54",), ()),
+        ("ja_JP", "モデルのルートが見つかりません", (False, ())),
         ("zh_HANS", "找不到模型的根部", (False, ())),
     ),
     (
         ("*", "Please select two or more mmd rigid objects"),
-        (("extensions/user_default/mmd_tools_local/operators/rigid_body.py:451",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/rigid_body.py:450",), ()),
+        ("ja_JP", "2つ以上のMMD剛体を選択してください", (False, ())),
         ("zh_HANS", "选择两个或更多 MMD 刚体", (False, ())),
     ),
     (
         ("*", "Binded  of  selected mesh(es)"),
-        (("extensions/user_default/mmd_tools_local/operators/sdef.py:88",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/sdef.py:87",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Filter"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:238",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:273",), ()),
+        ("ja_JP", "フィルタ", (False, ())),
         ("zh_HANS", "筛选", (False, ())),
     ),
     (
         ("*", "is Blank:"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:242",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:277",), ()),
         ("ja_JP", "空白のみ:", (False, ())),
         ("zh_HANS", "是空白:", (False, ())),
     ),
     (
         ("*", "Japanese"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:244",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:280",), ()),
         ("ja_JP", "日本語", (False, ())),
         ("zh_HANS", "日文", (False, ())),
     ),
     (
         ("*", "English"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:245",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:282",), ()),
         ("ja_JP", "英語", (False, ())),
         ("zh_HANS", "英文", (False, ())),
     ),
     (
         ("*", "Select the target column for Batch Operations:"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:255",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:310",), ()),
         ("ja_JP", "一括操作の対象列を選択:", (False, ())),
         ("zh_HANS", "选择批量操作的目标列:", (False, ())),
     ),
     (
         ("*", "Batch Operation:"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:276",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:334",), ()),
         ("ja_JP", "一括操作:", (False, ())),
         ("zh_HANS", "批量操作:", (False, ())),
     ),
     (
         ("*", "Preset"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:281",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:342",), ()),
+        ("ja_JP", "プリセット", (False, ())),
         ("zh_HANS", "预设", (False, ())),
     ),
     (
         ("Operator", "Execute"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:282",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:345",), ()),
         ("ja_JP", "実行", (False, ())),
         ("zh_HANS", "执行", (False, ())),
     ),
     (
         ("*", "Dictionaries:"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:286",), ()),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:349",), ()),
         ("ja_JP", "辞書:", (False, ())),
         ("zh_HANS", "词典:", (False, ())),
     ),
     (
         ("*", "to_english"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:288",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:351",), ()),
+        ("ja_JP", "to_english", (False, ())),
         ("zh_HANS", "to_english", (False, ())),
     ),
     (
         ("*", "replace"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:293",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:355",), ()),
+        ("ja_JP", "置換", (False, ())),
         ("zh_HANS", "替换", (False, ())),
+    ),
+    (
+        ("*", "CSV:"),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:360",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("Operator", "Import CSV"),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:362",), ()),
+        ("ja_JP", "インポート CSV", (False, ())),
+        ("zh_HANS", "导入 CSV", (False, ())),
+    ),
+    (
+        ("Operator", "Export CSV"),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:363",), ()),
+        ("ja_JP", "エクスポート CSV", (False, ())),
+        ("zh_HANS", "导出 CSV", (False, ())),
+    ),
+    (
+        ("*", "Exported to "),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:456",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Failed to translate %d names, see '%s' in text editor"),
         (
             (
-                "extensions/user_default/mmd_tools_local/operators/translations.py:104",
-                "extensions/user_default/mmd_tools_local/operators/translations.py:331",
+                "extensions/blender_org/mmd_tools_local/operators/translations.py:112",
+                "extensions/blender_org/mmd_tools_local/operators/translations.py:403",
+            ),
+            (),
+        ),
+        (
+            "ja_JP",
+            "名称 %d の翻訳に失敗しました, テキストエディタで '%s' を確認してください",
+            (False, ()),
+        ),
+        ("zh_HANS", "未能翻译 %d 个名称，参见文本编辑器中的 '%s'", (False, ())),
+    ),
+    (
+        ("*", "Root object not found"),
+        (
+            (
+                "extensions/blender_org/mmd_tools_local/operators/translations.py:438",
+                "extensions/blender_org/mmd_tools_local/operators/translations.py:486",
             ),
             (),
         ),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "未能翻译 %d 个名称，参见文本编辑器中的 '%s'", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
-        ("*", "Failed to load dictionary: %s"),
-        (("extensions/user_default/mmd_tools_local/operators/translations.py:87",), ()),
+        ("*", "Failed to load dictionary: "),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:93",), ()),
+        ("ja_JP", "辞書の読み込みに失敗しました: %s", (True, ())),
+        ("zh_HANS", "未能加载词典: %s", (True, ())),
+    ),
+    (
+        ("*", "Failed to write CSV: "),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:453",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "未能加载词典: %s", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Failed to read CSV: "),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:554",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Missing required headers in CSV: , "),
+        (("extensions/blender_org/mmd_tools_local/operators/translations.py:501",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Information:"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_bone.py:46",
-                "extensions/user_default/mmd_tools_local/panels/prop_material.py:31",
+                "extensions/blender_org/mmd_tools_local/panels/prop_bone.py:45",
+                "extensions/blender_org/mmd_tools_local/panels/prop_material.py:30",
             ),
             (),
         ),
@@ -5225,8 +6082,8 @@ translations_tuple = (
         ("*", "ID"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_bone.py:49",
-                "extensions/user_default/mmd_tools_local/panels/prop_material.py:34",
+                "extensions/blender_org/mmd_tools_local/panels/prop_bone.py:48",
+                "extensions/blender_org/mmd_tools_local/panels/prop_material.py:33",
             ),
             (),
         ),
@@ -5235,37 +6092,37 @@ translations_tuple = (
     ),
     (
         ("*", "Rotate +"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:87",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:86",), ()),
         ("ja_JP", "回転 +", (False, ())),
         ("zh_HANS", "旋转 +", (False, ())),
     ),
     (
         ("*", "Move +"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:88",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:87",), ()),
         ("ja_JP", "移動 +", (False, ())),
         ("zh_HANS", "移动 +", (False, ())),
     ),
     (
         ("*", "Influence"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:92",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:91",), ()),
+        ("ja_JP", "影響", (False, ())),
         ("zh_HANS", "影响", (False, ())),
     ),
     (
-        ("*", "Display Connection (Bone Target):"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:95",), ()),
+        ("*", "Display Connection (Bone Tail Location):"),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:94",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "骨骼末端指向:", (False, ())),
     ),
     (
         ("*", "Type"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:96",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:95",), ()),
         ("ja_JP", "タイプ", (True, ())),
         ("zh_HANS", "类型", (False, ())),
     ),
     (
         ("*", "MMD Shadow Bone!"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:38",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:37",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "MMD Shadow Bone!", (False, ())),
     ),
@@ -5273,92 +6130,98 @@ translations_tuple = (
         ("Operator", "Load"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_bone.py:68",
-                "extensions/user_default/mmd_tools_local/panels/prop_bone.py:78",
+                "extensions/blender_org/mmd_tools_local/panels/prop_bone.py:67",
+                "extensions/blender_org/mmd_tools_local/panels/prop_bone.py:77",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "読み込む", (False, ())),
         ("zh_HANS", "加载", (False, ())),
     ),
     (
         ("Operator", "Apply"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_bone.py:69",
-                "extensions/user_default/mmd_tools_local/panels/prop_bone.py:79",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:183",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:210",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:153",
+                "extensions/blender_org/mmd_tools_local/panels/prop_bone.py:68",
+                "extensions/blender_org/mmd_tools_local/panels/prop_bone.py:78",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:187",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:217",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:157",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "適用", (False, ())),
         ("zh_HANS", "应用", (False, ())),
     ),
     (
         ("*", "Target Bone"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:99",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:98",), ()),
+        ("ja_JP", "対象ボーン", (False, ())),
         ("zh_HANS", "目标骨骼", (False, ())),
     ),
     (
-        ("*", "IK Angle {%s}"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:27",), ()),
+        ("*", "Offset is auto-calculated during export."),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:100",), ()),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "IK角度 {%s}", (False, ())),
+        ("zh_HANS", "偏移量会在导出模型时自动计算。", (False, ())),
     ),
     (
-        ("*", "IK Angle (%s)"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_bone.py:29",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "IK角度 (%s)", (False, ())),
+        ("*", "IK Angle {}"),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:26",), ()),
+        ("ja_JP", "IK角度 {%s}", (True, ())),
+        ("zh_HANS", "IK角度 {%s}", (True, ())),
+    ),
+    (
+        ("*", "IK Angle ()"),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_bone.py:28",), ()),
+        ("ja_JP", "IK角度 (%s)", (True, ())),
+        ("zh_HANS", "IK角度 (%s)", (True, ())),
     ),
     (
         ("*", "Distance"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_camera.py:36",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_camera.py:35",), ()),
+        ("ja_JP", "距離", (False, ())),
         ("zh_HANS", "距离", (False, ())),
     ),
     (
         ("Operator", "Convert"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_camera.py:44",
-                "extensions/user_default/mmd_tools_local/panels/prop_lamp.py:36",
+                "extensions/blender_org/mmd_tools_local/panels/prop_camera.py:43",
+                "extensions/blender_org/mmd_tools_local/panels/prop_lamp.py:35",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "変換", (False, ())),
         ("zh_HANS", "转换", (False, ())),
     ),
     (
         ("*", "Light Source"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_lamp.py:34",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_lamp.py:33",), ()),
         ("ja_JP", "光源", (False, ())),
         ("zh_HANS", "光源", (False, ())),
     ),
     (
         ("*", "Color:"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_material.py:41",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_material.py:40",), ()),
         ("ja_JP", "カラー:", (False, ())),
         ("zh_HANS", "颜色:", (False, ())),
     ),
     (
         ("*", "Shadow:"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_material.py:53",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_material.py:52",), ()),
         ("ja_JP", "シャドウ:", (False, ())),
         ("zh_HANS", "阴影:", (False, ())),
     ),
     (
         ("*", "Texture:"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_material.py:91",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_material.py:90",), ()),
         ("ja_JP", "テクスチャ:", (False, ())),
         ("zh_HANS", "纹理:", (False, ())),
     ),
     (
         ("*", "Sphere Texture:"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_material.py:105",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_material.py:104",), ()),
         ("ja_JP", "スフィアテクスチャ:", (False, ())),
         ("zh_HANS", "球体纹理:", (False, ())),
     ),
@@ -5366,44 +6229,44 @@ translations_tuple = (
         ("Operator", "Add"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_material.py:102",
-                "extensions/user_default/mmd_tools_local/panels/prop_material.py:116",
+                "extensions/blender_org/mmd_tools_local/panels/prop_material.py:101",
+                "extensions/blender_org/mmd_tools_local/panels/prop_material.py:115",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "追加", (False, ())),
         ("zh_HANS", "添加", (False, ())),
     ),
     (
         ("Operator", "Remove"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_material.py:99",
-                "extensions/user_default/mmd_tools_local/panels/prop_material.py:113",
+                "extensions/blender_org/mmd_tools_local/panels/prop_material.py:98",
+                "extensions/blender_org/mmd_tools_local/panels/prop_material.py:112",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "削除", (False, ())),
         ("zh_HANS", "移除", (False, ())),
     ),
     (
         ("*", "Collision Group Mask:"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_physics.py:73",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_physics.py:72",), ()),
         ("ja_JP", "コリジョングループマスク:", (False, ())),
         ("zh_HANS", "碰撞组遮罩:", (False, ())),
     ),
     (
         ("*", "Damping"),
-        (("extensions/user_default/mmd_tools_local/panels/prop_physics.py:82",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/prop_physics.py:81",), ()),
+        ("ja_JP", "減衰", (False, ())),
         ("zh_HANS", "阻尼", (False, ())),
     ),
     (
         ("*", "X-Axis:"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_physics.py:118",
-                "extensions/user_default/mmd_tools_local/panels/prop_physics.py:134",
+                "extensions/blender_org/mmd_tools_local/panels/prop_physics.py:117",
+                "extensions/blender_org/mmd_tools_local/panels/prop_physics.py:133",
             ),
             (),
         ),
@@ -5414,8 +6277,8 @@ translations_tuple = (
         ("*", "Y-Axis:"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_physics.py:119",
-                "extensions/user_default/mmd_tools_local/panels/prop_physics.py:135",
+                "extensions/blender_org/mmd_tools_local/panels/prop_physics.py:118",
+                "extensions/blender_org/mmd_tools_local/panels/prop_physics.py:134",
             ),
             (),
         ),
@@ -5426,8 +6289,8 @@ translations_tuple = (
         ("*", "Z-Axis:"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/prop_physics.py:120",
-                "extensions/user_default/mmd_tools_local/panels/prop_physics.py:136",
+                "extensions/blender_org/mmd_tools_local/panels/prop_physics.py:119",
+                "extensions/blender_org/mmd_tools_local/panels/prop_physics.py:135",
             ),
             (),
         ),
@@ -5436,19 +6299,19 @@ translations_tuple = (
     ),
     (
         ("*", "MMD Shading Presets"),
-        (("extensions/user_default/mmd_tools_local/panels/shading.py:23",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/shading.py:22",), ()),
         ("ja_JP", "MMDシェーディングプリセット", (False, ())),
         ("zh_HANS", "MMD着色预设", (False, ())),
     ),
     (
         ("Operator", "GLSL"),
-        (("extensions/user_default/mmd_tools_local/panels/shading.py:25",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/shading.py:24",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "GLSL", (False, ())),
     ),
     (
         ("Operator", "Shadeless"),
-        (("extensions/user_default/mmd_tools_local/panels/shading.py:26",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/shading.py:25",), ()),
         ("ja_JP", "影なし", (False, ())),
         ("zh_HANS", "无明暗", (False, ())),
     ),
@@ -5456,67 +6319,118 @@ translations_tuple = (
         ("Operator", "Reset"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/shading.py:28",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:41",
+                "extensions/blender_org/mmd_tools_local/panels/shading.py:27",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:40",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "リセット", (False, ())),
         ("zh_HANS", "重设", (False, ())),
     ),
     (
         ("*", "Migrating from old vertex group ordering to bone_id system"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:254",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:276",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "从旧的顶点组排序迁移至新的骨骼 ID 系统", (False, ())),
     ),
     (
         ("*", "Successfully migrated  bones from vertex groups to bone_id system"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:279",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:301",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "成功从旧的顶点组排序迁移至新的骨骼 ID 系统", (False, ())),
+    ),
+    (
+        ("*", "Cleaning invalid bone references..."),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:315",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("Operator", "Fix Bone Order"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:518",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:565",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:600",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:647",
             ),
             (),
         ),
-        ("ja_JP", "ボーン順序", (True, ())),
+        ("ja_JP", "ボーン順序を修正", (False, ())),
         ("zh_HANS", "修复骨骼顺序", (False, ())),
     ),
     (
         ("*", "Total Bones: %d"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:564",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:564",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:646",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:646",
+            ),
+            (),
+        ),
+        ("ja_JP", "ボーン合計", (False, ())),
+        ("zh_HANS", "骨骼数量: %d", (False, ())),
+    ),
+    (
+        (
+            "*",
+            "Bone ID is invalid (-1). Please click 'Fix Bone Order' button first to assign proper bone IDs.",
+        ),
+        (
+            (
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:33",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:75",
             ),
             (),
         ),
         ("ja_JP", "", (False, ())),
-        ("zh_HANS", "骨骼数量: %d", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Cleaned  invalid bone reference(s)."),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:163",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Bone order did not converge after 10 iterations"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:199",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Converting layer collections to MMD collections"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:229",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:251",), ()),
         ("ja_JP", "", (False, ())),
         ("zh_HANS", "将分层集合转换为 MMD 集合", (False, ())),
+    ),
+    (
+        ("*", "Operation cancelled: No active MMD model found."),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:319",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "Successfully cleaned or removed  invalid bone reference(s)."),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:325",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
+    ),
+    (
+        ("*", "No invalid bone references were found."),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:327",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "", (False, ())),
     ),
     (
         ("*", "Select a MMD Model"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:532",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:23",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/joints.py:21",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/meshes_sorter.py:22",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:24",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:24",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/rigid_bodies.py:21",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:614",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:22",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/joints.py:20",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/meshes_sorter.py:21",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:23",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:23",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/rigid_bodies.py:20",
             ),
             (),
         ),
@@ -5525,28 +6439,28 @@ translations_tuple = (
     ),
     (
         ("*", "The armature object of active MMD model can't be found"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/bone_order.py:537",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/bone_order.py:619",), ()),
+        ("ja_JP", "選択中のMMDモデルのアーマチュアが見つかりません", (False, ())),
         ("zh_HANS", "找不到选中MMD模型的骨架", (False, ())),
     ),
     (
         ("Operator", "Select"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:75",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:195",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:74",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:202",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "選択", (False, ())),
         ("zh_HANS", "选择", (False, ())),
     ),
     (
         ("Operator", "Bone"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:73",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:74",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:72",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:73",
             ),
             (),
         ),
@@ -5557,8 +6471,8 @@ translations_tuple = (
         ("Operator", "Morph"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:74",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:78",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:73",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:77",
             ),
             (),
         ),
@@ -5569,11 +6483,11 @@ translations_tuple = (
         ("Operator", "Move To Top"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:176",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:188",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/joints.py:70",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:333",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/rigid_bodies.py:82",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:175",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:187",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/joints.py:69",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:363",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/rigid_bodies.py:81",
             ),
             (),
         ),
@@ -5584,11 +6498,11 @@ translations_tuple = (
         ("Operator", "Move To Bottom"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:177",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:189",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/joints.py:71",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:334",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/rigid_bodies.py:83",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:176",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:188",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/joints.py:70",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:364",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/rigid_bodies.py:82",
             ),
             (),
         ),
@@ -5599,8 +6513,8 @@ translations_tuple = (
         ("Operator", "Delete All"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/display_panel.py:186",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:324",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/display_panel.py:185",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:354",
             ),
             (),
         ),
@@ -5611,8 +6525,8 @@ translations_tuple = (
         ("*", "Use the arrows to sort"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/material_sorter.py:49",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/meshes_sorter.py:48",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/material_sorter.py:48",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/meshes_sorter.py:47",
             ),
             (),
         ),
@@ -5622,18 +6536,76 @@ translations_tuple = (
     (
         ("*", "Select a mesh object"),
         (
-            ("extensions/user_default/mmd_tools_local/panels/sidebar/material_sorter.py:20",),
+            ("extensions/blender_org/mmd_tools_local/panels/sidebar/material_sorter.py:19",),
             (),
         ),
         ("ja_JP", "メッシュを選択してください", (False, ())),
         ("zh_HANS", "选择一个网格物体", (False, ())),
     ),
     (
+        ("*", "Model Validation:"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:20",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "模型检测:", (False, ())),
+    ),
+    (
+        ("Operator", "Check Bones"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:29",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "检测骨骼", (False, ())),
+    ),
+    (
+        ("Operator", "Check Morphs"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:30",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "检测变形", (False, ())),
+    ),
+    (
+        ("Operator", "Check Textures"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:31",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "检测贴图", (False, ())),
+    ),
+    (
+        ("*", "Validation Results:"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:35",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "检测结果:", (False, ())),
+    ),
+    (
+        ("*", "Quick Fixes:"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:48",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "快速修复:", (False, ())),
+    ),
+    (
+        ("Operator", "Fix Bones"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:53",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "修复骨骼", (False, ())),
+    ),
+    (
+        ("Operator", "Fix Morphs"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:56",), ()),
+        ("ja_JP", "モーフ", (True, ())),
+        ("zh_HANS", "修复变形", (False, ())),
+    ),
+    (
+        ("Operator", "Fix Textures"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:59",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "修复贴图", (False, ())),
+    ),
+    (
+        ("*", "Run validation to see results"),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_debug.py:44",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "运行测试以查看结果", (False, ())),
+    ),
+    (
         ("Operator", "Create Model"),
         (
-            (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_production.py:23",
-            ),
+            ("extensions/blender_org/mmd_tools_local/panels/sidebar/model_production.py:22",),
             (),
         ),
         ("ja_JP", "モデルを作成", (False, ())),
@@ -5642,9 +6614,7 @@ translations_tuple = (
     (
         ("Operator", "Convert Model"),
         (
-            (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_production.py:24",
-            ),
+            ("extensions/blender_org/mmd_tools_local/panels/sidebar/model_production.py:23",),
             (),
         ),
         ("ja_JP", "モデルを変換", (False, ())),
@@ -5653,9 +6623,7 @@ translations_tuple = (
     (
         ("Operator", "Attach Meshes"),
         (
-            (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_production.py:29",
-            ),
+            ("extensions/blender_org/mmd_tools_local/panels/sidebar/model_production.py:28",),
             (),
         ),
         ("ja_JP", "メッシュを取付", (False, ())),
@@ -5664,31 +6632,25 @@ translations_tuple = (
     (
         ("Operator", "Translate"),
         (
-            (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_production.py:32",
-            ),
+            ("extensions/blender_org/mmd_tools_local/panels/sidebar/model_production.py:31",),
             (),
         ),
         ("ja_JP", "翻訳", (False, ())),
         ("zh_HANS", "翻译", (False, ())),
     ),
     (
-        ("*", "Model Surgery:"),
+        ("*", "Model Surgery (Experimental):"),
         (
-            (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_production.py:39",
-            ),
+            ("extensions/blender_org/mmd_tools_local/panels/sidebar/model_production.py:38",),
             (),
         ),
-        ("ja_JP", "モデル手術", (False, ())),
-        ("zh_HANS", "模型手术", (False, ())),
+        ("ja_JP", "モデル手術(実験的):", (False, ())),
+        ("zh_HANS", "模型手术(实验性):", (False, ())),
     ),
     (
         ("Operator", "Chop"),
         (
-            (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_production.py:45",
-            ),
+            ("extensions/blender_org/mmd_tools_local/panels/sidebar/model_production.py:44",),
             (),
         ),
         ("ja_JP", "切断", (False, ())),
@@ -5697,9 +6659,7 @@ translations_tuple = (
     (
         ("Operator", "Peel"),
         (
-            (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_production.py:56",
-            ),
+            ("extensions/blender_org/mmd_tools_local/panels/sidebar/model_production.py:55",),
             (),
         ),
         ("ja_JP", "はがす", (False, ())),
@@ -5709,8 +6669,8 @@ translations_tuple = (
         ("Operator", "Join"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_production.py:63",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:139",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_production.py:62",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:140",
             ),
             (),
         ),
@@ -5719,109 +6679,103 @@ translations_tuple = (
     ),
     (
         ("*", "Visibility:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:40",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:39",), ()),
         ("ja_JP", "可視性:", (False, ())),
         ("zh_HANS", "可见性:", (False, ())),
     ),
     (
         ("*", "Mesh"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:46",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:45",), ()),
+        ("ja_JP", "メッシュ", (False, ())),
         ("zh_HANS", "网格", (False, ())),
     ),
     (
         ("*", "Armature"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:47",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:46",), ()),
+        ("ja_JP", "アーマチュア", (False, ())),
         ("zh_HANS", "骨架", (False, ())),
     ),
     (
         ("*", "Temporary Object"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:48",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:47",), ()),
         ("ja_JP", "テンポラリオブジェクト", (False, ())),
         ("zh_HANS", "临时物体", (False, ())),
     ),
     (
         ("*", "Rigid Body"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:50",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:49",), ()),
+        ("ja_JP", "剛体", (False, ())),
         ("zh_HANS", "刚体", (False, ())),
     ),
     (
         ("*", "Assembly:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:59",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:58",), ()),
         ("ja_JP", "組み立て:", (False, ())),
         ("zh_HANS", "装配:", (False, ())),
     ),
     (
         ("Operator", "All"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:64",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:63",), ()),
+        ("ja_JP", "すべて", (False, ())),
         ("zh_HANS", "全部", (False, ())),
     ),
     (
         ("Operator", "SDEF"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:68",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:67",), ()),
         ("ja_JP", "SDEF", (False, ())),
         ("zh_HANS", "SDEF", (False, ())),
     ),
     (
         ("*", "Property"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:91",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:90",), ()),
+        ("ja_JP", "プロパティ", (False, ())),
         ("zh_HANS", "属性", (False, ())),
     ),
     (
         ("*", "IK Toggle:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:128",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:129",), ()),
         ("ja_JP", "IK切替え:", (False, ())),
         ("zh_HANS", "IK切换:", (False, ())),
     ),
     (
         ("*", "Mesh:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:136",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:137",), ()),
         ("ja_JP", "メッシュ:", (False, ())),
         ("zh_HANS", "网格:", (False, ())),
     ),
     (
-        ("Operator", "Separate by Materials"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:138",), ()),
-        ("ja_JP", "マテリアルで分解", (False, ())),
-        ("zh_HANS", "按材质分开", (False, ())),
-    ),
-    (
         ("*", "Material:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:143",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:144",), ()),
         ("ja_JP", "マテリアル:", (False, ())),
         ("zh_HANS", "材质:", (False, ())),
     ),
     (
         ("*", "Sphere Texture"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:148",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:149",), ()),
         ("ja_JP", "スフィアテクスチャ", (False, ())),
         ("zh_HANS", "球体纹理", (False, ())),
     ),
     (
         ("Operator", "Convert to Blender"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:153",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:154",), ()),
         ("ja_JP", "Blender用に変換", (False, ())),
         ("zh_HANS", "转换给Blender", (False, ())),
     ),
     (
         ("Operator", "Convert to MMD"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:154",), ()),
-        ("ja_JP", "", (False, ())),
-        ("zh_HANS", "转换至 MMD", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:156",), ()),
+        ("ja_JP", "MMD用に変換", (False, ())),
+        ("zh_HANS", "转换给MMD", (False, ())),
     ),
     (
         ("*", "Misc:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:158",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:160",), ()),
         ("ja_JP", "その他:", (False, ())),
         ("zh_HANS", "杂项:", (False, ())),
     ),
     (
         ("Operator", "(Experimental) Global Translation"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:160",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:162",), ()),
         ("ja_JP", "(実験的) 全体翻訳", (False, ())),
         ("zh_HANS", "(实验性) 全局翻译", (False, ())),
     ),
@@ -5829,8 +6783,8 @@ translations_tuple = (
         ("Operator", "Physics"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:86",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:88",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:85",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:87",
             ),
             (),
         ),
@@ -5839,7 +6793,7 @@ translations_tuple = (
     ),
     (
         ("Operator", "Edge Preview"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/model_setup.py:150",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/model_setup.py:151",), ()),
         ("ja_JP", "輪郭プレビュー", (False, ())),
         ("zh_HANS", "边缘预览", (False, ())),
     ),
@@ -5847,8 +6801,8 @@ translations_tuple = (
         ("*", "Material Offsets (%d)"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:103",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:103",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:107",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:107",
             ),
             (),
         ),
@@ -5859,34 +6813,34 @@ translations_tuple = (
         ("Operator", "View"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:182",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:206",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:186",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:213",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "表示", (False, ())),
         ("zh_HANS", "显示", (False, ())),
     ),
     (
         ("Operator", "Clear"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:184",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:207",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:154",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:128",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:188",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:214",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:158",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:132",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "クリア", (False, ())),
         ("zh_HANS", "清除", (False, ())),
     ),
     (
         ("*", "Bone Offsets (%d)"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:186",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:186",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:193",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:193",
             ),
             (),
         ),
@@ -5897,20 +6851,20 @@ translations_tuple = (
         ("Operator", "Edit"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:209",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:196",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:216",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:203",
             ),
             (),
         ),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "編集", (False, ())),
         ("zh_HANS", "编辑", (False, ())),
     ),
     (
         ("*", "Group Offsets (%d)"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:226",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:226",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:236",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:236",
             ),
             (),
         ),
@@ -5919,46 +6873,46 @@ translations_tuple = (
     ),
     (
         ("*", "Morph Settings"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:61",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:65",), ()),
         ("ja_JP", "モーフ設定", (False, ())),
         ("zh_HANS", "变形设置", (False, ())),
     ),
     (
         ("*", "Not found"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:98",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:102",), ()),
+        ("ja_JP", "見つかりませんでした", (False, ())),
         ("zh_HANS", "未找到", (False, ())),
     ),
     (
         ("*", "This is not a valid base material"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:116",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:120",), ()),
+        ("ja_JP", "これは有効なベースマテリアルではありません", (False, ())),
         ("zh_HANS", "不是有效的基础材质", (False, ())),
     ),
     (
         ("*", "Armature not found"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:178",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:182",), ()),
+        ("ja_JP", "アーマチュアが見つかりません", (False, ())),
         ("zh_HANS", "找不到骨架", (False, ())),
     ),
     (
         ("Operator", "Update"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:197",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:204",), ()),
         ("ja_JP", "更新", (False, ())),
         ("zh_HANS", "更新", (False, ())),
     ),
     (
         ("*", "Scale"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:218",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:225",), ()),
+        ("ja_JP", "スケール", (False, ())),
         ("zh_HANS", "缩放", (False, ())),
     ),
     (
         ("*", "UV Offsets (%d)"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:220",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:220",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:227",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:227",
             ),
             (),
         ),
@@ -5967,37 +6921,37 @@ translations_tuple = (
     ),
     (
         ("Operator", "Bind morphs to .placeholder"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:326",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:356",), ()),
         ("ja_JP", "モーフを.placeholderへバインド", (False, ())),
         ("zh_HANS", "将变形绑定到.placeholder", (False, ())),
     ),
     (
         ("Operator", "Unbind morphs from .placeholder"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:327",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:357",), ()),
         ("ja_JP", "モーフを.placeholderからバインド解除", (False, ())),
         ("zh_HANS", "解绑变形与.placeholder", (False, ())),
     ),
     (
         ("*", "This offset affects all materials"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/morph_tools.py:125",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/morph_tools.py:129",), ()),
+        ("ja_JP", "このオフセットは全てのマテリアルに影響します", (False, ())),
         ("zh_HANS", "该偏移影响所有材质", (False, ())),
     ),
     (
         ("Operator", "Select Similar..."),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/rigid_bodies.py:67",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/rigid_bodies.py:66",), ()),
         ("ja_JP", "類似を選択...", (False, ())),
         ("zh_HANS", "选择类似...", (False, ())),
     ),
     (
         ("*", "Select Similar"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/rigid_bodies.py:80",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/rigid_bodies.py:79",), ()),
+        ("ja_JP", "類似選択", (False, ())),
         ("zh_HANS", "选择类似的刚体", (False, ())),
     ),
     (
         ("*", "Model:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:29",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:28",), ()),
         ("ja_JP", "モデル:", (False, ())),
         ("zh_HANS", "模型:", (False, ())),
     ),
@@ -6005,9 +6959,9 @@ translations_tuple = (
         ("Operator", "Import"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:30",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:35",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:40",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:29",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:34",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:39",
             ),
             (),
         ),
@@ -6018,9 +6972,9 @@ translations_tuple = (
         ("Operator", "Export"),
         (
             (
-                "extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:31",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:36",
-                "extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:41",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:30",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:35",
+                "extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:40",
             ),
             (),
         ),
@@ -6029,80 +6983,122 @@ translations_tuple = (
     ),
     (
         ("*", "Motion:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:34",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:33",), ()),
         ("ja_JP", "モーション:", (False, ())),
         ("zh_HANS", "运动:", (False, ())),
     ),
     (
         ("*", "Pose:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:39",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:38",), ()),
         ("ja_JP", "ポーズ:", (False, ())),
         ("zh_HANS", "姿态:", (False, ())),
     ),
     (
         ("*", "Timeline:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:46",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:45",), ()),
         ("ja_JP", "タイムライン:", (False, ())),
         ("zh_HANS", "时间线:", (False, ())),
     ),
     (
         ("*", "Start"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:49",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:48",), ()),
+        ("ja_JP", "開始", (False, ())),
         ("zh_HANS", "开始", (False, ())),
     ),
     (
         ("*", "End"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:50",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:49",), ()),
+        ("ja_JP", "終了", (False, ())),
         ("zh_HANS", "结束", (False, ())),
     ),
     (
         ("*", "Rigid Body Physics:"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:58",), ()),
-        ("ja_JP", "リジッドボディ物理演算:", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:57",), ()),
+        ("ja_JP", "剛体物理演算:", (False, ())),
         ("zh_HANS", "刚体物理:", (False, ())),
     ),
     (
         ("Operator", "Update World"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:59",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:58",), ()),
         ("ja_JP", "ワールドを更新", (False, ())),
         ("zh_HANS", "更新世界", (False, ())),
     ),
     (
         ("Operator", "MMD Tools/Manual"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:20",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:19",), ()),
         ("ja_JP", "MMD Tools/マニュアル", (False, ())),
         ("zh_HANS", "MMD Tools/使用手册", (False, ())),
     ),
     (
         ("*", "Substeps"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:63",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:62",), ()),
         ("ja_JP", "サブステップ", (False, ())),
         ("zh_HANS", "子步数", (False, ())),
     ),
     (
         ("*", "Iterations"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:64",), ()),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:63",), ()),
         ("ja_JP", "反復数", (False, ())),
         ("zh_HANS", "迭代", (False, ())),
     ),
     (
         ("Operator", "Bake"),
-        (("extensions/user_default/mmd_tools_local/panels/sidebar/scene_setup.py:78",), ()),
-        ("ja_JP", "", (False, ())),
+        (("extensions/blender_org/mmd_tools_local/panels/sidebar/scene_setup.py:77",), ()),
+        ("ja_JP", "ベイク", (False, ())),
         ("zh_HANS", "烘焙", (False, ())),
+    ),
+    (
+        ("*", "Default Operator Presets:"),
+        (("extensions/blender_org/mmd_tools_local/preferences.py:136",), ()),
+        ("ja_JP", "", (False, ())),
+        ("zh_HANS", "默认操作项预设:", (False, ())),
+    ),
+    (
+        ("*", "PMX Import"),
+        (("extensions/blender_org/mmd_tools_local/preferences.py:137",), ()),
+        ("ja_JP", "PMX インポート", (False, ())),
+        ("zh_HANS", "PMX 导入", (False, ())),
+    ),
+    (
+        ("*", "PMX Export"),
+        (("extensions/blender_org/mmd_tools_local/preferences.py:138",), ()),
+        ("ja_JP", "PMX エクスポート", (False, ())),
+        ("zh_HANS", "PMX 导出", (False, ())),
+    ),
+    (
+        ("*", "VMD Import"),
+        (("extensions/blender_org/mmd_tools_local/preferences.py:139",), ()),
+        ("ja_JP", "VMD インポート", (False, ())),
+        ("zh_HANS", "VMD 导入", (False, ())),
+    ),
+    (
+        ("*", "VMD Export"),
+        (("extensions/blender_org/mmd_tools_local/preferences.py:140",), ()),
+        ("ja_JP", "VMD エクスポート", (False, ())),
+        ("zh_HANS", "VMD 导出", (False, ())),
+    ),
+    (
+        ("*", "VPD Import"),
+        (("extensions/blender_org/mmd_tools_local/preferences.py:141",), ()),
+        ("ja_JP", "VPD インポート", (False, ())),
+        ("zh_HANS", "VPD 导入", (False, ())),
+    ),
+    (
+        ("*", "VPD Export"),
+        (("extensions/blender_org/mmd_tools_local/preferences.py:142",), ()),
+        ("ja_JP", "VPD エクスポート", (False, ())),
+        ("zh_HANS", "VPD 导出", (False, ())),
     ),
     (
         ("*", "MMD Tools"),
         (("Add-on MMD Tools info: name",), ()),
-        ("ja_JP", "MMDボーンツール", (True, ())),
+        ("ja_JP", "MMD Tools", (False, ())),
         ("zh_HANS", "MMD Tools", (False, ())),
     ),
     (
         ("*", "Utility tools for MMD model editing"),
         (("Add-on MMD Tools info: description",), ()),
-        ("ja_JP", "", (False, ())),
+        ("ja_JP", "MMDモデル編集用のツール", (False, ())),
         ("zh_HANS", "MMD 模型编辑实用工具", (False, ())),
     ),
 )
@@ -6133,5 +7129,5 @@ if __name__ == "__main__":
 
     for lang, cnt in untranslated_count.items():
         print(
-            f"Of {total_count} entries, {cnt} have not been translated for language {lang}"
+            f"Of {total_count} entries, {cnt} have not been translated for language {lang}",
         )

@@ -20,8 +20,7 @@ class FnDraw:
             bone = p_bone.bone
             if mmd_name:
                 row.prop(p_bone.mmd_bone, mmd_name, text="", emboss=True)
-            ic = "RESTRICT_VIEW_ON" if bone.hide else "RESTRICT_VIEW_OFF"
-            row.prop(bone, "hide", text="", emboss=p_bone.mmd_bone.is_tip, icon=ic)
+            row.prop(bone, "hide", text="", emboss=p_bone.mmd_bone.is_tip, icon_only=True)
             row.active = armature.mode != "EDIT"
         else:
             row.label()  # for alignment only
@@ -64,7 +63,7 @@ class UL_ObjectsMixIn:
             row = row.row(align=True)
             row.prop(item_prop, "name_e", text="", emboss=True)
             self.draw_item_special(context, row, item)
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon=self.icon)
 

@@ -16,7 +16,7 @@ class MMDCameraPanel(Panel):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj and (obj.type == "CAMERA" or MMDCamera.isMMDCamera(obj))
+        return obj is not None and (obj.type == "CAMERA" or MMDCamera.isMMDCamera(obj))
 
     def draw(self, context):
         obj = context.active_object
