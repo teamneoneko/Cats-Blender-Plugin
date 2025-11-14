@@ -36,8 +36,12 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Import/Export row
-        row = col.row(align=True)
+        # Import/Export section
+        import_box = col.box()
+        import_col = import_box.column(align=True)
+        
+        # Main import/export row
+        row = import_col.row(align=True)
         row.scale_y = 1.3
         split = row.split(factor=0.85, align=True)
         sub_row = split.row(align=True)
@@ -48,13 +52,6 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
             sub_row.operator(Importer.ExporterModelsPopup.bl_idname, 
                            icon='ARMATURE_DATA')
         split.operator(Importer.ModelsPopup.bl_idname, text="", icon='COLLAPSEMENU')
-
-        # FBX Test Import row
-        row = col.row(align=True)
-        row.scale_y = 1.0
-        row.operator(Importer.ImportFBXTest.bl_idname, 
-                    text="Import FBX (Test)", 
-                    icon='EXPERIMENTAL')
 
         # Armature selector
         if len(Common.get_armature_objects()) > 1:
@@ -67,6 +64,13 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         col.separator()
         box = col.box()
         quick_col = box.column(align=True)
+        
+        # Section header
+        header_row = quick_col.row(align=True)
+        header_row.scale_y = 0.75
+        header_row.label(text="Quick Actions", icon='SHADERFX')
+        
+        quick_col.separator()
         
         # Info text
         draw_info_box(quick_col, [
@@ -88,7 +92,17 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
 
         # Pose mode section
         col.separator()
-        self.draw_pose_section(col, context)
+        pose_box = col.box()
+        pose_col = pose_box.column(align=True)
+        
+        # Section header
+        header_row = pose_col.row(align=True)
+        header_row.scale_y = 0.75
+        header_row.label(text="Pose Mode", icon='POSE_HLT')
+        
+        pose_col.separator()
+        
+        self.draw_pose_section(pose_col, context)
 
     def draw_version_warnings(self, col, context):
         # Blender 5.0+ only - just check for dictionary
@@ -100,25 +114,24 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
             ])
 
     def draw_pose_section(self, col, context):
-        box = col.box()
-        box_col = box.column(align=True)
         armature_obj = Common.get_armature()
         
         if not armature_obj or armature_obj.mode != 'POSE':
-            row = box_col.row(align=True)
+            row = col.row(align=True)
             row.scale_y = 1.3
             split = row.split(factor=0.85, align=True)
             split.operator(Armature_manual.StartPoseMode.bl_idname, icon='POSE_HLT')
             split.operator(Armature_manual.StartPoseModeNoReset.bl_idname, text="", icon='POSE_HLT')
         else:
-            row = box_col.row(align=True)
+            row = col.row(align=True)
             row.scale_y = 1.3
             split = row.split(factor=0.85, align=True)
             split.operator(Armature_manual.StopPoseMode.bl_idname, icon=globs.ICON_POSE_MODE)
             split.operator(Armature_manual.StopPoseModeNoReset.bl_idname, text="", icon=globs.ICON_POSE_MODE)
 
             if armature_obj and armature_obj.mode == 'POSE':
-                pose_actions = box_col.column(align=True)
+                col.separator()
+                pose_actions = col.column(align=True)
                 pose_actions.scale_y = 1.0
                 pose_actions.operator(Armature_manual.PoseToShape.bl_idname, icon='SHAPEKEY_DATA')
                 pose_actions.operator(Armature_manual.PoseToRest.bl_idname, icon='POSE_HLT')

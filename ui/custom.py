@@ -107,7 +107,7 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
         # Settings
         box = col.box()
         box_col = box.column(align=True)
-        box_col.scale_y = 0.85
+        box_col.scale_y = 0.75
         
         box_col.prop(context.scene, 'merge_same_bones')
         box_col.prop(context.scene, 'apply_transforms')
@@ -189,7 +189,7 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
         # Settings
         box = col.box()
         box_col = box.column(align=True)
-        box_col.scale_y = 0.85
+        box_col.scale_y = 0.75
         box_col.prop(context.scene, 'merge_armatures_join_meshes')
 
         col.separator()
