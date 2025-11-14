@@ -289,7 +289,11 @@ class FixArmature(bpy.types.Operator):
                 
         if mmd_root:
             # This is an MMD model, back up and remove bone collections
-            for collection in list(armature.data.collections):
+            # First, collect all bone collection data in EDIT mode
+            Common.set_active(armature)
+            Common.switch('EDIT')
+            
+            for collection in armature.data.collections:
                 # Store collection data
                 collection_data = {
                     'name': collection.name,
@@ -297,14 +301,17 @@ class FixArmature(bpy.types.Operator):
                     'bones': []
                 }
                 
-                # Store bones in edit mode
-                Common.set_active(armature)
-                Common.switch('EDIT')
+                # Store bones while in edit mode
                 for bone in collection.bones:
                     collection_data['bones'].append(bone.name)
                 
                 bone_collections_backup.append(collection_data)
-                # Remove the collection
+            
+            # Switch to OBJECT mode before removing collections to avoid crashes
+            Common.switch('OBJECT')
+            
+            # Now safely remove collections in OBJECT mode
+            for collection in list(armature.data.collections):
                 armature.data.collections.remove(collection)
         
         # Check for Rigify/Metarig
@@ -710,6 +717,9 @@ class FixArmature(bpy.types.Operator):
         for bone in armature.data.edit_bones:
             bone.hide = False
 
+        # Switch to OBJECT mode before removing bone collections to avoid crashes
+        Common.switch('OBJECT')
+
         # Remove Bone Groups
         # Replaced in 4.0 with Bone Collections (Armature.collections), which also subsumed Armature.layers. Bone colors
         # are now defined per-bone, Bone.color.palette and PoseBone.color.palette
@@ -717,8 +727,11 @@ class FixArmature(bpy.types.Operator):
             for group in armature.pose.bone_groups:
                 armature.pose.bone_groups.remove(group)
         else:
-            for collection in armature.data.collections:
+            for collection in list(armature.data.collections):
                 armature.data.collections.remove(collection)
+
+        # Re-enter EDIT mode for subsequent operations
+        Common.switch('EDIT')
 
         # Bone constraints should be deleted
         # if context.scene.remove_constraints:

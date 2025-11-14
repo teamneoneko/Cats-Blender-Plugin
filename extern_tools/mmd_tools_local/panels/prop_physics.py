@@ -71,7 +71,7 @@ class MMDRigidPanel(bpy.types.Panel):
         col = c.column(align=True)
         col.label(text="Collision Group Mask:")
         row = col.row(align=True)
-        for i in range(0, 8):
+        for i in range(8):
             row.prop(obj.mmd_rigid, "collision_group_mask", index=i, text=str(i), toggle=True)
         row = col.row(align=True)
         for i in range(8, 16):

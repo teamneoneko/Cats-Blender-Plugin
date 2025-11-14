@@ -9,7 +9,7 @@ import bpy
 class _NodeTreeUtils:
     def __init__(self, shader: bpy.types.ShaderNodeTree):
         self.shader = shader
-        self.nodes: bpy.types.bpy_prop_collection[bpy.types.ShaderNode] = shader.nodes  # type: ignore
+        self.nodes: bpy.types.bpy_prop_collection[bpy.types.ShaderNode] = shader.nodes  # type: ignore[assignment]
         self.links = shader.links
 
     def _find_node(self, node_type: str) -> Optional[bpy.types.ShaderNode]:
@@ -64,13 +64,13 @@ class _NodeGroupUtils(_NodeTreeUtils):
     @property
     def node_input(self) -> bpy.types.NodeGroupInput:
         if not self.__node_input:
-            self.__node_input = cast(bpy.types.NodeGroupInput, self._find_node("NodeGroupInput") or self.new_node("NodeGroupInput", (-2, 0)))
+            self.__node_input = cast("bpy.types.NodeGroupInput", self._find_node("NodeGroupInput") or self.new_node("NodeGroupInput", (-2, 0)))
         return self.__node_input
 
     @property
     def node_output(self) -> bpy.types.NodeGroupOutput:
         if not self.__node_output:
-            self.__node_output = cast(bpy.types.NodeGroupOutput, self._find_node("NodeGroupOutput") or self.new_node("NodeGroupOutput", (2, 0)))
+            self.__node_output = cast("bpy.types.NodeGroupOutput", self._find_node("NodeGroupOutput") or self.new_node("NodeGroupOutput", (2, 0)))
         return self.__node_output
 
     def hide_nodes(self, hide_sockets=True):
@@ -99,7 +99,7 @@ class _NodeGroupUtils(_NodeTreeUtils):
             if not min_max:
                 if idname.endswith("Factor") or io_name.endswith("Alpha"):
                     interface_socket.min_value, interface_socket.max_value = 0, 1
-                elif idname.endswith("Float") or idname.endswith("Vector"):
+                elif idname.endswith(("Float", "Vector")):
                     interface_socket.min_value, interface_socket.max_value = -10, 10
         if socket is not None:
             self.links.new(io_sockets[io_name], socket)
@@ -141,7 +141,7 @@ class _MaterialMorph:
     def __update_morph_links(cls, node, reset=False):
         nodes, links = node.id_data.nodes, node.id_data.links
         if reset:
-            if any(l.from_node.name.startswith("mmd_bind") for i in node.inputs for l in i.links):
+            if any(link.from_node.name.startswith("mmd_bind") for i in node.inputs for link in i.links):
                 return
 
             def __init_link(socket_morph, socket_shader):
@@ -263,8 +263,8 @@ class _MaterialMorph:
             # https://github.com/blender/blender/blob/594f47ecd2d5367ca936cf6fc6ec8168c2b360d0/source/blender/blenkernel/intern/material.c#L1400
             node_mix = ng.new_mix_node("MULTIPLY" if use_mul else "ADD", (pos[0] + 1, pos[1]))
             links.new(node_input.outputs["Fac"], node_mix.inputs["Fac"])
-            ng.new_input_socket("%s1" % id_name + tag, node_mix.inputs["Color1"])
-            ng.new_input_socket("%s2" % id_name + tag, node_mix.inputs["Color2"], socket_type="NodeSocketVector")
+            ng.new_input_socket(f"{id_name}1" + tag, node_mix.inputs["Color1"])
+            ng.new_input_socket(f"{id_name}2" + tag, node_mix.inputs["Color2"], socket_type="NodeSocketVector")
             ng.new_output_socket(id_name + tag, node_mix.outputs["Color"])
             return node_mix
 

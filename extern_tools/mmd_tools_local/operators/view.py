@@ -4,7 +4,7 @@
 import re
 
 from bpy.types import Operator
-from mathutils import Matrix
+from mathutils import Matrix, Quaternion
 
 
 class _SetShadingBase:
@@ -29,12 +29,12 @@ class _SetShadingBase:
             for s in i.material_slots:
                 if s.material is None:
                     continue
-                # Note: material.use_nodes is deprecated in Blender 5.0+ and will be removed in 6.0
-                # It always returns True now and setting it has no effect
-                # s.material.use_nodes = False  # Deprecated
+                # use_nodes is deprecated in 5.0 but harmless to set
+                s.material.use_nodes = False
                 s.material.use_shadeless = use_shadeless
 
     def execute(self, context):
+        # Changed from BLENDER_EEVEE_NEXT to BLENDER_EEVEE for Blender 5.0
         context.scene.render.engine = "BLENDER_EEVEE"
 
         shading_mode = getattr(self, "_shading_mode", None)
@@ -120,7 +120,7 @@ class FlipPose(Operator):
 
     @staticmethod
     def __cmul(vec1, vec2):
-        return type(vec1)([x * y for x, y in zip(vec1, vec2)])
+        return type(vec1)([x * y for x, y in zip(vec1, vec2, strict=False)])
 
     @staticmethod
     def __matrix_compose(loc, rot, scale):
@@ -128,8 +128,6 @@ class FlipPose(Operator):
 
     @classmethod
     def __flip_pose(cls, matrix_basis, bone_src, bone_dest):
-        from mathutils import Quaternion
-
         m = bone_dest.bone.matrix_local.to_3x3().transposed()
         mi = bone_src.bone.matrix_local.to_3x3().transposed().inverted() if bone_src != bone_dest else m.inverted()
         loc, rot, scale = matrix_basis.decompose()
@@ -139,7 +137,8 @@ class FlipPose(Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object and context.active_object.type == "ARMATURE" and context.active_object.mode == "POSE"
+        obj = context.active_object
+        return obj is not None and obj.type == "ARMATURE" and obj.mode == "POSE"
 
     def execute(self, context):
         pose_bones = context.active_object.pose.bones
