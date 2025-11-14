@@ -16,7 +16,7 @@ class MMDMaterialPanel(Panel):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj.active_material and obj.mmd_type == "NONE"
+        return obj is not None and obj.active_material is not None and obj.mmd_type == "NONE"
 
     def draw(self, context):
         material = context.active_object.active_material
@@ -76,7 +76,7 @@ class MMDTexturePanel(Panel):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj.active_material and obj.mmd_type == "NONE"
+        return obj is not None and obj.active_material is not None and obj.mmd_type == "NONE"
 
     def draw(self, context):
         material = context.active_object.active_material

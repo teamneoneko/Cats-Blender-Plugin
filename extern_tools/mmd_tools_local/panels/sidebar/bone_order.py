@@ -12,28 +12,33 @@ class MMDToolsBoneIdMoveUp(bpy.types.Operator):
     bl_idname = "mmd_tools_local.bone_id_move_up"
     bl_label = "Move Bone ID Up"
     bl_description = "Move active bone up in bone order"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        root = FnModel.find_root_object(context.object)
+        root = FnModel.find_root_object(context.active_object)
         armature = FnModel.find_armature_object(root)
 
         if not root or not armature:
-            return {'CANCELLED'}
+            return {"CANCELLED"}
 
         active_bone_index = root.mmd_root.active_bone_index
-        if active_bone_index >= len(armature.pose.bones):
-            return {'CANCELLED'}
+        if active_bone_index < 0 or active_bone_index >= len(armature.pose.bones):
+            return {"CANCELLED"}
 
         active_bone = armature.pose.bones[active_bone_index]
         active_id = active_bone.mmd_bone.bone_id
+
+        # Check if bone_id is -1 and show warning
+        if active_id == -1:
+            self.report({"WARNING"}, "Bone ID is invalid (-1). Please click 'Fix Bone Order' button first to assign proper bone IDs.")
+            return {"CANCELLED"}
 
         # Find bone with smaller bone_id
         prev_bone = None
         prev_id = -1
 
         for bone in armature.pose.bones:
-            is_shadow = getattr(bone, 'is_mmd_shadow_bone', False) is True
+            is_shadow = getattr(bone, "is_mmd_shadow_bone", False) is True
             if not is_shadow and bone.mmd_bone.bone_id < active_id and bone.mmd_bone.bone_id > prev_id:
                 prev_bone = bone
                 prev_id = bone.mmd_bone.bone_id
@@ -42,39 +47,40 @@ class MMDToolsBoneIdMoveUp(bpy.types.Operator):
             # safe swap bone IDs
             FnModel.swap_bone_ids(active_bone, prev_bone, root.mmd_root.bone_morphs, armature.pose.bones)
 
-            # Refresh UI
-            for area in context.screen.areas:
-                area.tag_redraw()
-
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class MMDToolsBoneIdMoveDown(bpy.types.Operator):
     bl_idname = "mmd_tools_local.bone_id_move_down"
     bl_label = "Move Bone ID Down"
     bl_description = "Move active bone down in bone order"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        root = FnModel.find_root_object(context.object)
+        root = FnModel.find_root_object(context.active_object)
         armature = FnModel.find_armature_object(root)
 
         if not root or not armature:
-            return {'CANCELLED'}
+            return {"CANCELLED"}
 
         active_bone_index = root.mmd_root.active_bone_index
-        if active_bone_index >= len(armature.pose.bones):
-            return {'CANCELLED'}
+        if active_bone_index < 0 or active_bone_index >= len(armature.pose.bones):
+            return {"CANCELLED"}
 
         active_bone = armature.pose.bones[active_bone_index]
         active_id = active_bone.mmd_bone.bone_id
 
+        # Check if bone_id is -1 and show warning
+        if active_id == -1:
+            self.report({"WARNING"}, "Bone ID is invalid (-1). Please click 'Fix Bone Order' button first to assign proper bone IDs.")
+            return {"CANCELLED"}
+
         # Find bone with larger bone_id
         next_bone = None
-        next_id = float('inf')
+        next_id = float("inf")
 
         for bone in armature.pose.bones:
-            is_shadow = getattr(bone, 'is_mmd_shadow_bone', False) is True
+            is_shadow = getattr(bone, "is_mmd_shadow_bone", False) is True
             if not is_shadow and bone.mmd_bone.bone_id > active_id and bone.mmd_bone.bone_id < next_id:
                 next_bone = bone
                 next_id = bone.mmd_bone.bone_id
@@ -83,84 +89,87 @@ class MMDToolsBoneIdMoveDown(bpy.types.Operator):
             # safe swap bone IDs
             FnModel.swap_bone_ids(active_bone, next_bone, root.mmd_root.bone_morphs, armature.pose.bones)
 
-            # Refresh UI
-            for area in context.screen.areas:
-                area.tag_redraw()
-
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class MMDToolsBoneIdMoveTop(bpy.types.Operator):
     bl_idname = "mmd_tools_local.bone_id_move_top"
     bl_label = "Move Bone ID to Top"
     bl_description = "Move active bone to the top of bone order"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        root = FnModel.find_root_object(context.object)
+        root = FnModel.find_root_object(context.active_object)
         armature = FnModel.find_armature_object(root)
 
         if not root or not armature:
-            return {'CANCELLED'}
+            return {"CANCELLED"}
 
         active_bone_index = root.mmd_root.active_bone_index
-        if active_bone_index >= len(armature.pose.bones):
-            return {'CANCELLED'}
+        if active_bone_index < 0 or active_bone_index >= len(armature.pose.bones):
+            return {"CANCELLED"}
 
         active_bone = armature.pose.bones[active_bone_index]
+        old_bone_id = active_bone.mmd_bone.bone_id
+        new_bone_id = 0
+        bone_morphs = root.mmd_root.bone_morphs
+        pose_bones = armature.pose.bones
+        FnModel.shift_bone_id(old_bone_id, new_bone_id, bone_morphs, pose_bones)
 
-        # Change bone ID to 0 safely
-        FnModel.safe_change_bone_id(active_bone, 0, root.mmd_root.bone_morphs, armature.pose.bones)
-
-        # Refresh UI
-        for area in context.screen.areas:
-            area.tag_redraw()
-
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class MMDToolsBoneIdMoveBottom(bpy.types.Operator):
     bl_idname = "mmd_tools_local.bone_id_move_bottom"
     bl_label = "Move Bone ID to Bottom"
     bl_description = "Move active bone to the bottom of bone order"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        root = FnModel.find_root_object(context.object)
+        root = FnModel.find_root_object(context.active_object)
         armature = FnModel.find_armature_object(root)
 
         if not root or not armature:
-            return {'CANCELLED'}
+            return {"CANCELLED"}
 
         active_bone_index = root.mmd_root.active_bone_index
-        if active_bone_index >= len(armature.pose.bones):
-            return {'CANCELLED'}
+        if active_bone_index < 0 or active_bone_index >= len(armature.pose.bones):
+            return {"CANCELLED"}
 
         active_bone = armature.pose.bones[active_bone_index]
+        old_bone_id = active_bone.mmd_bone.bone_id
+        new_bone_id = FnModel.get_max_bone_id(armature.pose.bones)
+        bone_morphs = root.mmd_root.bone_morphs
+        pose_bones = armature.pose.bones
+        FnModel.shift_bone_id(old_bone_id, new_bone_id, bone_morphs, pose_bones)
 
-        # Get the maximum bone ID and add 1 to place at the bottom
-        max_bone_id = FnModel.get_max_bone_id(armature.pose.bones)
-        FnModel.safe_change_bone_id(active_bone, max_bone_id + 1, root.mmd_root.bone_morphs, armature.pose.bones)
-
-        # Refresh UI
-        for area in context.screen.areas:
-            area.tag_redraw()
-
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 class MMDToolsRealignBoneIds(bpy.types.Operator):
     bl_idname = "mmd_tools_local.fix_bone_order"
     bl_label = "Realign Bone IDs"
-    bl_description = "Realign bone IDs to be sequential without gaps and apply additional transforms"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Realign bone IDs to be sequential without gaps. Sorted primarily by hierarchy depth (ensuring parents have lower IDs than children), then by bone_id (valid ones prioritized), then by bone name. Apply additional transforms afterward (Assembly -> Bone button)."
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        root = FnModel.find_root_object(context.object)
-        armature = FnModel.find_armature_object(root)
+        root = FnModel.find_root_object(context.active_object)
+        if not root:
+            return {"CANCELLED"}
 
-        if not root or not armature:
-            return {'CANCELLED'}
+        # Clean invalid bone references first
+        cleaned_count = FnModel.clean_invalid_bone_id_references(root)
+        if cleaned_count > 0:
+            self.report({"INFO"}, f"Cleaned {cleaned_count} invalid bone reference(s).")
+
+        armature = FnModel.find_armature_object(root)
+        if not armature:
+            return {"FINISHED"}
+
+        # Trigger mode switch to sync newly created bones from Edit mode
+        current_mode = armature.mode
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.mode_set(mode=current_mode)
 
         # Migrate bone layers from Blender 3.6 and earlier to bone collections in newer versions
         self.check_and_rename_collections(armature)
@@ -169,19 +178,31 @@ class MMDToolsRealignBoneIds(bpy.types.Operator):
         bone_order_mesh_object = self.find_old_bone_order_mesh_object(root)
         if bone_order_mesh_object:
             self.migrate_from_vertex_groups(bone_order_mesh_object, armature, root)
-        else:
-            # safe realign bone IDs
-            FnModel.realign_bone_ids(armature.pose.bones, 0, root.mmd_root.bone_morphs, armature.pose.bones)
 
-        # Apply additional transformation (Assembly -> Bone button) (Very Slow)
+        # Fix bone order
+        for iteration in range(10):
+            current_state = {}
+            for bone in armature.pose.bones:
+                if not getattr(bone, "is_mmd_shadow_bone", False):
+                    current_state[bone.name] = bone.mmd_bone.bone_id
+
+            FnModel.realign_bone_ids(0, root.mmd_root.bone_morphs, armature.pose.bones)
+
+            new_state = {}
+            for bone in armature.pose.bones:
+                if not getattr(bone, "is_mmd_shadow_bone", False):
+                    new_state[bone.name] = bone.mmd_bone.bone_id
+
+            if current_state == new_state:
+                break
+        else:
+            self.report({"WARNING"}, "Bone order did not converge after 10 iterations")
+
+        # Apply additional transform (Assembly -> Bone button) (Very Slow)
         MigrationFnBone.fix_mmd_ik_limit_override(armature)
         FnBone.apply_additional_transformation(armature)
 
-        # Refresh UI
-        for area in context.screen.areas:
-            area.tag_redraw()
-
-        return {'FINISHED'}
+        return {"FINISHED"}
 
     def check_and_rename_collections(self, armature_object):
         """
@@ -199,7 +220,7 @@ class MMDToolsRealignBoneIds(bpy.types.Operator):
         collection_map = {
             "Layer 1": {"new_name": "mmd_normal", "should_be_shadow": False},
             "Layer 9": {"new_name": BONE_COLLECTION_NAME_SHADOW, "should_be_shadow": True},
-            "Layer 10": {"new_name": BONE_COLLECTION_NAME_DUMMY, "should_be_shadow": True}
+            "Layer 10": {"new_name": BONE_COLLECTION_NAME_DUMMY, "should_be_shadow": True},
         }
 
         # Check if all three collections exist
@@ -217,7 +238,7 @@ class MMDToolsRealignBoneIds(bpy.types.Operator):
             for bone in collection.bones:
                 pose_bone = armature_object.pose.bones.get(bone.name)
                 if pose_bone:
-                    is_shadow = getattr(pose_bone, 'is_mmd_shadow_bone', False)
+                    is_shadow = getattr(pose_bone, "is_mmd_shadow_bone", False)
                     if is_shadow != should_be_shadow:
                         all_conditions_met = False
                         break
@@ -227,7 +248,7 @@ class MMDToolsRealignBoneIds(bpy.types.Operator):
 
         # If all conditions are met, rename the collections
         if all_conditions_met:
-            self.report({'INFO'}, "Converting layer collections to MMD collections")
+            self.report({"INFO"}, "Converting layer collections to MMD collections")
             for old_name, settings in collection_map.items():
                 new_name = settings["new_name"]
                 if old_name in bone_collections and new_name not in bone_collections:
@@ -243,16 +264,16 @@ class MMDToolsRealignBoneIds(bpy.types.Operator):
             return None
 
         for mesh in armature.children:
-            if mesh.type != 'MESH':
+            if mesh.type != "MESH":
                 continue
             for mod in mesh.modifiers:
-                if mod.type == 'ARMATURE' and mod.name == 'mmd_bone_order_override':
+                if mod.type == "ARMATURE" and mod.name == "mmd_bone_order_override":
                     return mesh
         return None
 
     def migrate_from_vertex_groups(self, mesh_object, armature, root):
         """Migrate bone order from vertex groups to bone_id"""
-        self.report({'INFO'}, "Migrating from old vertex group ordering to bone_id system")
+        self.report({"INFO"}, "Migrating from old vertex group ordering to bone_id system")
 
         # Create mapping from bone name to index in vertex_groups
         vg_index_map = {}
@@ -262,8 +283,8 @@ class MMDToolsRealignBoneIds(bpy.types.Operator):
 
         # Assign bone_id based on vertex group index
         next_id = 0
-        for bone in sorted(armature.pose.bones, key=lambda b: vg_index_map.get(b.name, float('inf'))):
-            is_shadow = getattr(bone, 'is_mmd_shadow_bone', False) is True
+        for bone in sorted(armature.pose.bones, key=lambda b: vg_index_map.get(b.name, float("inf"))):
+            is_shadow = getattr(bone, "is_mmd_shadow_bone", False) is True
             if is_shadow:
                 continue
 
@@ -273,11 +294,39 @@ class MMDToolsRealignBoneIds(bpy.types.Operator):
 
         # Rename the mmd_bone_order_override modifier of the mesh
         for modifier in mesh_object.modifiers:
-            if modifier.name == 'mmd_bone_order_override':
-                modifier.name = 'mmd_armature'
+            if modifier.name == "mmd_bone_order_override":
+                modifier.name = "mmd_armature"
                 break
 
-        self.report({'INFO'}, f"Successfully migrated {next_id} bones from vertex groups to bone_id system")
+        self.report({"INFO"}, f"Successfully migrated {next_id} bones from vertex groups to bone_id system")
+
+
+class MMDToolsCleanInvalidBoneIdReferences(bpy.types.Operator):
+    bl_idname = "mmd_tools_local.clean_invalid_bone_id_references"
+    bl_label = "Clean Invalid Bone References"
+    bl_description = "Scans the active MMD model for any references to bone_ids that no longer exist, then cleans them up. This is useful after deleting bones to maintain data integrity."
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return FnModel.find_root_object(context.active_object) is not None
+
+    def execute(self, context):
+        self.report({"INFO"}, "Cleaning invalid bone references...")
+
+        root = FnModel.find_root_object(context.active_object)
+        if not root:
+            self.report({"WARNING"}, "Operation cancelled: No active MMD model found.")
+            return {"CANCELLED"}
+
+        cleaned_count = FnModel.clean_invalid_bone_id_references(root)
+
+        if cleaned_count > 0:
+            self.report({"INFO"}, f"Successfully cleaned or removed {cleaned_count} invalid bone reference(s).")
+        else:
+            self.report({"INFO"}, "No invalid bone references were found.")
+
+        return {"FINISHED"}
 
 
 class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
@@ -297,7 +346,7 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
         valid_bone_count = 0
 
         for bone in armature.pose.bones:
-            is_shadow = getattr(bone, 'is_mmd_shadow_bone', False) is True
+            is_shadow = getattr(bone, "is_mmd_shadow_bone", False) is True
             if is_shadow:
                 continue
 
@@ -341,13 +390,13 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
         # Create index to bone_id mapping
         bone_id_list = []
         for i, bone in enumerate(armature.pose.bones):
-            is_shadow = getattr(bone, 'is_mmd_shadow_bone', False) is True
+            is_shadow = getattr(bone, "is_mmd_shadow_bone", False) is True
             if not is_shadow:
-                bone_id = bone.mmd_bone.bone_id if hasattr(bone.mmd_bone, 'bone_id') else -1
+                bone_id = bone.mmd_bone.bone_id if hasattr(bone.mmd_bone, "bone_id") else -1
                 bone_id_list.append((i, bone_id))
 
         # Sort by bone_id
-        bone_id_list.sort(key=lambda x: x[1] if x[1] >= 0 else float('inf'))
+        bone_id_list.sort(key=lambda x: x[1] if x[1] >= 0 else float("inf"))
 
         # Create order mapping
         for new_idx, (orig_idx, _) in enumerate(bone_id_list):
@@ -359,7 +408,7 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
         r = None
         min_length = None
         for child in target_bone.children:
-            is_shadow = getattr(child, 'is_mmd_shadow_bone', False) is True
+            is_shadow = getattr(child, "is_mmd_shadow_bone", False) is True
             if is_shadow:
                 continue
             if child.bone.use_connect:
@@ -375,33 +424,62 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
         bones = getattr(data, propname)
         bone_count = len(bones)
 
+        helper_funcs = bpy.types.UI_UL_list
+
         # Filter out shadow bones
         filtered_flags = []
         for bone in bones:
-            is_shadow = getattr(bone, 'is_mmd_shadow_bone', False) is True
+            is_shadow = getattr(bone, "is_mmd_shadow_bone", False) is True
             if is_shadow:
                 filtered_flags.append(0)  # Filter out shadow bones
             else:
                 filtered_flags.append(self.bitflag_filter_item)  # Show non-shadow bones
 
-        # Use defined sort order
-        if not self._bone_order_map:
-            # If no sort mapping yet, update once
-            self.update_sorted_bones(data)
+        # Apply name search filter
+        if self.filter_name:
+            filtered_flags = helper_funcs.filter_items_by_name(self.filter_name, self.bitflag_filter_item, bones, "name", reverse=False)
+            # Re-apply shadow bone filter
+            for i, bone in enumerate(bones):
+                is_shadow = getattr(bone, "is_mmd_shadow_bone", False) is True
+                if is_shadow:
+                    filtered_flags[i] = 0
 
+        # Apply invert filter
+        if self.use_filter_invert:
+            for i in range(bone_count):
+                if filtered_flags[i]:
+                    filtered_flags[i] = 0
+                else:
+                    # Only show non-shadow bones when inverted
+                    is_shadow = getattr(bones[i], "is_mmd_shadow_bone", False) is True
+                    if not is_shadow:
+                        filtered_flags[i] = self.bitflag_filter_item
+
+        # Sort items
         ordered_indices = []
-        for i in range(bone_count):
-            if filtered_flags[i]:  # Only sort displayed bones
-                ordered_indices.append(self._bone_order_map.get(i, i))
-            else:
-                ordered_indices.append(i)  # Keep filtered items in original position
+
+        if self.use_filter_sort_alpha:
+            # Sort by name alphabetically
+            ordered_indices = helper_funcs.sort_items_by_name(bones, "name")
+        else:
+            # Sort by bone_id (default)
+            # Use defined sort order
+            if not self._bone_order_map:
+                # If no sort mapping yet, update once
+                self.update_sorted_bones(data)
+
+            for i in range(bone_count):
+                if filtered_flags[i]:  # Only sort displayed bones
+                    ordered_indices.append(self._bone_order_map.get(i, i))
+                else:
+                    ordered_indices.append(i)  # Keep filtered items in original position
 
         return filtered_flags, ordered_indices
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             self._draw_bone_item(layout, item)
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 
@@ -410,7 +488,7 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
         """Draw a single bone item in the UI list"""
         is_shadow = False
         if bone:
-            is_shadow = getattr(bone, 'is_mmd_shadow_bone', False) is True
+            is_shadow = getattr(bone, "is_mmd_shadow_bone", False) is True
 
         if not bone or is_shadow:
             layout.active = False
@@ -423,14 +501,14 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
         has_duplicate = False
         if bone_id >= 0:
             for other_bone in bone.id_data.pose.bones:
-                if other_bone != bone and not getattr(other_bone, 'is_mmd_shadow_bone', False) and other_bone.mmd_bone.bone_id == bone_id:
+                if other_bone != bone and not getattr(other_bone, "is_mmd_shadow_bone", False) and other_bone.mmd_bone.bone_id == bone_id:
                     has_duplicate = True
                     break
 
         count = len(bone.id_data.pose.bones)
         bone_transform_rank = bone_id + bone.mmd_bone.transform_order * count
 
-        row = layout.split(factor=0.45, align=False)
+        row = layout.split(factor=0.4, align=False)
         r0 = row.row()
         r0.label(text=bone.name, translate=False, icon="POSE_HLT" if bone.name in cls._IK_BONES else "BONE_DATA")
         r = r0.row()
@@ -442,7 +520,7 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
         else:
             r.label(text=str(bone_id))
 
-        row_sub = row.split(factor=0.67, align=False)
+        row_sub = row.split(factor=0.5, align=False)
 
         # Display bone relationships
         r = row_sub.row()
@@ -454,7 +532,7 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
             parent_icon = "ERROR"
             if parent_bone_id >= 0:
                 if bone_transform_rank >= (parent_bone_id + bone_parent.mmd_bone.transform_order * count):
-                    parent_icon = "INFO" if bone_id < parent_bone_id else "FILE_PARENT"
+                    parent_icon = "FILE_PARENT"
             r.label(text=str(parent_bone_id), icon=parent_icon)
         else:
             r.label()
@@ -497,7 +575,7 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
             ik_bones_data.append((ik_bone_id, ik_bone, icon))
 
         # Sort by bone_id (similar to the old version's vertex_group index sorting)
-        for bone_id, ik_bone, icon in sorted(ik_bones_data, key=lambda x: x[0] if x[0] >= 0 else float('inf')):
+        for bone_id, ik_bone, icon in sorted(ik_bones_data, key=lambda x: x[0] if x[0] >= 0 else float("inf")):
             r.prop(ik_bone, "mmd_ik_toggle", text=str(bone_id), toggle=True, icon=icon)
 
         # Display transform order and post-dynamics transform
@@ -508,6 +586,9 @@ class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
         else:
             row.prop(mmd_bone, "transform_after_dynamics", text="", toggle=True, icon="BLANK1")
         row.prop(mmd_bone, "transform_order", text="", slider=bool(mmd_bone.transform_order))
+
+        row.prop(bone.bone, "select", text="", emboss=False, icon_only=True, icon="RESTRICT_SELECT_OFF" if bone.select else "RESTRICT_SELECT_ON")
+        row.prop(bone.bone, "hide", text="", emboss=False, icon_only=True)  # auto icon
 
 
 class MMDBoneOrderMenu(bpy.types.Menu):

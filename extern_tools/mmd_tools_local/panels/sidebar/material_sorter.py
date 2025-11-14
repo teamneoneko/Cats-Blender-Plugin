@@ -30,17 +30,17 @@ class MMDMaterialSorter(PT_ProductionPanelBase, bpy.types.Panel):
 
 class mmd_tools_local_UL_Materials(bpy.types.UIList):
     def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname, _index):
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             if item:
                 row = layout.row(align=True)
-                item_prop = getattr(item, "mmd_material")
+                item_prop = item.mmd_material
                 row.prop(item_prop, "name_j", text="", emboss=False, icon="MATERIAL")
                 row.prop(item_prop, "name_e", text="", emboss=True)
             else:
                 layout.label(text="UNSET", translate=False, icon="ERROR")
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 

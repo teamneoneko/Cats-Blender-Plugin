@@ -29,11 +29,7 @@ class MMDTranslationElementType(Enum):
 
 
 class MMDDataHandlerABC(ABC):
-    @classmethod
-    @property
-    @abstractmethod
-    def type_name(cls) -> str:
-        pass
+    type_name: str
 
     @classmethod
     @abstractmethod
@@ -63,7 +59,8 @@ class MMDDataHandlerABC(ABC):
     @classmethod
     @abstractmethod
     def get_names(cls, mmd_translation_element: "MMDTranslationElement") -> Tuple[str, str, str]:
-        """Returns (name, name_j, name_e)"""
+        """Return (name, name_j, name_e)"""
+        pass
 
     @classmethod
     def is_restorable(cls, mmd_translation_element: "MMDTranslationElement") -> bool:
@@ -71,7 +68,7 @@ class MMDDataHandlerABC(ABC):
 
     @classmethod
     def check_data_visible(cls, filter_selected: bool, filter_visible: bool, select: bool, hide: bool) -> bool:
-        return filter_selected and not select or filter_visible and hide
+        return (filter_selected and not select) or (filter_visible and hide)
 
     @classmethod
     def prop_restorable(cls, layout: bpy.types.UILayout, mmd_translation_element: "MMDTranslationElement", prop_name: str, original_value: str, index: int):
@@ -96,10 +93,7 @@ class MMDDataHandlerABC(ABC):
 
 
 class MMDBoneHandler(MMDDataHandlerABC):
-    @classmethod
-    @property
-    def type_name(cls) -> str:
-        return MMDTranslationElementType.BONE.name
+    type_name = MMDTranslationElementType.BONE.name
 
     @classmethod
     def draw_item(cls, layout: bpy.types.UILayout, mmd_translation_element: "MMDTranslationElement", index: int):
@@ -110,18 +104,18 @@ class MMDBoneHandler(MMDDataHandlerABC):
         cls.prop_restorable(prop_row, mmd_translation_element, "name", pose_bone.name, index)
         cls.prop_restorable(prop_row, mmd_translation_element, "name_j", pose_bone.mmd_bone.name_j, index)
         cls.prop_restorable(prop_row, mmd_translation_element, "name_e", pose_bone.mmd_bone.name_e, index)
-        row.prop(pose_bone.bone, "select", text="", emboss=False, icon_only=True, icon="RESTRICT_SELECT_OFF" if pose_bone.bone.select else "RESTRICT_SELECT_ON")
-        row.prop(pose_bone.bone, "hide", text="", emboss=False, icon_only=True, icon="HIDE_ON" if pose_bone.bone.hide else "HIDE_OFF")
+        row.prop(pose_bone.bone, "select", text="", emboss=False, icon_only=True, icon="RESTRICT_SELECT_OFF" if pose_bone.select else "RESTRICT_SELECT_ON")
+        row.prop(pose_bone.bone, "hide", text="", emboss=False, icon_only=True)
 
     @classmethod
     def collect_data(cls, mmd_translation: "MMDTranslation"):
         armature_object: bpy.types.Object = FnModel.find_armature_object(mmd_translation.id_data)
         pose_bone: bpy.types.PoseBone
         for index, pose_bone in enumerate(armature_object.pose.bones):
-            if not any(c.is_visible for c in pose_bone.bone.collections):
+            if pose_bone.bone.hide or (pose_bone.bone.collections and not any(c.is_visible for c in pose_bone.bone.collections)):
                 continue
 
-            mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements.add()
+            mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements.add()
             mmd_translation_element.type = MMDTranslationElementType.BONE.name
             mmd_translation_element.object = armature_object
             mmd_translation_element.data_path = f"pose.bones[{index}]"
@@ -136,14 +130,14 @@ class MMDBoneHandler(MMDDataHandlerABC):
 
     @classmethod
     def update_query(cls, mmd_translation: "MMDTranslation", filter_selected: bool, filter_visible: bool, check_blank_name: Callable[[str, str], bool]):
-        mmd_translation_element: "MMDTranslationElement"
+        mmd_translation_element: MMDTranslationElement
         for index, mmd_translation_element in enumerate(mmd_translation.translation_elements):
             if mmd_translation_element.type != MMDTranslationElementType.BONE.name:
                 continue
 
             pose_bone: bpy.types.PoseBone = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
 
-            if cls.check_data_visible(filter_selected, filter_visible, pose_bone.bone.select, pose_bone.bone.hide):
+            if cls.check_data_visible(filter_selected, filter_visible, pose_bone.select, pose_bone.bone.hide):
                 continue
 
             if check_blank_name(mmd_translation_element.name_j, mmd_translation_element.name_e):
@@ -152,7 +146,7 @@ class MMDBoneHandler(MMDDataHandlerABC):
             if mmd_translation.filter_restorable and not cls.is_restorable(mmd_translation_element):
                 continue
 
-            mmd_translation_element_index: "MMDTranslationElementIndex" = mmd_translation.filtered_translation_element_indices.add()
+            mmd_translation_element_index: MMDTranslationElementIndex = mmd_translation.filtered_translation_element_indices.add()
             mmd_translation_element_index.value = index
 
     @classmethod
@@ -172,14 +166,11 @@ class MMDBoneHandler(MMDDataHandlerABC):
 
 
 class MMDMorphHandler(MMDDataHandlerABC):
-    @classmethod
-    @property
-    def type_name(cls) -> str:
-        return MMDTranslationElementType.MORPH.name
+    type_name = MMDTranslationElementType.MORPH.name
 
     @classmethod
     def draw_item(cls, layout: bpy.types.UILayout, mmd_translation_element: "MMDTranslationElement", index: int):
-        morph: "_MorphBase" = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
+        morph: _MorphBase = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
         row = layout.row(align=True)
         row.label(text="", icon="SHAPEKEY_DATA")
         prop_row = row.row()
@@ -194,7 +185,7 @@ class MMDMorphHandler(MMDDataHandlerABC):
     @classmethod
     def collect_data(cls, mmd_translation: "MMDTranslation"):
         root_object: bpy.types.Object = mmd_translation.id_data
-        mmd_root: "MMDRoot" = root_object.mmd_root
+        mmd_root: MMDRoot = root_object.mmd_root
 
         for morphs_name, morphs in {
             "material_morphs": mmd_root.material_morphs,
@@ -203,9 +194,9 @@ class MMDMorphHandler(MMDDataHandlerABC):
             "vertex_morphs": mmd_root.vertex_morphs,
             "group_morphs": mmd_root.group_morphs,
         }.items():
-            morph: "_MorphBase"
+            morph: _MorphBase
             for index, morph in enumerate(morphs):
-                mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements.add()
+                mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements.add()
                 mmd_translation_element.type = MMDTranslationElementType.MORPH.name
                 mmd_translation_element.object = root_object
                 mmd_translation_element.data_path = f"mmd_root.{morphs_name}[{index}]"
@@ -224,24 +215,24 @@ class MMDMorphHandler(MMDDataHandlerABC):
 
     @classmethod
     def update_query(cls, mmd_translation: "MMDTranslation", filter_selected: bool, filter_visible: bool, check_blank_name: Callable[[str, str], bool]):
-        mmd_translation_element: "MMDTranslationElement"
+        mmd_translation_element: MMDTranslationElement
         for index, mmd_translation_element in enumerate(mmd_translation.translation_elements):
             if mmd_translation_element.type != MMDTranslationElementType.MORPH.name:
                 continue
 
-            morph: "_MorphBase" = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
+            morph: _MorphBase = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
             if check_blank_name(morph.name, morph.name_e):
                 continue
 
             if mmd_translation.filter_restorable and not cls.is_restorable(mmd_translation_element):
                 continue
 
-            mmd_translation_element_index: "MMDTranslationElementIndex" = mmd_translation.filtered_translation_element_indices.add()
+            mmd_translation_element_index: MMDTranslationElementIndex = mmd_translation.filtered_translation_element_indices.add()
             mmd_translation_element_index.value = index
 
     @classmethod
     def set_names(cls, mmd_translation_element: "MMDTranslationElement", name: Optional[str], name_j: Optional[str], name_e: Optional[str]):
-        morph: "_MorphBase" = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
+        morph: _MorphBase = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
         if name is not None:
             morph.name = name
         if name_e is not None:
@@ -249,15 +240,12 @@ class MMDMorphHandler(MMDDataHandlerABC):
 
     @classmethod
     def get_names(cls, mmd_translation_element: "MMDTranslationElement") -> Tuple[str, str, str]:
-        morph: "_MorphBase" = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
+        morph: _MorphBase = mmd_translation_element.object.path_resolve(mmd_translation_element.data_path)
         return (morph.name, "", morph.name_e)
 
 
 class MMDMaterialHandler(MMDDataHandlerABC):
-    @classmethod
-    @property
-    def type_name(cls) -> str:
-        return MMDTranslationElementType.MATERIAL.name
+    type_name = MMDTranslationElementType.MATERIAL.name
 
     @classmethod
     def draw_item(cls, layout: bpy.types.UILayout, mmd_translation_element: "MMDTranslationElement", index: int):
@@ -270,7 +258,7 @@ class MMDMaterialHandler(MMDDataHandlerABC):
         cls.prop_restorable(prop_row, mmd_translation_element, "name_j", material.mmd_material.name_j, index)
         cls.prop_restorable(prop_row, mmd_translation_element, "name_e", material.mmd_material.name_e, index)
         row.prop(mesh_object, "select", text="", emboss=False, icon_only=True, icon="RESTRICT_SELECT_OFF" if mesh_object.select_get() else "RESTRICT_SELECT_ON")
-        row.prop(mesh_object, "hide", text="", emboss=False, icon_only=True, icon="HIDE_ON" if mesh_object.hide_get() else "HIDE_OFF")
+        row.prop(mesh_object, "hide", text="", emboss=False, icon_only=True)
 
     MATERIAL_DATA_PATH_EXTRACT = re.compile(r"data\.materials\[(?P<index>\d*)\]")
 
@@ -289,7 +277,7 @@ class MMDMaterialHandler(MMDDataHandlerABC):
                 if not hasattr(material, "mmd_material"):
                     continue
 
-                mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements.add()
+                mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements.add()
                 mmd_translation_element.type = MMDTranslationElementType.MATERIAL.name
                 mmd_translation_element.object = mesh_object
                 mmd_translation_element.data_path = f"data.materials[{index}]"
@@ -310,7 +298,7 @@ class MMDMaterialHandler(MMDDataHandlerABC):
 
     @classmethod
     def update_query(cls, mmd_translation: "MMDTranslation", filter_selected: bool, filter_visible: bool, check_blank_name: Callable[[str, str], bool]):
-        mmd_translation_element: "MMDTranslationElement"
+        mmd_translation_element: MMDTranslationElement
         for index, mmd_translation_element in enumerate(mmd_translation.translation_elements):
             if mmd_translation_element.type != MMDTranslationElementType.MATERIAL.name:
                 continue
@@ -326,7 +314,7 @@ class MMDMaterialHandler(MMDDataHandlerABC):
             if mmd_translation.filter_restorable and not cls.is_restorable(mmd_translation_element):
                 continue
 
-            mmd_translation_element_index: "MMDTranslationElementIndex" = mmd_translation.filtered_translation_element_indices.add()
+            mmd_translation_element_index: MMDTranslationElementIndex = mmd_translation.filtered_translation_element_indices.add()
             mmd_translation_element_index.value = index
 
     @classmethod
@@ -346,10 +334,7 @@ class MMDMaterialHandler(MMDDataHandlerABC):
 
 
 class MMDDisplayHandler(MMDDataHandlerABC):
-    @classmethod
-    @property
-    def type_name(cls) -> str:
-        return MMDTranslationElementType.DISPLAY.name
+    type_name = MMDTranslationElementType.DISPLAY.name
 
     @classmethod
     def draw_item(cls, layout: bpy.types.UILayout, mmd_translation_element: "MMDTranslationElement", index: int):
@@ -362,7 +347,7 @@ class MMDDisplayHandler(MMDDataHandlerABC):
         cls.prop_disabled(prop_row, mmd_translation_element, "name")
         cls.prop_disabled(prop_row, mmd_translation_element, "name_e")
         row.prop(mmd_translation_element.object, "select", text="", emboss=False, icon_only=True, icon="RESTRICT_SELECT_OFF" if mmd_translation_element.object.select_get() else "RESTRICT_SELECT_ON")
-        row.prop(mmd_translation_element.object, "hide", text="", emboss=False, icon_only=True, icon="HIDE_ON" if mmd_translation_element.object.hide_get() else "HIDE_OFF")
+        row.prop(mmd_translation_element.object, "hide", text="", emboss=False, icon_only=True)
 
     DISPLAY_DATA_PATH_EXTRACT = re.compile(r"data\.collections\[(?P<index>\d*)\]")
 
@@ -371,7 +356,7 @@ class MMDDisplayHandler(MMDDataHandlerABC):
         armature_object: bpy.types.Object = FnModel.find_armature_object(mmd_translation.id_data)
         bone_collection: bpy.types.BoneCollection
         for index, bone_collection in enumerate(armature_object.data.collections):
-            mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements.add()
+            mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements.add()
             mmd_translation_element.type = MMDTranslationElementType.DISPLAY.name
             mmd_translation_element.object = armature_object
             mmd_translation_element.data_path = f"data.collections[{index}]"
@@ -392,7 +377,7 @@ class MMDDisplayHandler(MMDDataHandlerABC):
 
     @classmethod
     def update_query(cls, mmd_translation: "MMDTranslation", filter_selected: bool, filter_visible: bool, check_blank_name: Callable[[str, str], bool]):
-        mmd_translation_element: "MMDTranslationElement"
+        mmd_translation_element: MMDTranslationElement
         for index, mmd_translation_element in enumerate(mmd_translation.translation_elements):
             if mmd_translation_element.type != MMDTranslationElementType.DISPLAY.name:
                 continue
@@ -408,7 +393,7 @@ class MMDDisplayHandler(MMDDataHandlerABC):
             if mmd_translation.filter_restorable and not cls.is_restorable(mmd_translation_element):
                 continue
 
-            mmd_translation_element_index: "MMDTranslationElementIndex" = mmd_translation.filtered_translation_element_indices.add()
+            mmd_translation_element_index: MMDTranslationElementIndex = mmd_translation.filtered_translation_element_indices.add()
             mmd_translation_element_index.value = index
 
     @classmethod
@@ -424,10 +409,7 @@ class MMDDisplayHandler(MMDDataHandlerABC):
 
 
 class MMDPhysicsHandler(MMDDataHandlerABC):
-    @classmethod
-    @property
-    def type_name(cls) -> str:
-        return MMDTranslationElementType.PHYSICS.name
+    type_name = MMDTranslationElementType.PHYSICS.name
 
     @classmethod
     def draw_item(cls, layout: bpy.types.UILayout, mmd_translation_element: "MMDTranslationElement", index: int):
@@ -447,7 +429,7 @@ class MMDPhysicsHandler(MMDDataHandlerABC):
         cls.prop_restorable(prop_row, mmd_translation_element, "name_j", mmd_object.name_j, index)
         cls.prop_restorable(prop_row, mmd_translation_element, "name_e", mmd_object.name_e, index)
         row.prop(obj, "select", text="", emboss=False, icon_only=True, icon="RESTRICT_SELECT_OFF" if obj.select_get() else "RESTRICT_SELECT_ON")
-        row.prop(obj, "hide", text="", emboss=False, icon_only=True, icon="HIDE_ON" if obj.hide_get() else "HIDE_OFF")
+        row.prop(obj, "hide", text="", emboss=False, icon_only=True)
 
     @classmethod
     def collect_data(cls, mmd_translation: "MMDTranslation"):
@@ -456,7 +438,7 @@ class MMDPhysicsHandler(MMDDataHandlerABC):
 
         obj: bpy.types.Object
         for obj in model.rigidBodies():
-            mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements.add()
+            mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements.add()
             mmd_translation_element.type = MMDTranslationElementType.PHYSICS.name
             mmd_translation_element.object = obj
             mmd_translation_element.data_path = "mmd_rigid"
@@ -466,7 +448,7 @@ class MMDPhysicsHandler(MMDDataHandlerABC):
 
         obj: bpy.types.Object
         for obj in model.joints():
-            mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements.add()
+            mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements.add()
             mmd_translation_element.type = MMDTranslationElementType.PHYSICS.name
             mmd_translation_element.object = obj
             mmd_translation_element.data_path = "mmd_joint"
@@ -480,7 +462,7 @@ class MMDPhysicsHandler(MMDDataHandlerABC):
 
     @classmethod
     def update_query(cls, mmd_translation: "MMDTranslation", filter_selected: bool, filter_visible: bool, check_blank_name: Callable[[str, str], bool]):
-        mmd_translation_element: "MMDTranslationElement"
+        mmd_translation_element: MMDTranslationElement
         for index, mmd_translation_element in enumerate(mmd_translation.translation_elements):
             if mmd_translation_element.type != MMDTranslationElementType.PHYSICS.name:
                 continue
@@ -500,7 +482,7 @@ class MMDPhysicsHandler(MMDDataHandlerABC):
             if mmd_translation.filter_restorable and not cls.is_restorable(mmd_translation_element):
                 continue
 
-            mmd_translation_element_index: "MMDTranslationElementIndex" = mmd_translation.filtered_translation_element_indices.add()
+            mmd_translation_element_index: MMDTranslationElementIndex = mmd_translation.filtered_translation_element_indices.add()
             mmd_translation_element_index.value = index
 
     @classmethod
@@ -532,10 +514,7 @@ class MMDPhysicsHandler(MMDDataHandlerABC):
 
 
 class MMDInfoHandler(MMDDataHandlerABC):
-    @classmethod
-    @property
-    def type_name(cls) -> str:
-        return MMDTranslationElementType.INFO.name
+    type_name = MMDTranslationElementType.INFO.name
 
     TYPE_TO_ICONS = {
         "EMPTY": "EMPTY_DATA",
@@ -553,7 +532,7 @@ class MMDInfoHandler(MMDDataHandlerABC):
         cls.prop_disabled(prop_row, mmd_translation_element, "name")
         cls.prop_disabled(prop_row, mmd_translation_element, "name_e")
         row.prop(info_object, "select", text="", emboss=False, icon_only=True, icon="RESTRICT_SELECT_OFF" if info_object.select_get() else "RESTRICT_SELECT_ON")
-        row.prop(info_object, "hide", text="", emboss=False, icon_only=True, icon="HIDE_ON" if info_object.hide_get() else "HIDE_OFF")
+        row.prop(info_object, "hide", text="", emboss=False, icon_only=True)
 
     @classmethod
     def collect_data(cls, mmd_translation: "MMDTranslation"):
@@ -564,7 +543,7 @@ class MMDInfoHandler(MMDDataHandlerABC):
             info_objects.append(armature_object)
 
         for info_object in itertools.chain(info_objects, FnModel.iterate_mesh_objects(root_object)):
-            mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements.add()
+            mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements.add()
             mmd_translation_element.type = MMDTranslationElementType.INFO.name
             mmd_translation_element.object = info_object
             mmd_translation_element.data_path = ""
@@ -578,7 +557,7 @@ class MMDInfoHandler(MMDDataHandlerABC):
 
     @classmethod
     def update_query(cls, mmd_translation: "MMDTranslation", filter_selected: bool, filter_visible: bool, check_blank_name: Callable[[str, str], bool]):
-        mmd_translation_element: "MMDTranslationElement"
+        mmd_translation_element: MMDTranslationElement
         for index, mmd_translation_element in enumerate(mmd_translation.translation_elements):
             if mmd_translation_element.type != MMDTranslationElementType.INFO.name:
                 continue
@@ -593,7 +572,7 @@ class MMDInfoHandler(MMDDataHandlerABC):
             if mmd_translation.filter_restorable and not cls.is_restorable(mmd_translation_element):
                 continue
 
-            mmd_translation_element_index: "MMDTranslationElementIndex" = mmd_translation.filtered_translation_element_indices.add()
+            mmd_translation_element_index: MMDTranslationElementIndex = mmd_translation.filtered_translation_element_indices.add()
             mmd_translation_element_index.value = index
 
     @classmethod
@@ -623,10 +602,10 @@ MMD_DATA_TYPE_TO_HANDLERS: Dict[str, MMDDataHandlerABC] = {h.type_name: h for h 
 class FnTranslations:
     @staticmethod
     def apply_translations(root_object: bpy.types.Object):
-        mmd_translation: "MMDTranslation" = root_object.mmd_root.translation
-        mmd_translation_element_index: "MMDTranslationElementIndex"
+        mmd_translation: MMDTranslation = root_object.mmd_root.translation
+        mmd_translation_element_index: MMDTranslationElementIndex
         for mmd_translation_element_index in mmd_translation.filtered_translation_element_indices:
-            mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements[mmd_translation_element_index.value]
+            mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements[mmd_translation_element_index.value]
             handler: MMDDataHandlerABC = MMD_DATA_TYPE_TO_HANDLERS[mmd_translation_element.type]
             name, name_j, name_e = handler.get_names(mmd_translation_element)
             handler.set_names(
@@ -638,7 +617,7 @@ class FnTranslations:
 
     @staticmethod
     def execute_translation_batch(root_object: bpy.types.Object) -> Tuple[Dict[str, str], Optional[bpy.types.Text]]:
-        mmd_translation: "MMDTranslation" = root_object.mmd_root.translation
+        mmd_translation: MMDTranslation = root_object.mmd_root.translation
         batch_operation_script = mmd_translation.batch_operation_script
         if not batch_operation_script:
             return ({}, None)
@@ -653,9 +632,9 @@ class FnTranslations:
         batch_operation_script_ast = compile(mmd_translation.batch_operation_script, "<string>", "eval")
         batch_operation_target: str = mmd_translation.batch_operation_target
 
-        mmd_translation_element_index: "MMDTranslationElementIndex"
+        mmd_translation_element_index: MMDTranslationElementIndex
         for mmd_translation_element_index in mmd_translation.filtered_translation_element_indices:
-            mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements[mmd_translation_element_index.value]
+            mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements[mmd_translation_element_index.value]
 
             handler: MMDDataHandlerABC = MMD_DATA_TYPE_TO_HANDLERS[mmd_translation_element.type]
 
@@ -680,7 +659,7 @@ class FnTranslations:
                         "org_name_j": org_name_j,
                         "org_name_e": org_name_e,
                     },
-                )
+                ),
             )
 
             if batch_operation_target == "BLENDER":
@@ -697,8 +676,8 @@ class FnTranslations:
         if mmd_translation.filtered_translation_element_indices_active_index < 0:
             return
 
-        mmd_translation_element_index: "MMDTranslationElementIndex" = mmd_translation.filtered_translation_element_indices[mmd_translation.filtered_translation_element_indices_active_index]
-        mmd_translation_element: "MMDTranslationElement" = mmd_translation.translation_elements[mmd_translation_element_index.value]
+        mmd_translation_element_index: MMDTranslationElementIndex = mmd_translation.filtered_translation_element_indices[mmd_translation.filtered_translation_element_indices_active_index]
+        mmd_translation_element: MMDTranslationElement = mmd_translation.translation_elements[mmd_translation_element_index.value]
 
         MMD_DATA_TYPE_TO_HANDLERS[mmd_translation_element.type].update_index(mmd_translation_element)
 
@@ -720,7 +699,7 @@ class FnTranslations:
         filter_visible: bool = mmd_translation.filter_visible
 
         def check_blank_name(name_j: str, name_e: str) -> bool:
-            return filter_japanese_blank and name_j or filter_english_blank and name_e
+            return (filter_japanese_blank and name_j) or (filter_english_blank and name_e)
 
         for handler in MMD_DATA_HANDLERS:
             if handler.type_name in mmd_translation.filter_types:

@@ -88,7 +88,10 @@ def _set_size(prop, value):
     mesh = obj.data
     rb = obj.rigid_body
 
-    if len(mesh.vertices) == 0 or rb is None or rb.collision_shape != shape:
+    current_size = FnRigidBody.get_rigid_body_size(obj)
+    is_zero_size = all(abs(s) < 1e-6 for s in current_size)
+
+    if len(mesh.vertices) == 0 or rb is None or rb.collision_shape != shape or is_zero_size:
         if shape == "SPHERE":
             bpyutils.makeSphere(
                 radius=value[0],

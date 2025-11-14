@@ -30,6 +30,11 @@ class MMDMorphToolsPanel(PT_ProductionPanelBase, bpy.types.Panel):
         row.prop(mmd_root, "active_morph_type", expand=True)
         morph_type = mmd_root.active_morph_type
 
+        grid = col.grid_flow(row_major=True, align=False)
+        row = grid.row(align=True)
+        row.prop(mmd_root, "show_japanese_name", toggle=True)
+        row.prop(mmd_root, "show_english_name", toggle=True)
+
         c = col.column(align=True)
         row = c.row()
         row.template_list("mmd_tools_local_UL_Morphs", "", mmd_root, morph_type, mmd_root, "active_morph")
@@ -59,7 +64,7 @@ class MMDMorphToolsPanel(PT_ProductionPanelBase, bpy.types.Panel):
             )
             row.label(text="Morph Settings")
             if mmd_root.morph_panel_show_settings:
-                draw_func = getattr(self, "_draw_%s_data" % morph_type[:-7], None)
+                draw_func = getattr(self, f"_draw_{morph_type[:-7]}_data", None)
                 if draw_func:
                     draw_func(context, rig, col, morph)
 
@@ -111,7 +116,7 @@ class MMDMorphToolsPanel(PT_ProductionPanelBase, bpy.types.Panel):
         c_mat.prop_search(data, "material", related_mesh or bpy.data, "materials")
 
         base_mat_name = data.material
-        if "_temp" in base_mat_name:
+        if base_mat_name and "_temp" in base_mat_name:
             col.label(text="This is not a valid base material", icon="ERROR")
             return
 
@@ -182,6 +187,9 @@ class MMDMorphToolsPanel(PT_ProductionPanelBase, bpy.types.Panel):
         row.operator(operators_morph.ApplyBoneMorph.bl_idname, text="Apply")
         row.operator(operators_morph.ClearBoneMorphView.bl_idname, text="Clear")
 
+        row = col.row(align=True)
+        row.operator("mmd_tools_local.convert_bone_morph_to_vertex_morph", text="Convert To Vertex Morph", icon="SHAPEKEY_DATA")
+
         col.label(text=bpy.app.translations.pgettext_iface("Bone Offsets (%d)") % len(morph.data))
         data = self._template_morph_offset_list(col, morph, "mmd_tools_local_UL_BoneMorphOffsets")
         if data is None:
@@ -223,7 +231,7 @@ class MMDMorphToolsPanel(PT_ProductionPanelBase, bpy.types.Panel):
 
     def _draw_group_data(self, context, rig, col, morph):
         row = col.row(align=True)
-        row.operator("mmd_tools_local.convert_group_morph_to_vertex_morph", text="Merge Group Vertex Morphs", icon="SHAPEKEY_DATA")
+        row.operator("mmd_tools_local.convert_group_morph_to_vertex_morph", text="Convert To Vertex Morph", icon="SHAPEKEY_DATA")
 
         col.label(text=bpy.app.translations.pgettext_iface("Group Offsets (%d)") % len(morph.data))
         item = self._template_morph_offset_list(col, morph, "mmd_tools_local_UL_GroupMorphOffsets")
@@ -237,71 +245,91 @@ class MMDMorphToolsPanel(PT_ProductionPanelBase, bpy.types.Panel):
 
 
 class mmd_tools_local_UL_Morphs(bpy.types.UIList):
-    def draw_item(self, _context, layout, data, item, icon, _active_data, _active_propname, _index):
+    def draw_item(self, context, layout, data, item, icon, _active_data, _active_propname, _index):
         mmd_root = data
-        if self.layout_type in {"DEFAULT"}:
-            row = layout.split(factor=0.4, align=True)
-            row.prop(item, "name", text="", emboss=False, icon="SHAPEKEY_DATA")
-            row = row.split(factor=0.6, align=True)
-            row.prop(item, "name_e", text="", emboss=True)
-            row = row.row(align=True)
-            row.prop(item, "category", text="", emboss=False)
+        if self.layout_type == "DEFAULT":
+            # main row
+            row = layout.row(align=True)
+
+            # Left part
+            info_split = row.split(factor=0.7, align=True)
+            left_row = info_split.row(align=True)
+            if mmd_root.show_japanese_name:
+                left_row.prop(item, "name", text="", emboss=False, icon="SHAPEKEY_DATA")
+            if mmd_root.show_english_name:
+                left_row.prop(item, "name_e", text="", emboss=True)
+
+            # Morph category
+            cat_row = info_split.row(align=True)
+            cat_row.prop(item, "category", text="", emboss=False)
+
+            # Facial Frame
             frame_facial = mmd_root.display_item_frames.get("表情")
             morph_item = frame_facial.data.get(item.name) if frame_facial else None
             if morph_item is None:
-                row.label(icon="INFO")
+                cat_row.label(icon="INFO")
             elif morph_item.morph_type != mmd_root.active_morph_type:
-                row.label(icon="SHAPEKEY_DATA")
+                cat_row.label(icon="SHAPEKEY_DATA")
             else:
-                row.label(icon="BLANK1")
+                cat_row.label(icon="BLANK1")
+
+            # Value Slider
+            slider_row = row.row(align=True)
+            root = FnModel.find_root_object(context.active_object)
+            if root:
+                rig = Model(root)
+                slider = rig.morph_slider.get(item.name)
+                if slider:
+                    slider_row.prop(slider, "value", text="", slider=True)
+
             if isinstance(item, MaterialMorph) and any(not d.material for d in item.data):
                 row.label(icon="TEMP")
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 
 
 class mmd_tools_local_UL_MaterialMorphOffsets(bpy.types.UIList):
     def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname, _index):
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             material = item.material
             layout.label(text=material or "All Materials", translate=False, icon="MATERIAL")
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 
 
 class mmd_tools_local_UL_UVMorphOffsets(bpy.types.UIList):
     def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname, _index):
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             layout.label(text=str(item.index), translate=False, icon="MESH_DATA")
             layout.prop(item, "offset", text="", emboss=False, slider=True)
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 
 
 class mmd_tools_local_UL_BoneMorphOffsets(bpy.types.UIList):
     def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname, _index):
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             layout.prop(item, "bone", text="", emboss=False, icon="BONE_DATA")
             FnDraw.draw_bone_special(layout, FnModel.find_armature_object(item.id_data), item.bone)
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 
 
 class mmd_tools_local_UL_GroupMorphOffsets(bpy.types.UIList):
     def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname, _index):
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             row = layout.split(factor=0.5, align=True)
             row.prop(item, "name", text="", emboss=False, icon="SHAPEKEY_DATA")
             row = row.row(align=True)
@@ -310,9 +338,9 @@ class mmd_tools_local_UL_GroupMorphOffsets(bpy.types.UIList):
                 row.prop(item, "factor", text="", emboss=False, slider=True)
             else:
                 row.label(icon="ERROR")
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 

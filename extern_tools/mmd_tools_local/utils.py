@@ -4,14 +4,16 @@
 import logging
 import os
 import re
+import string
 from typing import Callable, Optional, Set
 
 import bpy
+import numpy as np
 
 from .bpyutils import FnContext
 
 
-## 指定したオブジェクトのみを選択状態かつアクティブにする
+# 指定したオブジェクトのみを選択状態かつアクティブにする
 def selectAObject(obj):
     try:
         bpy.ops.object.mode_set(mode="OBJECT")
@@ -22,7 +24,7 @@ def selectAObject(obj):
     FnContext.set_active_object(FnContext.ensure_context(), obj)
 
 
-## 現在のモードを指定したオブジェクトのEdit Modeに変更する
+# 現在のモードを指定したオブジェクトのEdit Modeに変更する
 def enterEditMode(obj):
     selectAObject(obj)
     if obj.mode != "EDIT":
@@ -41,8 +43,8 @@ def setParentToBone(obj, parent, bone_name):
 def selectSingleBone(context, armature, bone_name, reset_pose=False):
     try:
         bpy.ops.object.mode_set(mode="OBJECT")
-    except:
-        pass
+    except Exception as e:
+        logging.warning(f"Failed to set object mode: {e}")
     for i in context.selected_objects:
         i.select_set(False)
     FnContext.set_active_object(context, armature)
@@ -50,21 +52,20 @@ def selectSingleBone(context, armature, bone_name, reset_pose=False):
     if reset_pose:
         for p_bone in armature.pose.bones:
             p_bone.matrix_basis.identity()
-    armature_bones: bpy.types.ArmatureBones = armature.data.bones
-    i: bpy.types.Bone
-    for i in armature_bones:
-        i.select = i.name == bone_name
-        i.select_head = i.select_tail = i.select
-        if i.select:
-            armature_bones.active = i
-            i.hide = False
+
+    for p_bone in armature.pose.bones:
+        is_target = p_bone.name == bone_name
+        p_bone.select = is_target
+        if is_target:
+            armature.data.bones.active = p_bone.bone
+            p_bone.bone.hide = False
 
 
-__CONVERT_NAME_TO_L_REGEXP = re.compile("^(.*)左(.*)$")
-__CONVERT_NAME_TO_R_REGEXP = re.compile("^(.*)右(.*)$")
+__CONVERT_NAME_TO_L_REGEXP = re.compile(r"^(.*)左(.*)$")
+__CONVERT_NAME_TO_R_REGEXP = re.compile(r"^(.*)右(.*)$")
 
 
-## 日本語で左右を命名されている名前をblender方式のL(R)に変更する
+# 日本語で左右を命名されている名前をblender方式のL(R)に変更する
 def convertNameToLR(name, use_underscore=False):
     m = __CONVERT_NAME_TO_L_REGEXP.match(name)
     delimiter = "_" if use_underscore else "."
@@ -92,7 +93,7 @@ def convertLRToName(name):
     return name
 
 
-## src_vertex_groupのWeightをdest_vertex_groupにaddする
+# src_vertex_groupのWeightをdest_vertex_groupにaddする
 def mergeVertexGroup(meshObj, src_vertex_group_name, dest_vertex_group_name):
     mesh = meshObj.data
     src_vertex_group = meshObj.vertex_groups[src_vertex_group_name]
@@ -107,40 +108,70 @@ def mergeVertexGroup(meshObj, src_vertex_group_name, dest_vertex_group_name):
             pass
 
 
-def separateByMaterials(meshObj: bpy.types.Object):
-    if len(meshObj.data.materials) < 2:
+def separateByMaterials(meshObj: bpy.types.Object, keep_normals: bool = False):
+    meshData = meshObj.data
+    if len(meshData.materials) < 2:
         selectAObject(meshObj)
         return
-    matrix_parent_inverse = meshObj.matrix_parent_inverse.copy()
-    prev_parent = meshObj.parent
-    dummy_parent = bpy.data.objects.new(name="tmp", object_data=None)
-    meshObj.parent = dummy_parent
-    meshObj.active_shape_key_index = 0
+
+    dummy_parent = None
     try:
-        enterEditMode(meshObj)
-        bpy.ops.mesh.select_all(action="SELECT")
-        bpy.ops.mesh.separate(type="MATERIAL")
+        dummy_parent = bpy.data.objects.new(name="tmp", object_data=None)
+        matrix_parent_inverse = meshObj.matrix_parent_inverse.copy()
+        prev_parent = meshObj.parent
+        meshObj.parent = dummy_parent
+        meshObj.active_shape_key_index = 0
+        mmd_normal_name = None  # To avoid conflict ("mmd_normal.001", etc.)
+        if keep_normals:
+            existing_custom_normal = meshData.attributes.get("custom_normal")
+            if existing_custom_normal:
+                if existing_custom_normal.data_type == "INT16_2D":
+                    normals_data = np.empty(len(meshData.loops) * 2, dtype=np.int16)
+                    existing_custom_normal.data.foreach_get("value", normals_data)
+                    mmd_normal = meshData.attributes.new("mmd_normal", "INT16_2D", "CORNER")
+                    mmd_normal_name = mmd_normal.name
+                    mmd_normal.data.foreach_set("value", normals_data)
+                else:
+                    raise TypeError(f"Unsupported custom_normal data type: '{existing_custom_normal.data_type}'. Supported types: 'INT16_2D'")
+
+        try:
+            enterEditMode(meshObj)
+            bpy.ops.mesh.separate(type="MATERIAL")
+        finally:
+            bpy.ops.object.mode_set(mode="OBJECT")
+
+        for i in dummy_parent.children:
+            materials = i.data.materials
+            i.name = getattr(materials[0], "name", "None") if len(materials) else "None"
+            i.parent = prev_parent
+            i.matrix_parent_inverse = matrix_parent_inverse
+
+            if keep_normals and mmd_normal_name:
+                mmd_normal = i.data.attributes.get(mmd_normal_name)
+                if mmd_normal:
+                    if mmd_normal.data_type == "INT16_2D":
+                        normals_data = np.empty(len(i.data.loops) * 2, dtype=np.int16)
+                        mmd_normal.data.foreach_get("value", normals_data)
+                        custom_normal_attr = i.data.attributes.get("custom_normal")
+                        if not custom_normal_attr:
+                            custom_normal_attr = i.data.attributes.new("custom_normal", "INT16_2D", "CORNER")
+                        custom_normal_attr.data.foreach_set("value", normals_data)
+                    else:
+                        raise TypeError(f"Unsupported custom_normal data type: '{mmd_normal.data_type}'. Supported types: 'INT16_2D'")
+                    i.data.attributes.remove(mmd_normal)
     finally:
-        bpy.ops.object.mode_set(mode="OBJECT")
-    for i in dummy_parent.children:
-        materials = i.data.materials
-        i.name = getattr(materials[0], "name", "None") if len(materials) else "None"
-        i.parent = prev_parent
-        i.matrix_parent_inverse = matrix_parent_inverse
-    bpy.data.objects.remove(dummy_parent)
+        if dummy_parent and dummy_parent.name in bpy.data.objects:
+            bpy.data.objects.remove(dummy_parent)
 
 
 def clearUnusedMeshes():
-    meshes_to_delete = []
-    for mesh in bpy.data.meshes:
-        if mesh.users == 0:
-            meshes_to_delete.append(mesh)
+    meshes_to_delete = [mesh for mesh in bpy.data.meshes if mesh.users == 0]
 
     for mesh in meshes_to_delete:
         bpy.data.meshes.remove(mesh)
 
 
-## Boneのカスタムプロパティにname_jが存在する場合、name_jの値を
+# Boneのカスタムプロパティにname_jが存在する場合、name_jの値を
 # それ以外の場合は通常のbone名をキーとしたpose_boneへの辞書を作成
 def makePmxBoneMap(armObj):
     # Maintain backward compatibility with mmd_tools_local v0.4.x or older.
@@ -151,7 +182,7 @@ __REMOVE_PREFIX_DIGITS_REGEXP = re.compile(r"\.\d{1,}$")
 
 
 def unique_name(name: str, used_names: Set[str]) -> str:
-    """Helper function for storing unique names.
+    """Generate a unique name from the given name.
     This function is a limited and simplified version of bpy_extras.io_utils.unique_name.
 
     Args:
@@ -173,11 +204,9 @@ def unique_name(name: str, used_names: Set[str]) -> str:
 
 def int2base(x, base, width=0):
     """
-    Method to convert an int to a base
+    Convert an int to a base
     Source: http://stackoverflow.com/questions/2267362
     """
-    import string
-
     digs = string.digits + string.ascii_uppercase
     assert 2 <= base <= len(digs)
     digits, negtive = "", False
@@ -220,6 +249,7 @@ def saferelpath(path, start, strategy="inside"):
             return ".." + os.sep + os.path.basename(path)
 
     return os.path.relpath(path, start)
+
 
 class ItemOp:
     @staticmethod
@@ -271,7 +301,7 @@ class ItemMoveOp:
         if index < index_min:
             items.move(index, index_min)
             return index_min
-        elif index > index_max:
+        if index > index_max:
             items.move(index, index_max)
             return index_max
 
@@ -291,7 +321,7 @@ class ItemMoveOp:
 
 
 def deprecated(deprecated_in: Optional[str] = None, details: Optional[str] = None):
-    """Decorator to mark a function as deprecated.
+    """Mark a function as deprecated.
     Args:
         deprecated_in (Optional[str]): Version in which the function was deprecated.
         details (Optional[str]): Additional details about the deprecation.
@@ -310,7 +340,7 @@ def deprecated(deprecated_in: Optional[str] = None, details: Optional[str] = Non
 
 
 def warn_deprecation(function_name: str, deprecated_in: Optional[str] = None, details: Optional[str] = None) -> None:
-    """Reports a deprecation warning.
+    """Report a deprecation warning.
     Args:
         function_name (str): Name of the deprecated function.
         deprecated_in (Optional[str]): Version in which the function was deprecated.

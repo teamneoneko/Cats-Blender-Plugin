@@ -38,14 +38,22 @@ def log_message(prefix, message, level="INFO"):
         message (str): Message to log.
         level (str): Log level ('INFO', 'WARNING', 'ERROR').
     """
-    level = level.upper()
-    for line in message.split("\n"):
-        if level == "WARNING":
-            logging.warning("[%s] %s", prefix, line)
-        elif level == "ERROR":
-            logging.error("[%s] %s", prefix, line)
-        else:  # Default to INFO
-            logging.info("[%s] %s", prefix, line)
+    logger = logging.getLogger()
+    original_level = logger.level
+    # Set to DEBUG to ensure all messages are output.
+    logger.setLevel(logging.DEBUG)
+
+    try:
+        level = level.upper()
+        for line in message.split("\n"):
+            if level == "WARNING":
+                logging.warning("[%s] %s", prefix, line)
+            elif level == "ERROR":
+                logging.error("[%s] %s", prefix, line)
+            else:  # Default to INFO
+                logging.info("[%s] %s", prefix, line)
+    finally:
+        logger.setLevel(original_level)
 
 
 class MMDModelValidateBones(Operator):
@@ -87,13 +95,13 @@ class MMDModelValidateBones(Operator):
             else:
                 bone_names.add(name_j)
 
-            # Check Shift-JIS encoding and length
+            # Check cp932 encoding and length
             try:
-                encoded_name = name_j.encode("shift_jis")
+                encoded_name = name_j.encode("cp932")
                 if len(encoded_name) > 15:
-                    issues.append(f"Bone '{name_j}' exceeds 15 bytes in ShiftJIS")
+                    issues.append(f"Bone '{name_j}' exceeds 15 bytes in cp932")
             except UnicodeEncodeError:
-                issues.append(f"Bone '{name_j}' contains characters that cannot be encoded in ShiftJIS")
+                issues.append(f"Bone '{name_j}' contains characters that cannot be encoded in cp932")
 
         results = "\n".join(issues) or "No bone issues found"
         context.scene.mmd_validation_results = results
@@ -134,11 +142,11 @@ class MMDModelValidateMorphs(Operator):
                     morph_names.add(morph.name)
 
                 try:
-                    encoded_name = morph.name.encode("shift_jis")
+                    encoded_name = morph.name.encode("cp932")
                     if len(encoded_name) > 15:
-                        issues.append(f"Morph '{morph.name}' name too long (exceeds 15 bytes in ShiftJIS)")
+                        issues.append(f"Morph '{morph.name}' name too long (exceeds 15 bytes in cp932)")
                 except UnicodeEncodeError:
-                    issues.append(f"Morph '{morph.name}' contains characters that cannot be encoded in ShiftJIS")
+                    issues.append(f"Morph '{morph.name}' contains characters that cannot be encoded in cp932")
 
         results = "\n".join(issues) or "No morph issues found"
         context.scene.mmd_validation_results = results
@@ -275,11 +283,11 @@ class MMDModelFixBoneIssues(Operator):
 
             original_name = pose_bone.mmd_bone.name_j
 
-            # Check if name is too long in ShiftJIS
+            # Check if name is too long in cp932
             name_too_long = False
             has_non_japanese = False
             try:
-                encoded = original_name.encode("shift_jis")
+                encoded = original_name.encode("cp932")
                 name_too_long = len(encoded) > 15
             except UnicodeEncodeError:
                 has_non_japanese = True
@@ -298,7 +306,7 @@ class MMDModelFixBoneIssues(Operator):
             new_name = ""
             for char in converted_name:
                 try:
-                    char.encode("shift_jis")
+                    char.encode("cp932")
                     new_name += char
                 except UnicodeEncodeError:
                     continue
@@ -310,7 +318,7 @@ class MMDModelFixBoneIssues(Operator):
             # Then truncate from right if still too long
             while new_name:
                 try:
-                    encoded = new_name.encode("shift_jis")
+                    encoded = new_name.encode("cp932")
                     if len(encoded) <= 13:  # Leave room for suffixes
                         break
                     new_name = new_name[:-1]
@@ -323,7 +331,7 @@ class MMDModelFixBoneIssues(Operator):
                 for suffix in range(2, 100):
                     test_name = f"{new_name}{suffix}"
                     try:
-                        encoded_test = test_name.encode("shift_jis")
+                        encoded_test = test_name.encode("cp932")
                         if len(encoded_test) <= 15 and test_name not in processed_names:
                             final_name = test_name
                             break
@@ -372,11 +380,11 @@ class MMDModelFixMorphIssues(Operator):
             for morph in morphs:
                 original_name = morph.name
 
-                # Check if name is too long in ShiftJIS
+                # Check if name is too long in cp932
                 name_too_long = False
                 has_non_japanese = False
                 try:
-                    encoded = original_name.encode("shift_jis")
+                    encoded = original_name.encode("cp932")
                     name_too_long = len(encoded) > 15
                 except UnicodeEncodeError:
                     has_non_japanese = True
@@ -393,7 +401,7 @@ class MMDModelFixMorphIssues(Operator):
                 new_name = ""
                 for char in converted_name:
                     try:
-                        char.encode("shift_jis")
+                        char.encode("cp932")
                         new_name += char
                     except UnicodeEncodeError:
                         continue
@@ -405,7 +413,7 @@ class MMDModelFixMorphIssues(Operator):
                 # Then truncate from right if still too long
                 while new_name:
                     try:
-                        encoded = new_name.encode("shift_jis")
+                        encoded = new_name.encode("cp932")
                         if len(encoded) <= 14:
                             break
                         new_name = new_name[:-1]
@@ -418,7 +426,7 @@ class MMDModelFixMorphIssues(Operator):
                     for suffix in range(2, 10):  # Plenty of suffixes
                         test_name = f"{new_name}{suffix}"
                         try:
-                            encoded_test = test_name.encode("shift_jis")
+                            encoded_test = test_name.encode("cp932")
                             if len(encoded_test) <= 15 and test_name not in processed_names:
                                 final_name = test_name
                                 break
@@ -701,7 +709,7 @@ class MMDModelFixTextureIssues(Operator):
 
         # Clean up unused image blocks with missing files
         removed_images = []
-        for img in bpy.data.images:
+        for img in reversed(bpy.data.images):
             if img.users == 0 and (not os.path.exists(bpy.path.abspath(img.filepath)) and not img.packed_file):
                 removed_images.append(f"Removed unused image block: '{img.name}'")
                 bpy.data.images.remove(img)

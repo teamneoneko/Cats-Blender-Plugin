@@ -3,8 +3,10 @@
 
 import collections
 import logging
+import math
 import os
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import bpy
@@ -81,7 +83,7 @@ class PMXImporter:
     def __createObjects(self):
         """Create main objects and link them to scene."""
         pmxModel = self.__model
-        obj_name = self.__safe_name(bpy.path.display_name(pmxModel.filepath), max_length=54)
+        obj_name = self.__safe_name(bpy.path.display_name_from_filepath(pmxModel.filepath), max_length=54)
         self.__rig = Model.create(pmxModel.name, pmxModel.name_e, self.__scale, obj_name)
         root = self.__rig.rootObject()
         mmd_root: MMDRoot = root.mmd_root
@@ -158,7 +160,7 @@ class PMXImporter:
                 vertex_group_table[pv_bones[0]].add(index=idx, weight=pv_weights[0], type="ADD")
                 vertex_group_table[pv_bones[1]].add(index=idx, weight=1.0 - pv_weights[0], type="ADD")
             elif len(pv_bones) == 4:
-                for bone, weight in zip(pv_bones, pv_weights):
+                for bone, weight in zip(pv_bones, pv_weights, strict=False):
                     vertex_group_table[bone].add(index=idx, weight=weight, type="ADD")
             else:
                 raise Exception("unkown bone weight type.")
@@ -186,10 +188,10 @@ class PMXImporter:
 
         self.__textureTable = []
         for i in pmxModel.textures:
-            self.__textureTable.append(bpy.path.resolve_ncase(path=i.path))
+            self.__textureTable.append(str(Path(i.path).resolve()))
 
     def __createEditBones(self, obj, pmx_bones):
-        """create EditBones from pmx file data.
+        """Create EditBones from pmx file data.
         @return the list of bone names which can be accessed by the bone index of pmx data.
         """
         editBoneTable = []
@@ -198,15 +200,13 @@ class PMXImporter:
         dependency_cycle_ik_bones = []
         # for i, p_bone in enumerate(pmx_bones):
         #    if p_bone.isIK:
-        #        if p_bone.target != -1:
+        #        if p_bone.target >= 0:
         #            t = pmx_bones[p_bone.target]
         #            if p_bone.parent == t.parent:
         #                dependency_cycle_ik_bones.append(i)
 
-        from math import isfinite
-
         def _VectorXZY(v):
-            return Vector(v).xzy if all(isfinite(n) for n in v) else Vector((0, 0, 0))
+            return Vector(v).xzy if all(math.isfinite(n) for n in v) else Vector((0, 0, 0))
 
         with bpyutils.edit_object(obj) as data:
             for i in pmx_bones:
@@ -216,16 +216,16 @@ class PMXImporter:
                 editBoneTable.append(bone)
                 nameTable.append(bone.name)
 
-            for i, (b_bone, m_bone) in enumerate(zip(editBoneTable, pmx_bones)):
-                if m_bone.parent != -1:
+            for i, (b_bone, m_bone) in enumerate(zip(editBoneTable, pmx_bones, strict=False)):
+                if m_bone.parent >= 0:
                     if i not in dependency_cycle_ik_bones:
                         b_bone.parent = editBoneTable[m_bone.parent]
                     else:
                         b_bone.parent = editBoneTable[m_bone.parent].parent
 
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
                 if isinstance(m_bone.displayConnection, int):
-                    if m_bone.displayConnection != -1:
+                    if m_bone.displayConnection >= 0:
                         b_bone.tail = editBoneTable[m_bone.displayConnection].head
                     else:
                         b_bone.tail = b_bone.head
@@ -233,13 +233,13 @@ class PMXImporter:
                     loc = _VectorXZY(m_bone.displayConnection) * self.__scale
                     b_bone.tail = b_bone.head + loc
 
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
-                if m_bone.isIK and m_bone.target != -1:
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
+                if m_bone.isIK and m_bone.target >= 0:
                     logging.debug(" - checking IK links of %s", b_bone.name)
                     b_target = editBoneTable[m_bone.target]
                     for i in range(len(m_bone.ik_links)):
                         b_bone_link = editBoneTable[m_bone.ik_links[i].target]
-                        if self.__fix_IK_links or b_bone_link.length < 0.001:
+                        if self.__fix_ik_links or b_bone_link.length < 0.001:
                             b_bone_tail = b_target if i == 0 else editBoneTable[m_bone.ik_links[i - 1].target]
                             loc = b_bone_tail.head - b_bone_link.head
                             if loc.length < 0.001:
@@ -250,7 +250,7 @@ class PMXImporter:
                                 logging.debug("   * fix IK link %s", b_bone_link.name)
                                 b_bone_link.tail = b_bone_link.head + loc
 
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
                 # Set the length of too short bones to 1 because Blender delete them.
                 if b_bone.length < 0.001:
                     if not self.__apply_bone_fixed_axis and m_bone.axis is not None:
@@ -261,11 +261,11 @@ class PMXImporter:
                             b_bone.tail = b_bone.head + Vector((0, 0, 1)) * self.__scale
                     else:
                         b_bone.tail = b_bone.head + Vector((0, 0, 1)) * self.__scale
-                    if m_bone.displayConnection != -1 and m_bone.displayConnection != [0.0, 0.0, 0.0]:
+                    if m_bone.displayConnection not in (-1, (0.0, 0.0, 0.0), [0.0, 0.0, 0.0]):
                         logging.debug(" * special tip bone %s, display %s", b_bone.name, str(m_bone.displayConnection))
                         specialTipBones.append(b_bone.name)
 
-            for b_bone, m_bone in zip(editBoneTable, pmx_bones):
+            for b_bone, m_bone in zip(editBoneTable, pmx_bones, strict=False):
                 if m_bone.localCoordinate is not None:
                     FnBone.update_bone_roll(b_bone, m_bone.localCoordinate.x_axis, m_bone.localCoordinate.z_axis)
                 elif FnBone.has_auto_local_axis(m_bone.name):
@@ -274,9 +274,7 @@ class PMXImporter:
         return nameTable, specialTipBones
 
     def __sortPoseBonesByBoneIndex(self, pose_bones: List[bpy.types.PoseBone], bone_names):
-        r: List[bpy.types.PoseBone] = []
-        for i in bone_names:
-            r.append(pose_bones[i])
+        r: List[bpy.types.PoseBone] = [pose_bones[i] for i in bone_names]
         return r
 
     @staticmethod
@@ -308,13 +306,12 @@ class PMXImporter:
         return new_min_angle, new_max_angle
 
     def __applyIk(self, index, pmx_bone, pose_bones):
-        """create a IK bone constraint
+        """Create a IK bone constraint
         If the IK bone and the target bone is separated, a dummy IK target bone is created as a child of the IK bone.
         @param index the bone index
         @param pmx_bone pmx.Bone
         @param pose_bones the list of PoseBones sorted by the bone index
         """
-
         # for tracking mmd ik target, simple explaination:
         # + Root
         # | + link1
@@ -341,7 +338,7 @@ class PMXImporter:
             if not is_valid_ik:
                 ik_constraint_bone = ik_constraint_bone_real
                 logging.warning(" * IK bone (%s) warning: IK target (%s) is not a child of IK link 0 (%s)", ik_bone.name, ik_target.name, ik_constraint_bone.name)
-            elif any(pose_bones[i.target].parent != pose_bones[j.target] for i, j in zip(pmx_bone.ik_links, pmx_bone.ik_links[1:])):
+            elif any(pose_bones[i.target].parent != pose_bones[j.target] for i, j in zip(pmx_bone.ik_links, pmx_bone.ik_links[1:], strict=False)):
                 logging.warning(" * Invalid IK bone (%s): IK chain does not follow parent-child relationship", ik_bone.name)
                 return
         if ik_constraint_bone is None or len(pmx_bone.ik_links) < 1:
@@ -423,7 +420,7 @@ class PMXImporter:
             else:  # vector offset
                 mmd_bone.display_connection_type = "OFFSET"
 
-            if pmx_bone.displayConnection == -1 or pmx_bone.displayConnection == (0.0, 0.0, 0.0):
+            if pmx_bone.displayConnection in (-1, (0.0, 0.0, 0.0), [0.0, 0.0, 0.0]):
                 mmd_bone.is_tip = True
             elif b_bone.name in specialTipBones:
                 mmd_bone.is_tip = True
@@ -446,7 +443,7 @@ class PMXImporter:
                 mmd_bone.has_additional_location = pmx_bone.hasAdditionalLocation
                 mmd_bone.additional_transform_influence = influ
                 if 0 <= bone_index < len(pose_bones):
-                    mmd_bone.additional_transform_bone = pose_bones[bone_index].name
+                    mmd_bone.additional_transform_bone_id = bone_index
 
             if pmx_bone.localCoordinate is not None:
                 mmd_bone.enabled_local_axes = True
@@ -463,14 +460,29 @@ class PMXImporter:
                     b_bone.lock_scale = [True, True, True]
 
     def __importRigids(self):
+        if len(self.__model.rigids) == 0:
+            logging.info("No rigid bodies to import, skipping rigid body creation.")
+            return
         start_time = time.time()
         self.__rigidTable = {}
         context = FnContext.ensure_context()
         rigid_pool = FnRigidBody.new_rigid_body_objects(context, FnModel.ensure_rigid_group_object(context, self.__rig.rootObject()), len(self.__model.rigids))
-        for i, (rigid, rigid_obj) in enumerate(zip(self.__model.rigids, rigid_pool)):
-            loc = Vector(rigid.location).xzy * self.__scale
-            rot = Vector(rigid.rotation).xzy * -1
-            size = Vector(rigid.size).xzy if rigid.type == pmx.Rigid.TYPE_BOX else Vector(rigid.size)
+        for i, (rigid, rigid_obj) in enumerate(zip(self.__model.rigids, rigid_pool, strict=False)):
+            loc_data = rigid.location
+            rot_data = rigid.rotation
+            size_data = rigid.size
+            if any(math.isnan(val) for val in loc_data):
+                logging.warning(f"Rigid body '{rigid.name}' has invalid location data, using default location")
+                loc_data = (0.0, 0.0, 0.0)
+            if any(math.isnan(val) for val in rot_data):
+                logging.warning(f"Rigid body '{rigid.name}' has invalid rotation data, using default rotation")
+                rot_data = (0.0, 0.0, 0.0)
+            if any(math.isnan(val) for val in size_data):
+                logging.warning(f"Rigid body '{rigid.name}' has invalid size data, using default size")
+                size_data = (1.0, 1.0, 1.0)
+            loc = Vector(loc_data).xzy * self.__scale
+            rot = Vector(rot_data).xzy * -1
+            size = Vector(size_data).xzy if rigid.type == pmx.Rigid.TYPE_BOX else Vector(size_data)
 
             obj = FnRigidBody.setup_rigid_body_object(
                 obj=rigid_obj,
@@ -497,10 +509,13 @@ class PMXImporter:
         logging.debug("Finished importing rigid bodies in %f seconds.", time.time() - start_time)
 
     def __importJoints(self):
+        if len(self.__model.joints) == 0:
+            logging.info("No joints to import, skipping joint creation.")
+            return
         start_time = time.time()
         context = FnContext.ensure_context()
         joint_pool = FnRigidBody.new_joint_objects(context, FnModel.ensure_joint_group_object(context, self.__rig.rootObject()), len(self.__model.joints), FnModel.get_empty_display_size(self.__rig.rootObject()))
-        for i, (joint, joint_obj) in enumerate(zip(self.__model.joints, joint_pool)):
+        for i, (joint, joint_obj) in enumerate(zip(self.__model.joints, joint_pool, strict=False)):
             loc = Vector(joint.location).xzy * self.__scale
             rot = Vector(joint.rotation).xzy * -1
 
@@ -553,9 +568,11 @@ class PMXImporter:
             self.__materialFaceCountTable.append(int(i.vertex_count / 3))
             self.__meshObj.data.materials.append(mat)
             fnMat = FnMaterial(mat)
-            if i.texture != -1:
+            if i.texture >= 0:
                 texture_slot = fnMat.create_texture(self.__textureTable[i.texture])
-                texture_slot.texture.use_mipmap = self.__use_mipmap
+                # use_mipmap property was removed in Blender 5.0 (did nothing since 2.80)
+                if hasattr(texture_slot.texture, 'use_mipmap'):
+                    texture_slot.texture.use_mipmap = self.__use_mipmap
                 self.__imageTable[len(self.__materialTable) - 1] = texture_slot.texture.image
 
             if i.is_shared_toon_texture:
@@ -570,7 +587,7 @@ class PMXImporter:
                 amount = self.__spa_blend_factor
             else:
                 amount = self.__sph_blend_factor
-            if i.sphere_texture != -1 and amount != 0.0:
+            if i.sphere_texture >= 0 and amount != 0.0:
                 texture_slot = fnMat.create_sphere_texture(self.__textureTable[i.sphere_texture])
                 texture_slot.diffuse_color_factor = amount
                 if i.sphere_texture_mode == 3 and getattr(pmxModel.header, "additional_uvs", 0):
@@ -602,13 +619,30 @@ class PMXImporter:
         uv_layer.data.foreach_set("uv", tuple(v for i in loop_indices_orig for v in uv_table[i]))
 
         if hasattr(mesh, "uv_textures"):
-            for bf, mi in zip(uv_tex.data, material_indices):
+            for bf, mi in zip(uv_tex.data, material_indices, strict=False):
                 bf.image = self.__imageTable.get(mi, None)
+
+        # Import ADD UV2 as vertex colors
+        if self.__import_adduv2_as_vertex_colors and pmxModel.header and pmxModel.header.additional_uvs >= 2:
+            # Create vertex color layer
+            vertex_colors = mesh.vertex_colors.new(name="Color")
+            color_data = []
+            for loop_index in loop_indices_orig:
+                vertex = pmxModel.vertices[loop_index]
+                if len(vertex.additional_uvs) >= 2:
+                    uv2_data = vertex.additional_uvs[1]  # ADD UV2 data (X,Y,Z,W)
+                    # Convert UV data to vertex color (XYZW -> RGBA)
+                    color_data.extend([uv2_data[0], uv2_data[1], uv2_data[2], uv2_data[3]])
+                else:
+                    color_data.extend([1.0, 1.0, 1.0, 1.0])
+            vertex_colors.data.foreach_set("color", color_data)
+            logging.info("Imported ADD UV2 as vertex colors")
 
         if pmxModel.header and pmxModel.header.additional_uvs:
             logging.info("Importing %d additional uvs", pmxModel.header.additional_uvs)
             zw_data_map = collections.OrderedDict()
-            split_uvzw = lambda uvi: (self.flipUV_V(uvi[:2]), uvi[2:])
+            def split_uvzw(uvi):
+                return (self.flipUV_V(uvi[:2]), uvi[2:])
             for i in range(pmxModel.header.additional_uvs):
                 add_uv = uv_layers[uv_textures.new(name="UV" + str(i + 1)).name]
                 logging.info(" - %s...(uv channels)", add_uv.name)
@@ -661,15 +695,38 @@ class PMXImporter:
         mmd_root = self.__root.mmd_root
         categories = self.CATEGORIES
         self.__createBasisShapeKey()
+
+        # Pre-fetch basis coordinates for batch processing
+        basis_coords = []
+        shape_keys = self.__meshObj.data.shape_keys
+        if shape_keys and shape_keys.key_blocks:
+            basis_shape = shape_keys.key_blocks[0]
+            basis_coords = [0.0] * (len(basis_shape.data) * 3)
+            basis_shape.data.foreach_get("co", basis_coords)
+
         for morph in (x for x in self.__model.morphs if isinstance(x, pmx.VertexMorph)):
             shapeKey = self.__meshObj.shape_key_add(name=morph.name)
+            shapeKey.value = 0.0
+
             vtx_morph = mmd_root.vertex_morphs.add()
             vtx_morph.name = morph.name
             vtx_morph.name_e = morph.name_e
             vtx_morph.category = categories.get(morph.category, "OTHER")
-            for md in morph.offsets:
-                shapeKeyPoint = shapeKey.data[md.index]
-                shapeKeyPoint.co += Vector(md.offset).xzy * self.__scale
+
+            if morph.offsets and basis_coords:
+                # Copy basis coordinates as starting point
+                shape_coords = basis_coords.copy()
+
+                # Apply morphing offsets to specific vertices
+                for md in morph.offsets:
+                    offset = Vector(md.offset).xzy * self.__scale
+                    base_idx = md.index * 3
+                    shape_coords[base_idx] += offset[0]
+                    shape_coords[base_idx + 1] += offset[1]
+                    shape_coords[base_idx + 2] += offset[2]
+
+                # Batch set all coordinates at once
+                shapeKey.data.foreach_set("co", shape_coords)
 
     def __importMaterialMorphs(self):
         mmd_root = self.__root.mmd_root
@@ -717,7 +774,10 @@ class PMXImporter:
         mmd_root = self.__root.mmd_root
         categories = self.CATEGORIES
         __OffsetData = collections.namedtuple("OffsetData", "index, offset")
-        __convert_offset = lambda x: (x[0], -x[1], x[2], -x[3])
+
+        def __convert_offset(x):
+            return (x[0], -x[1], x[2], -x[3])
+
         for morph in (x for x in self.__model.morphs if isinstance(x, pmx.UVMorph)):
             uv_morph = mmd_root.uv_morphs.add()
             uv_morph.name = morph.name
@@ -759,17 +819,26 @@ class PMXImporter:
             frame.name_e = i.name_e
             frame.is_special = i.isSpecial
             for disp_type, index in i.data:
-                item = frame.data.add()
                 if disp_type == 0:
-                    item.type = "BONE"
-                    item.name = self.__boneTable[index].name
+                    # Check bone index bounds
+                    if 0 <= index < len(self.__boneTable):
+                        item = frame.data.add()
+                        item.type = "BONE"
+                        item.name = self.__boneTable[index].name
+                    else:
+                        logging.warning("Invalid bone index %d in display frame '%s', skipping item", index, i.name)
                 elif disp_type == 1:
-                    item.type = "MORPH"
-                    morph = pmxModel.morphs[index]
-                    item.name = morph.name
-                    item.morph_type = morph_types[morph.type_index()]
+                    # Check morph index bounds
+                    if 0 <= index < len(pmxModel.morphs):
+                        item = frame.data.add()
+                        item.type = "MORPH"
+                        morph = pmxModel.morphs[index]
+                        item.name = morph.name
+                        item.morph_type = morph_types[morph.type_index()]
+                    else:
+                        logging.warning("Invalid morph index %d in display frame '%s', skipping item", index, i.name)
                 else:
-                    raise Exception("Unknown display item type.")
+                    logging.warning("Unknown display item type %d in display frame '%s', skipping item", disp_type, i.name)
 
         FnBone.sync_bone_collections_from_display_item_frames(self.__armObj)
 
@@ -782,8 +851,37 @@ class PMXImporter:
         armModifier.show_render = armModifier.show_viewport = len(meshObj.data.vertices) > 0
 
     def __assignCustomNormals(self):
+        # NOTE: This uses the older Blender API instead of the newer mesh.attributes approach
+        # because it requires "INT16_2D" format for proper functionality.
+        # Manual calculation of normals in INT16_2D format is overly complex.
+        # The newer implementation was removed in commit [ad47b9a] due to these issues.
+        # The current implementation uses normals_split_custom_set() with 179-degree sharp edge
+        # marking as a workaround. While not ideal, this remains the most practical solution
+        # for preserving custom normals in most cases.
+
         mesh: bpy.types.Mesh = self.__meshObj.data
         logging.info("Setting custom normals...")
+        # CRITICAL: Mark sharp edges (based on angle) BEFORE setting custom normals
+        # For mesh.normals_split_custom_set() to work as expected, two conditions must be met:
+        # 1. The normal vectors must be non-zero (mentioned in Blender documentation)
+        # 2. Some edges must be marked as sharp (NOT mentioned in Blender documentation)
+        # An angle of 179 degrees is confirmed to be sufficient to preserve all custom normals.
+        # 180 degrees does not work because it misses some sharp edges required for normals_split_custom_set to work 100% correctly.
+        current_mode = bpy.context.active_object.mode
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.select_all(action="DESELECT")
+        bpy.context.view_layer.objects.active = self.__meshObj
+        # Mark sharp edges
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="DESELECT")
+        bpy.ops.mesh.edges_select_sharp(sharpness=math.radians(179))
+        bpy.ops.mesh.mark_sharp()
+        bpy.ops.object.mode_set(mode="OBJECT")
+        # Logging
+        total_edges = len(mesh.edges)
+        sharp_edges = sum(1 for edge in mesh.edges if edge.use_edge_sharp)
+        percentage = (sharp_edges / total_edges) * 100 if total_edges > 0 else 0
+        logging.info(f"   - Marked {sharp_edges}/{total_edges} ({percentage:.2f}%) sharp edges with angle: 179 degrees")
         if self.__vertex_map:
             verts, faces = self.__model.vertices, self.__model.faces
             custom_normals = [(Vector(verts[i].normal).xzy).normalized() for f in faces for i in f]
@@ -791,6 +889,7 @@ class PMXImporter:
         else:
             custom_normals = [(Vector(v.normal).xzy).normalized() for v in self.__model.vertices]
             mesh.normals_split_custom_set_from_vertices(custom_normals)
+        bpy.ops.object.mode_set(mode=current_mode)
         logging.info("   - Done!!")
 
     def __renameLRBones(self, use_underscore):
@@ -820,13 +919,16 @@ class PMXImporter:
         types = args.get("types", set())
         clean_model = args.get("clean_model", False)
         remove_doubles = args.get("remove_doubles", False)
+        self.__import_adduv2_as_vertex_colors = args.get("import_adduv2_as_vertex_colors", False)
         self.__scale = args.get("scale", 1.0)
         self.__use_mipmap = args.get("use_mipmap", True)
         self.__sph_blend_factor = args.get("sph_blend_factor", 1.0)
         self.__spa_blend_factor = args.get("spa_blend_factor", 1.0)
-        self.__fix_IK_links = args.get("fix_IK_links", False)
+        self.__fix_ik_links = args.get("fix_ik_links", False)
         self.__apply_bone_fixed_axis = args.get("apply_bone_fixed_axis", False)
-        self.__translator = args.get("translator", None)
+        self.__bone_disp_mode = args.get("bone_disp_mode", "OCTAHEDRAL")
+        self.__translator = args.get("translator")
+        self.__add_rigid_body_world = args.get("add_rigid_body_world", True)
 
         logging.info("****************************************")
         logging.info(" mmd_tools_local.import_pmx module")
@@ -858,6 +960,8 @@ class PMXImporter:
                 self.__createMeshObject()
                 self.__importVertexGroup()
             self.__importBones()
+            if args.get("fix_bone_order", True):
+                bpy.ops.mmd_tools_local.fix_bone_order()
             if args.get("rename_LR_bones", False):
                 use_underscore = args.get("use_underscore", False)
                 self.__renameLRBones(use_underscore)
@@ -865,11 +969,31 @@ class PMXImporter:
                 self.__translateBoneNames()
             if self.__apply_bone_fixed_axis:
                 FnBone.apply_bone_fixed_axis(self.__armObj)
+            self.__armObj.data.display_type = self.__bone_disp_mode
             FnBone.apply_additional_transformation(self.__armObj)
 
         if "PHYSICS" in types:
-            self.__importRigids()
-            self.__importJoints()
+            rigidbody_world = bpy.context.scene.rigidbody_world
+            original_enabled = None
+
+            try:
+                self.__importRigids()
+
+                # Temporarily disable physics to prevent rigid bodies from moving to origin during import
+                # See: https://github.com/MMD-Blender/blender_mmd_tools_local/issues/255
+                if rigidbody_world:
+                    original_enabled = rigidbody_world.enabled
+                    rigidbody_world.enabled = False
+
+                self.__importJoints()
+
+            finally:
+                if rigidbody_world and original_enabled is not None:
+                    rigidbody_world.enabled = original_enabled
+
+                # Remove the automatically created rigid body world if it was not intended
+                if not self.__add_rigid_body_world and rigidbody_world is None:
+                    bpy.ops.rigidbody.world_remove()
 
         if "DISPLAY" in types:
             self.__importDisplayFrames()
@@ -904,7 +1028,7 @@ class _PMXCleaner:
         pmx_vertices = pmx_model.vertices
 
         # clean face/vertex
-        cls.__clean_pmx_faces(pmx_faces, pmx_model.materials, lambda f: frozenset(f))
+        cls.__clean_pmx_faces(pmx_faces, pmx_model.materials, frozenset)
 
         index_map = {v: v for f in pmx_faces for v in f}
         is_index_clean = len(index_map) == len(pmx_vertices)
@@ -969,8 +1093,10 @@ class _PMXCleaner:
             return None
 
         # clean face
-        # face_key_func = lambda f: frozenset(vertex_map[x][0] for x in f)
-        face_key_func = lambda f: frozenset({vertex_map[x][0]: tuple(pmx_vertices[x].uv) for x in f}.items())
+        # def face_key_func(f):
+        #     return frozenset(vertex_map[x][0] for x in f)
+        def face_key_func(f):
+            return frozenset({vertex_map[x][0]: tuple(pmx_vertices[x].uv) for x in f}.items())
         cls.__clean_pmx_faces(pmx_model.faces, pmx_model.materials, face_key_func)
 
         if mesh_only:

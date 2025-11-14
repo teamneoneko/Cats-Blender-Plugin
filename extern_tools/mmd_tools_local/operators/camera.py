@@ -46,7 +46,7 @@ class ConvertToMMDCamera(Operator):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj and obj.type == "CAMERA"
+        return obj is not None and obj.type == "CAMERA"
 
     def invoke(self, context, event):
         vm = context.window_manager

@@ -13,7 +13,7 @@ class MMDLamp:
         if obj and obj.type == "EMPTY" and obj.mmd_type == "LIGHT":
             self.__emptyObj = obj
         else:
-            raise ValueError("%s is not MMDLamp" % str(obj))
+            raise ValueError(f"{str(obj)} is not MMDLamp")
 
     @staticmethod
     def isLamp(obj):
