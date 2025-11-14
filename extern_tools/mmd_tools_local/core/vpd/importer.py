@@ -6,7 +6,7 @@ import logging
 import bpy
 from mathutils import Matrix
 
-from ...bpyutils import FnContext
+from ...compat import action_compat
 from .. import vpd
 from ..vmd import importer
 
@@ -47,7 +47,7 @@ class VPDImporter:
         # Check if an action exists
         if armObj.animation_data.action is None:
             action = bpy.data.actions.new(name="PoseLib")
-            armObj.animation_data.action = action
+            action_compat.assign_action_to_datablock(armObj, action)
         else:
             action = armObj.animation_data.action
 
@@ -58,29 +58,29 @@ class VPDImporter:
 
         # Update and keyframe only the bones affected by the current VPD file
         for bone in armObj.pose.bones:
-            vpd_pose = pose_data.get(bone, None)
+            vpd_pose = pose_data.get(bone)
             if vpd_pose:
                 bone.matrix_basis = vpd_pose
-                
+
                 data_path_rot = prop_rot_map.get(bone.rotation_mode, "rotation_euler")
                 bone_rotation = getattr(bone, data_path_rot)
                 fcurves = [None] * (3 + len(bone_rotation))  # x, y, z, r0, r1, r2, (r3)
-                
-                data_path = 'pose.bones["%s"].location' % bone.name
+
+                data_path = f'pose.bones["{bone.name}"].location'
                 for axis_i in range(3):
                     fcurves[axis_i] = action.fcurves.find(data_path, index=axis_i)
                     if fcurves[axis_i] is None:
                         fcurves[axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
-                
-                data_path = 'pose.bones["%s"].%s' % (bone.name, data_path_rot)
+
+                data_path = f'pose.bones["{bone.name}"].{data_path_rot}'
                 for axis_i in range(len(bone_rotation)):
-                    fcurves[3 + axis_i] = action.fcurves.find(data_path, index=axis_i) 
+                    fcurves[3 + axis_i] = action.fcurves.find(data_path, index=axis_i)
                     if fcurves[3 + axis_i] is None:
                         fcurves[3 + axis_i] = action.fcurves.new(data_path=data_path, index=axis_i, action_group=bone.name)
-                
+
                 for axis_i in range(3):
                     fcurves[axis_i].keyframe_points.insert(current_frame, bone.location[axis_i])
-                
+
                 for axis_i in range(len(bone_rotation)):
                     fcurves[3 + axis_i].keyframe_points.insert(current_frame, bone_rotation[axis_i])
 
@@ -106,8 +106,8 @@ class VPDImporter:
 
         # Check if an action exists or create new one
         if meshObj.data.shape_keys.animation_data.action is None:
-            action = bpy.data.actions.new(name=meshObj.name+"_ShapeKeys")
-            meshObj.data.shape_keys.animation_data.action = action
+            action = bpy.data.actions.new(name=meshObj.name + "_ShapeKeys")
+            action_compat.assign_action_to_datablock(meshObj.data.shape_keys, action)
         else:
             action = meshObj.data.shape_keys.animation_data.action
 
@@ -121,16 +121,16 @@ class VPDImporter:
             if shape_key is None:
                 logging.warning(" * Shape key not found: %s", m.morph_name)
                 continue
-            
+
             # Set the value
             shape_key.value = m.weight
-            
+
             # Create or get FCurve
-            data_path = 'key_blocks["%s"].value' % shape_key.name
+            data_path = f'key_blocks["{shape_key.name}"].value'
             fcurve = action.fcurves.find(data_path)
             if fcurve is None:
                 fcurve = action.fcurves.new(data_path=data_path)
-            
+
             # Add keyframe
             fcurve.keyframe_points.insert(current_frame, m.weight)
 

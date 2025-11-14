@@ -4,20 +4,20 @@
 import bpy
 
 
-def patch_library_overridable(property: "bpy.props._PropertyDeferred") -> "bpy.props._PropertyDeferred":
+def patch_library_overridable(prop: "bpy.props._PropertyDeferred") -> "bpy.props._PropertyDeferred":
     """Apply recursively for each mmd_tools_local property class annotations.
     Args:
-        property: The property to be patched.
+        prop: The property to be patched.
 
     Returns:
         The patched property.
     """
-    property.keywords.setdefault("override", set()).add("LIBRARY_OVERRIDABLE")
+    prop.keywords.setdefault("override", set()).add("LIBRARY_OVERRIDABLE")
 
-    if property.function.__name__ not in {"PointerProperty", "CollectionProperty"}:
-        return property
+    if prop.function.__name__ not in {"PointerProperty", "CollectionProperty"}:
+        return prop
 
-    property_type = property.keywords["type"]
+    property_type = prop.keywords["type"]
     # The __annotations__ cannot be inherited. Manually search for base classes.
     for inherited_type in (property_type, *property_type.__bases__):
         if not inherited_type.__module__.startswith("mmd_tools_local.properties"):
@@ -27,4 +27,4 @@ def patch_library_overridable(property: "bpy.props._PropertyDeferred") -> "bpy.p
                 continue
             patch_library_overridable(annotation)
 
-    return property
+    return prop

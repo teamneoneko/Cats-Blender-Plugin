@@ -99,6 +99,8 @@ class MMDToolsModelSetupPanel(PT_PanelBase, bpy.types.Panel):
         self.__toggle_items_ttl = time.time() + 10
         self.__toggle_items_cache = []
         armature_object = FnModel.find_armature_object(mmd_root_object)
+        if armature_object is None:
+            return self.__toggle_items_cache
         pose_bones = armature_object.pose.bones
         ik_map = {pose_bones[c.subtarget]: (b.bone, c.chain_count, not c.is_valid) for b in pose_bones for c in b.constraints if c.type == "IK" and c.subtarget in pose_bones}
 
@@ -134,7 +136,7 @@ class MMDToolsModelSetupPanel(PT_PanelBase, bpy.types.Panel):
         col = self.layout.column(align=True)
         col.label(text="Mesh:", icon="MESH_DATA")
         grid = col.grid_flow(row_major=True, align=True)
-        grid.row(align=True).operator("mmd_tools_local.separate_by_materials", text="Separate by Materials", icon="MOD_EXPLODE")
+        grid.row(align=True).operator("mmd_tools_local.separate_by_materials", text="Sep by Mat(High Risk)", icon="MOD_EXPLODE")
         grid.row(align=True).operator("mmd_tools_local.join_meshes", text="Join", icon="MESH_CUBE")
 
     def draw_material(self, context, mmd_root_object):
@@ -150,7 +152,8 @@ class MMDToolsModelSetupPanel(PT_PanelBase, bpy.types.Panel):
         row.operator("mmd_tools_local.edge_preview_setup", text="", icon="TRASH").action = "CLEAN"
         row = grid.row(align=True)
         row.operator("mmd_tools_local.convert_materials", text="Convert to Blender", icon="BLENDER")
-        row.operator('mmd_tools_local.convert_bsdf_materials', text='Convert to MMD', icon='MATSPHERE')
+        row.operator("mmd_tools_local.merge_materials", text="", icon="LINK_BLEND")
+        row.operator("mmd_tools_local.convert_bsdf_materials", text="Convert to MMD", icon="MATSPHERE")
 
     def draw_misc(self, context, mmd_root_object):
         col = self.layout.column(align=True)

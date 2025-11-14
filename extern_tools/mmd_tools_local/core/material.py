@@ -3,6 +3,7 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Iterable, Optional, Tuple, cast
 
 import bpy
@@ -48,7 +49,7 @@ class FnMaterial:
         FnMaterial.__NODES_ARE_READONLY = nodes_are_readonly
 
     @classmethod
-    def from_material_id(cls, material_id: str):
+    def from_material_id(cls, material_id: int):
         for material in bpy.data.materials:
             if material.mmd_material.material_id == material_id:
                 return cls(material)
@@ -66,7 +67,8 @@ class FnMaterial:
     @staticmethod
     def swap_materials(mesh_object: bpy.types.Object, mat1_ref: str | int, mat2_ref: str | int, reverse=False, swap_slots=False) -> Tuple[bpy.types.Material, bpy.types.Material]:
         """
-        This method will assign the polygons of mat1 to mat2.
+        Assign the polygons of mat1 to mat2.
+
         If reverse is True it will also swap the polygons assigned to mat2 to mat1.
         The reference to materials can be indexes or names
         Finally it will also swap the material slots if the option is given.
@@ -84,16 +86,16 @@ class FnMaterial:
         Raises:
             MaterialNotFoundError: If one of the materials is not found
         """
-        mesh = cast(bpy.types.Mesh, mesh_object.data)
+        mesh = cast("bpy.types.Mesh", mesh_object.data)
         try:
             # Try to find the materials
             mat1 = mesh.materials[mat1_ref]
             mat2 = mesh.materials[mat2_ref]
-            if None in (mat1, mat2):
-                raise MaterialNotFoundError()
+            if None in {mat1, mat2}:
+                raise MaterialNotFoundError
         except (KeyError, IndexError) as exc:
             # Wrap exceptions within our custom ones
-            raise MaterialNotFoundError() from exc
+            raise MaterialNotFoundError from exc
         mat1_idx = mesh.materials.find(mat1.name)
         mat2_idx = mesh.materials.find(mat2.name)
         # Swap polygons
@@ -110,10 +112,8 @@ class FnMaterial:
 
     @staticmethod
     def fixMaterialOrder(meshObj: bpy.types.Object, material_names: Iterable[str]):
-        """
-        This method will fix the material order. Which is lost after joining meshes.
-        """
-        materials = cast(bpy.types.Mesh, meshObj.data).materials
+        """Fix the material order which is lost after joining meshes."""
+        materials = cast("bpy.types.Mesh", meshObj.data).materials
         for new_idx, mat in enumerate(material_names):
             # Get the material that is currently on this index
             other_mat = materials[new_idx]
@@ -144,8 +144,8 @@ class FnMaterial:
             # pylint: disable=bare-except
             try:
                 return os.path.samefile(img_filepath, filepath)
-            except:
-                pass
+            except Exception as e:
+                logging.warning(f"Failed to compare files '{img_filepath}' and '{filepath}': {e}")
         return False
 
     def _load_image(self, filepath):
@@ -154,7 +154,7 @@ class FnMaterial:
             # pylint: disable=bare-except
             try:
                 img = bpy.data.images.load(filepath)
-            except:
+            except Exception:
                 logging.warning("Cannot create a texture for %s. No such file.", filepath)
                 img = bpy.data.images.new(os.path.basename(filepath), 1, 1)
                 img.source = "FILE"
@@ -173,7 +173,7 @@ class FnMaterial:
         if mmd_mat.is_shared_toon_texture:
             shared_toon_folder = FnContext.get_addon_preferences_attribute(FnContext.ensure_context(), "shared_toon_folder", "")
             toon_path = os.path.join(shared_toon_folder, "toon%02d.bmp" % (mmd_mat.shared_toon_texture + 1))
-            self.create_toon_texture(bpy.path.resolve_ncase(path=toon_path))
+            self.create_toon_texture(str(Path(toon_path).resolve()))
         elif mmd_mat.toon_texture != "":
             self.create_toon_texture(mmd_mat.toon_texture)
         else:
@@ -251,7 +251,7 @@ class FnMaterial:
         sphere_texture_type = int(self.material.mmd_material.sphere_texture_type)
         is_sph_add = sphere_texture_type == 2
 
-        if sphere_texture_type not in (1, 2, 3):
+        if sphere_texture_type not in {1, 2, 3}:
             self.__update_shader_input("Sphere Tex Fac", 0)
         else:
             self.__update_shader_input("Sphere Tex Fac", 1)
@@ -269,7 +269,7 @@ class FnMaterial:
                 nodes, links = mat.node_tree.nodes, mat.node_tree.links
                 if sphere_texture_type == 3:
                     if obj and obj.type == "MESH" and mat in tuple(obj.data.materials):
-                        uv_layers = (l for l in obj.data.uv_layers if not l.name.startswith("_"))
+                        uv_layers = (layer for layer in obj.data.uv_layers if not layer.name.startswith("_"))
                         next(uv_layers, None)  # skip base UV
                         subtex_uv = getattr(next(uv_layers, None), "name", "")
                         if subtex_uv != "UV1":
@@ -317,8 +317,6 @@ class FnMaterial:
     def __create_texture_node(self, node_name, filepath, pos):
         texture = self.__get_texture_node(node_name)
         if texture is None:
-            from mathutils import Vector
-
             self.__update_shader_nodes()
             nodes = self.material.node_tree.nodes
             texture = nodes.new("ShaderNodeTexImage")
@@ -380,7 +378,7 @@ class FnMaterial:
         mmd_mat = mat.mmd_material
         mat.roughness = 1 / pow(max(mmd_mat.shininess, 1), 0.37)
         if hasattr(mat, "metallic"):
-            mat.metallic = pow(1 - mat.roughness, 2.7)
+            mat.metallic = 0.0
         if hasattr(mat, "specular_hardness"):
             mat.specular_hardness = mmd_mat.shininess
         self.__update_shader_input("Reflect", mmd_mat.shininess)
@@ -458,9 +456,9 @@ class FnMaterial:
                 tex_node.name = "mmd_base_tex"
             else:
                 # Take the Base Color from BSDF if there's no texture
-                bsdf_node = next((n for n in m.node_tree.nodes if n.type.startswith('BSDF_')), None)
+                bsdf_node = next((n for n in m.node_tree.nodes if n.type.startswith("BSDF_")), None)
                 if bsdf_node:
-                    base_color_input = bsdf_node.inputs.get('Base Color') or bsdf_node.inputs.get('Color')
+                    base_color_input = bsdf_node.inputs.get("Base Color") or bsdf_node.inputs.get("Color")
                     if base_color_input:
                         mmd_material.diffuse_color = base_color_input.default_value[:3]
                         # ambient should be half the diffuse
@@ -492,7 +490,7 @@ class FnMaterial:
 
         # delete bsdf node if it's there
         if m.use_nodes:
-            nodes_to_remove = [n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED' or n.type.startswith('BSDF_')]
+            nodes_to_remove = [n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED" or n.type.startswith("BSDF_")]
             for n in nodes_to_remove:
                 m.node_tree.nodes.remove(n)
 
@@ -523,7 +521,7 @@ class FnMaterial:
         if node_shader is None:
             node_shader: bpy.types.ShaderNodeGroup = nodes.new("ShaderNodeGroup")
             node_shader.name = "mmd_shader"
-            node_shader.location = (0, 1500)
+            node_shader.location = (0, 300)
             node_shader.width = 200
             node_shader.node_tree = self.__get_shader()
 
@@ -553,7 +551,7 @@ class FnMaterial:
             links.new(node_shader.outputs["Shader"], node_output.inputs["Surface"])
 
         for name_id in ("Base", "Toon", "Sphere"):
-            texture = self.__get_texture_node("mmd_%s_tex" % name_id.lower())
+            texture = self.__get_texture_node(f"mmd_{name_id.lower()}_tex")
             if texture:
                 name_tex_in, name_alpha_in, name_uv_out = (name_id + x for x in (" Tex", " Alpha", " UV"))
                 if not node_shader.inputs.get(name_tex_in, _Dummy).is_linked:
