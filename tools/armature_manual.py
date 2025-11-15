@@ -13,7 +13,7 @@ from . import eyetracking as Eyetracking
 from .register import register_wrap
 from .translations import t
 
-# Bone names from https://github.com/triazo/immersive_scaler/
+# Bone names from https://github.com/teamneoneko/immersive_scaler
 bone_names = {
     "right_shoulder": ["rightshoulder", "shoulderr", "rshoulder"],
     "right_arm": ["rightarm", "armr", "rarm", "upperarmr", "rightupperarm", "uparmr", "ruparm"],

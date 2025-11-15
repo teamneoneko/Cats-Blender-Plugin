@@ -141,7 +141,7 @@ class ShotariyaButton(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
-        webbrowser.open('https://github.com/teamneoneko/material-combiner-addon/archive/refs/heads/master.zip')
+        webbrowser.open('https://github.com/teamneoneko/material-combiner-addon/releases/latest')
 
         self.report({'INFO'}, 'ShotariyaButton.success')
         return {'FINISHED'}
@@ -152,9 +152,9 @@ class ShotariyaButton(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.label(text="This will download Material Combiner master branch:", icon='INFO')
+        col.label(text="This will open Material Combiner releases:", icon='INFO')
         col.separator()
         col.label(text="https://github.com/teamneoneko/material-combiner-addon/")
-        col.label(text="archive/refs/heads/master.zip")
+        col.label(text="releases/latest")
         col.separator() 
-        col.label(text="Click OK to download, or Cancel to download manually.")
+        col.label(text="Click OK to open, or Cancel to visit manually.")
