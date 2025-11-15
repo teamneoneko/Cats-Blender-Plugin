@@ -5,6 +5,7 @@ import logging
 import time
 
 import bpy
+import numpy as np
 from mathutils import Matrix, Vector
 
 from ..bpyutils import FnObject
@@ -13,10 +14,9 @@ from ..bpyutils import FnObject
 def _hash(v):
     if isinstance(v, (bpy.types.Object, bpy.types.PoseBone)):
         return hash(type(v).__name__ + v.name)
-    elif isinstance(v, bpy.types.Pose):
+    if isinstance(v, bpy.types.Pose):
         return hash(type(v).__name__ + v.id_data.name)
-    else:
-        raise NotImplementedError("hash")
+    raise NotImplementedError("hash")
 
 
 class FnSDEF:
@@ -80,6 +80,8 @@ class FnSDEF:
 
     @staticmethod
     def has_sdef_data(obj):
+        if obj is None or not hasattr(obj, "modifiers") or not hasattr(obj, "data") or obj.data is None:
+            return False
         mod = obj.modifiers.get("mmd_armature")
         if mod and mod.type == "ARMATURE" and mod.object:
             kb = getattr(obj.data.shape_keys, "key_blocks", None)
@@ -89,6 +91,7 @@ class FnSDEF:
     @classmethod
     def __find_vertices(cls, obj):
         if not cls.has_sdef_data(obj):
+            logging.debug(f"SDEF vertex search skipped for '{obj.name}': No SDEF data found")
             return {}
 
         vertices = {}
@@ -107,7 +110,7 @@ class FnSDEF:
                     # preprocessing
                     w0, w1 = bgs[0].weight, bgs[1].weight
                     # w0 + w1 == 1
-                    w0 = w0 / (w0 + w1)
+                    w0 /= (w0 + w1)
                     w1 = 1 - w0
 
                     c, r0, r1 = sdef_c[i].co, sdef_r0[i].co, sdef_r1[i].co
@@ -125,12 +128,18 @@ class FnSDEF:
 
     @classmethod
     def driver_function_wrap(cls, obj_name, bulk_update, use_skip, use_scale):
+        if obj_name not in bpy.data.objects:
+            logging.warning(f"SDEF driver wrap: Object '{obj_name}' not found")
+            return 0.0
         obj = bpy.data.objects[obj_name]
         shapekey = obj.data.shape_keys.key_blocks[cls.SHAPEKEY_NAME]
         return cls.driver_function(shapekey, obj_name, bulk_update, use_skip, use_scale)
 
     @classmethod
     def driver_function(cls, shapekey, obj_name, bulk_update, use_skip, use_scale):
+        if obj_name not in bpy.data.objects:
+            logging.warning(f"SDEF driver: Object '{obj_name}' not found, driver will be inactive")
+            return 0.0
         obj = bpy.data.objects[obj_name]
         if getattr(shapekey.id_data, "is_evaluated", False):
             # For Blender 2.8x, we should use evaluated object, and the only reference is the "obj" variable of SDEF driver
@@ -182,8 +191,6 @@ class FnSDEF:
         else:  # bulk update
             shapekey_data = cls.g_shapekey_data[_hash(obj)]
             if shapekey_data is None:
-                import numpy as np
-
                 shapekey_data = np.zeros(len(shapekey.data) * 3, dtype=np.float32)
                 shapekey.data.foreach_get("co", shapekey_data)
                 shapekey_data = cls.g_shapekey_data[_hash(obj)] = shapekey_data.reshape(len(shapekey.data), 3)
@@ -202,7 +209,7 @@ class FnSDEF:
                         rot1 = -rot1
                     s0, s1 = mat0.to_scale(), mat1.to_scale()
 
-                    def scale(mat_rot, w0, w1):
+                    def scale(mat_rot, w0, w1, s0, s1):
                         s = s0 * w0 + s1 * w1
                         return mat_rot @ Matrix([(s[0], 0, 0), (0, s[1], 0), (0, 0, s[2])])
 
@@ -210,7 +217,7 @@ class FnSDEF:
                         delta = sum(((key.data[vid].co - key.relative_key.data[vid].co) * key.value for key in key_blocks), Vector())  # assuming key.vertex_group = ''
                         return (mat_rot @ (pos_c + delta)) - delta
 
-                    shapekey_data[vids] = [offset(scale((rot0 * w0 + rot1 * w1).normalized().to_matrix(), w0, w1), pos_c, vid) + (mat0 @ cr0) * w0 + (mat1 @ cr1) * w1 for vid, w0, w1, pos_c, cr0, cr1 in sdef_data]
+                    shapekey_data[vids] = [offset(scale((rot0 * w0 + rot1 * w1).normalized().to_matrix(), w0, w1, s0, s1), pos_c, vid) + (mat0 @ cr0) * w0 + (mat1 @ cr1) * w1 for vid, w0, w1, pos_c, cr0, cr1 in sdef_data]
             else:
                 # bulk update
                 for bone0, bone1, sdef_data, vids in cls.g_verts[_hash(obj)].values():
@@ -260,6 +267,7 @@ class FnSDEF:
         # Unbind first
         cls.unbind(obj)
         if not cls.has_sdef_data(obj):
+            logging.debug(f"SDEF bind skipped for '{obj.name}': No SDEF data found")
             return False
         # Create the shapekey for the driver
         shapekey = obj.shape_key_add(name=cls.SHAPEKEY_NAME, from_mix=False)
@@ -278,18 +286,15 @@ class FnSDEF:
         ov.type = "SINGLE_PROP"
         ov.targets[0].id = obj
         ov.targets[0].data_path = "name"
-        if not bulk_update and use_skip:  # FIXME: force disable use_skip=True for bulk_update=False on 2.8
-            use_skip = False
         mod = obj.modifiers.get("mmd_armature")
         variables = f.driver.variables
-        for name in set(data[i].name for data in cls.g_verts[_hash(obj)].values() for i in range(2)):  # add required bones for dependency graph
+        for name in {data[i].name for data in cls.g_verts[_hash(obj)].values() for i in range(2)}:  # add required bones for dependency graph
             var = variables.new()
             var.type = "TRANSFORMS"
             var.targets[0].id = mod.object
             var.targets[0].bone_target = name
         f.driver.use_self = True
-        param = (bulk_update, use_skip, use_scale)
-        f.driver.expression = "mmd_sdef_driver(self, obj, bulk_update={}, use_skip={}, use_scale={})".format(*param)
+        f.driver.expression = f"mmd_sdef_driver(self, obj, bulk_update={bulk_update}, use_skip={use_skip}, use_scale={use_scale})"
         return True
 
     @classmethod
@@ -309,7 +314,7 @@ class FnSDEF:
     @classmethod
     def clear_cache(cls, obj=None, unused_only=False):
         if unused_only:
-            valid_keys = set(_hash(i) for i in bpy.data.objects if i.type == "MESH" and i != obj)
+            valid_keys = {_hash(i) for i in bpy.data.objects if i.type == "MESH" and i != obj}
             for key in cls.g_verts.keys() - valid_keys:
                 del cls.g_verts[key]
             for key in cls.g_shapekey_data.keys() - cls.g_verts.keys():

@@ -2,9 +2,12 @@
 # This file is part of MMD Tools.
 
 import contextlib
+import math
 from typing import Generator, List, Optional, TypeVar
 
+import bmesh
 import bpy
+from mathutils import Matrix
 
 
 class Props:  # For API changes of only name changed properties
@@ -29,7 +32,7 @@ class __EditMode:
     def __enter__(self):
         return self.__obj.data
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):
         if self.__prevMode == "EDIT":
             bpy.ops.object.mode_set(mode="OBJECT")  # update edited data
         bpy.ops.object.mode_set(mode=self.__prevMode)
@@ -51,7 +54,7 @@ class __SelectObjects:
             i.select_set(False)
 
         self.__active_object = active_object
-        self.__selected_objects = tuple(set(selected_objects) | set([active_object])) if selected_objects else (active_object,)
+        self.__selected_objects = tuple(set(selected_objects) | {active_object}) if selected_objects else (active_object,)
 
         self.__hides: List[bool] = []
         for i in self.__selected_objects:
@@ -62,8 +65,8 @@ class __SelectObjects:
     def __enter__(self) -> bpy.types.Object:
         return self.__active_object
 
-    def __exit__(self, type, value, traceback):
-        for i, j in zip(self.__selected_objects, self.__hides):
+    def __exit__(self, exc_type, exc_value, traceback):
+        for i, j in zip(self.__selected_objects, self.__hides, strict=False):
             try:
                 i.hide_set(j)
             except ReferenceError:
@@ -104,7 +107,10 @@ def select_object(obj: bpy.types.Object, objects: Optional[List[bpy.types.Object
        with select_object(obj):
            some functions...
     """
-    # TODO: Reimplement with bpy.context.temp_override (If it ain't broke, don't fix it.)
+    # TODO: Consider reimplementing with bpy.context.temp_override,
+    #       but note that Blender's new API has stability issues.
+    #       temp_override is prone to crashes, making the current approach safer.
+    #       If it ain't broke, don't fix it.
     return __SelectObjects(obj, objects)
 
 
@@ -118,10 +124,9 @@ def createObject(name="Object", object_data=None, target_scene=None):
 
 
 def makeSphere(segment=8, ring_count=5, radius=1.0, target_object=None):
-    import bmesh
-
     if target_object is None:
-        target_object = createObject(name="Sphere")
+        mesh_data = bpy.data.meshes.new("Sphere")
+        target_object = createObject(name="Sphere", object_data=mesh_data)
 
     mesh = target_object.data
     bm = bmesh.new()
@@ -139,11 +144,9 @@ def makeSphere(segment=8, ring_count=5, radius=1.0, target_object=None):
 
 
 def makeBox(size=(1, 1, 1), target_object=None):
-    import bmesh
-    from mathutils import Matrix
-
     if target_object is None:
-        target_object = createObject(name="Box")
+        mesh_data = bpy.data.meshes.new("Box")
+        target_object = createObject(name="Box", object_data=mesh_data)
 
     mesh = target_object.data
     bm = bmesh.new()
@@ -160,12 +163,9 @@ def makeBox(size=(1, 1, 1), target_object=None):
 
 
 def makeCapsule(segment=8, ring_count=2, radius=1.0, height=1.0, target_object=None):
-    import math
-
-    import bmesh
-
     if target_object is None:
-        target_object = createObject(name="Capsule")
+        mesh_data = bpy.data.meshes.new("Capsule")
+        target_object = createObject(name="Capsule", object_data=mesh_data)
     height = max(height, 1e-3)
 
     mesh = target_object.data
@@ -174,8 +174,11 @@ def makeCapsule(segment=8, ring_count=2, radius=1.0, height=1.0, target_object=N
     top = (0, 0, height / 2 + radius)
     verts.new(top)
 
-    # f = lambda i: radius*i/ring_count
-    f = lambda i: radius * math.sin(0.5 * math.pi * i / ring_count)
+    # def f(i):
+    #     return radius * i / ring_count
+    def f(i):
+        return radius * math.sin(0.5 * math.pi * i / ring_count)
+
     for i in range(ring_count, 0, -1):
         z = f(i - 1)
         t = math.sqrt(radius**2 - z**2)
@@ -317,7 +320,7 @@ class FnContext:
     def get_active_object(context: bpy.types.Context) -> Optional[bpy.types.Object]:
         # Added defensive programming for get methods
         # Related to: https://github.com/MMD-Blender/blender_mmd_tools_local/issues/176
-        if context is None or not hasattr(context, 'active_object'):
+        if context is None or not hasattr(context, "active_object"):
             return None
         return context.active_object
 
@@ -334,7 +337,7 @@ class FnContext:
     def get_scene_objects(context: bpy.types.Context) -> bpy.types.SceneObjects:
         # Added defensive programming for get methods
         # Added for consistency with get_active_object
-        if context is None or not hasattr(context, 'scene') or not hasattr(context.scene, 'objects'):
+        if context is None or not hasattr(context, "scene") or not hasattr(context.scene, "objects"):
             return []
         return context.scene.objects
 
@@ -434,7 +437,7 @@ class FnContext:
     @staticmethod
     def find_user_layer_collection_by_object(context: bpy.types.Context, target_object: bpy.types.Object) -> Optional[bpy.types.LayerCollection]:
         """
-        Finds the layer collection that contains the given target_object in the user's collections.
+        Find the layer collection that contains the given target_object in the user's collections.
 
         Args:
             context (bpy.types.Context): The Blender context.

@@ -62,7 +62,7 @@ class CleanRiggingObjects(bpy.types.Operator):
 class BuildRig(bpy.types.Operator):
     bl_idname = "mmd_tools_local.build_rig"
     bl_label = "Build Rig"
-    bl_description = "Translate physics of selected object into format usable by Blender"
+    bl_description = "Translate physics of selected object into format usable by Blender\n\nWarning: May cause crashes and performance issues. Consider using mmdbridge instead for better stability and accurate physics simulation."
     bl_options = {"REGISTER", "UNDO", "INTERNAL"}
 
     non_collision_distance_scale: bpy.props.FloatProperty(
@@ -190,36 +190,6 @@ class SetupBoneLocalAxes(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class AddMissingVertexGroupsFromBones(bpy.types.Operator):
-    bl_idname = "mmd_tools_local.add_missing_vertex_groups_from_bones"
-    bl_label = "Add Missing Vertex Groups from Bones"
-    bl_description = "Add the missing vertex groups to the selected mesh"
-    bl_options = {"REGISTER", "UNDO"}
-
-    search_in_all_meshes: bpy.props.BoolProperty(
-        name="Search in all meshes",
-        description="Search for vertex groups in all meshes",
-        default=False,
-    )
-
-    @classmethod
-    def poll(cls, context: bpy.types.Context):
-        return FnModel.find_root_object(context.active_object) is not None
-
-    def execute(self, context: bpy.types.Context):
-        active_object: bpy.types.Object = context.active_object
-        root_object = FnModel.find_root_object(active_object)
-        assert root_object is not None
-
-        bone_order_mesh_object = FnModel.find_bone_order_mesh_object(root_object)
-        if bone_order_mesh_object is None:
-            return {"CANCELLED"}
-
-        FnModel.add_missing_vertex_groups_from_bones(root_object, bone_order_mesh_object, self.search_in_all_meshes)
-
-        return {"FINISHED"}
-
-
 class CreateMMDModelRoot(bpy.types.Operator):
     bl_idname = "mmd_tools_local.create_mmd_model_root_object"
     bl_label = "Create a MMD Model Root Object"
@@ -303,7 +273,7 @@ class ConvertToMMDModel(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj and obj.type == "ARMATURE" and obj.mode != "EDIT"
+        return obj is not None and obj.type == "ARMATURE" and obj.mode != "EDIT"
 
     def invoke(self, context, event):
         vm = context.window_manager
@@ -448,7 +418,9 @@ class AssembleAll(bpy.types.Operator):
             rig.build()
             rig.morph_slider.bind()
 
-            with context.temp_override(selected_objects=[active_object]):
+            mesh_objects = list(FnModel.iterate_mesh_objects(root_object))
+            FnModel.attach_mesh_objects(root_object, mesh_objects, add_armature_modifier=True)
+            with context.temp_override(selected_objects=mesh_objects):
                 bpy.ops.mmd_tools_local.sdef_bind()
             root_object.mmd_root.use_property_driver = True
 

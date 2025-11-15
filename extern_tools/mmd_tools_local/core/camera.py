@@ -5,6 +5,7 @@ import math
 from typing import Optional
 
 import bpy
+from mathutils import Matrix, Vector
 
 from ..bpyutils import FnContext, Props
 
@@ -58,13 +59,12 @@ class FnCamera:
                 v.targets[0].data_path = "mmd_camera.angle"
                 expression = expression.replace("$angle", v.name)
             if "$sensor_height" in expression:
-                v = d.variables.new()
-                v.name = "sensor_height"
-                v.type = "SINGLE_PROP"
-                v.targets[0].id_type = "CAMERA"
-                v.targets[0].id = camera_object.data
-                v.targets[0].data_path = "sensor_height"
-                expression = expression.replace("$sensor_height", v.name)
+                # Use fixed sensor_height instead of dynamic reference.
+                # When controlled by MMD angle, sensor_height shouldn't change.
+                # This avoids unnecessary dependency cycles.
+                # Reference: https://github.com/MMD-Blender/blender_mmd_tools_local/issues/227
+                current_sensor_height = camera_object.data.sensor_height
+                expression = expression.replace("$sensor_height", str(current_sensor_height))
 
             d.expression = expression
 
@@ -77,7 +77,7 @@ class FnCamera:
     def remove_drivers(camera_object: bpy.types.Object):
         camera_object.data.driver_remove("ortho_scale")
         camera_object.driver_remove("rotation_euler")
-        camera_object.data.driver_remove("ortho_scale")
+        camera_object.data.driver_remove("type")
         camera_object.data.driver_remove("lens")
 
 
@@ -101,7 +101,7 @@ class MMDCamera:
     def __init__(self, obj):
         root_object = FnCamera.find_root(obj)
         if root_object is None:
-            raise ValueError("%s is not MMDCamera" % str(obj))
+            raise ValueError(f"{str(obj)} is not MMDCamera")
 
         self.__emptyObj = getattr(root_object, "original", obj)
 
@@ -164,20 +164,18 @@ class MMDCamera:
             if scene.camera is None:
                 scene.camera = mmd_cam
                 return MMDCamera(mmd_cam_root)
-            _camera_override_func = lambda: scene.camera
+            def _camera_override_func():
+                return scene.camera
 
         _target_override_func = None
         if cameraTarget is None:
-            _target_override_func = lambda camObj: camObj.data.dof.focus_object or camObj
+            def _target_override_func(camObj):
+                return camObj.data.dof.focus_object or camObj
 
         action_name = mmd_cam_root.name
         parent_action = bpy.data.actions.new(name=action_name)
         distance_action = bpy.data.actions.new(name=action_name + "_dis")
         FnCamera.remove_drivers(mmd_cam)
-
-        from math import atan
-
-        from mathutils import Matrix, Vector
 
         render = scene.render
         factor = (render.resolution_y * render.pixel_aspect_y) / (render.resolution_x * render.pixel_aspect_x)
@@ -187,18 +185,15 @@ class MMDCamera:
         frame_count = frame_end - frame_start
         frames = range(frame_start, frame_end)
 
-        fcurves = []
-        for i in range(3):
-            fcurves.append(parent_action.fcurves.new(data_path="location", index=i))  # x, y, z
-        for i in range(3):
-            fcurves.append(parent_action.fcurves.new(data_path="rotation_euler", index=i))  # rx, ry, rz
+        fcurves = [parent_action.fcurves.new(data_path="location", index=i) for i in range(3)]  # x, y, z
+        fcurves.extend(parent_action.fcurves.new(data_path="rotation_euler", index=i) for i in range(3))  # rx, ry, rz
         fcurves.append(parent_action.fcurves.new(data_path="mmd_camera.angle"))  # fov
         fcurves.append(parent_action.fcurves.new(data_path="mmd_camera.is_perspective"))  # persp
         fcurves.append(distance_action.fcurves.new(data_path="location", index=1))  # dis
         for c in fcurves:
             c.keyframe_points.add(frame_count)
 
-        for f, x, y, z, rx, ry, rz, fov, persp, dis in zip(frames, *(c.keyframe_points for c in fcurves)):
+        for f, x, y, z, rx, ry, rz, fov, persp, dis in zip(frames, *(c.keyframe_points for c in fcurves), strict=False):
             scene.frame_set(f)
             if _camera_override_func:
                 cameraObj = _camera_override_func()
@@ -231,7 +226,7 @@ class MMDCamera:
             x.co, y.co, z.co = ((f, i) for i in cam_target_loc)
             rx.co, ry.co, rz.co = ((f, i) for i in cam_rotation)
             dis.co = (f, cam_dis)
-            fov.co = (f, 2 * atan(tan_val))
+            fov.co = (f, 2 * math.atan(tan_val))
             persp.co = (f, cameraObj.data.type != "ORTHO")
             persp.interpolation = "CONSTANT"
             for kp in (x, y, z, rx, ry, rz, fov, dis):

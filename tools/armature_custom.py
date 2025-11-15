@@ -463,8 +463,10 @@ def merge_armatures(
                 return
             Common.apply_transforms(armature_name=merge_armature_name)
         else:
-            adjust_merge_armature_transforms(merge_armature, mesh_merge)
-            Common.apply_transforms(armature_name=merge_armature_name)
+            # Only adjust and apply transforms if the checkbox is enabled
+            if bpy.context.scene.apply_transforms:
+                adjust_merge_armature_transforms(merge_armature, mesh_merge)
+                Common.apply_transforms(armature_name=merge_armature_name)
     elif bpy.context.scene.apply_transforms:
         Common.apply_transforms(armature_name=merge_armature_name)
 

@@ -11,13 +11,14 @@ from collections import OrderedDict
 
 import bmesh
 import bpy
-import mathutils
+from mathutils import Euler, Matrix, Vector
 
 from ...bpyutils import FnContext
 from ...operators.misc import MoveObject
 from ...utils import saferelpath
 from .. import pmx
 from ..material import FnMaterial
+from ..model import FnModel
 from ..morph import FnMorph
 from ..sdef import FnSDEF
 from ..translations import FnTranslations
@@ -60,11 +61,11 @@ class _DefaultMaterial:
         # mat.mmd_material.specular_color = (0, 0, 0)
         # mat.mmd_material.ambient_color = (0, 0, 0)
         self.material = mat
-        logging.debug("create default material: %s", str(self.material))
+        logging.debug("create default material: %s", self.material.name)
 
     def __del__(self):
         if self.material:
-            logging.debug("remove default material: %s", str(self.material))
+            logging.debug("remove default material: %s", self.material.name)
             bpy.data.materials.remove(self.material)
 
 
@@ -74,6 +75,14 @@ class __PmxExporter:
         "EYEBROW": pmx.Morph.CATEGORY_EYEBROW,
         "EYE": pmx.Morph.CATEGORY_EYE,
         "MOUTH": pmx.Morph.CATEGORY_MOUTH,
+    }
+
+    MORPH_TYPES = {
+        pmx.GroupMorph: "group_morphs",
+        pmx.VertexMorph: "vertex_morphs",
+        pmx.BoneMorph: "bone_morphs",
+        pmx.UVMorph: "uv_morphs",
+        pmx.MaterialMorph: "material_morphs",
     }
 
     def __init__(self):
@@ -222,51 +231,82 @@ class __PmxExporter:
             logging.warning("  The texture file does not exist: %s", t.path)
         return len(self.__model.textures) - 1
 
-    def __copy_textures(self, output_dir, base_folder=""):
+    def __copy_textures(self, output_dir, base_folder="", copy_textures_mode="NONE"):
+        # Step 0: Store original paths for Step 2
+        original_paths = {texture: texture.path for texture in self.__model.textures}
+
+        # Step 1: Set PMX texture relative paths
         tex_dir_fallback = os.path.join(output_dir, "textures")
         tex_dir_preference = FnContext.get_addon_preferences_attribute(FnContext.ensure_context(), "base_texture_folder", "")
 
-        path_set = set()  # to prevent overwriting
-        tex_copy_list = []
         for texture in self.__model.textures:
-            path = texture.path
-            tex_dir = output_dir  # restart to the default directory at each loop
-            if not os.path.isfile(path):
-                logging.warning("*** skipping texture file which does not exist: %s", path)
-                path_set.add(os.path.normcase(path))
-                continue
-            dst_name = os.path.basename(path)
+            current_path = original_paths[texture]
+
+            # Calculate the ideal destination filename and directory based on preference
+            dst_name = os.path.basename(current_path)
+            tex_dir = output_dir  # Restart to the default directory at each loop
             if base_folder:
-                dst_name = saferelpath(path, base_folder, strategy="outside")
+                dst_name = saferelpath(current_path, base_folder, strategy="outside")
                 if dst_name.startswith(".."):
-                    # Check if the texture comes from the preferred folder
                     if tex_dir_preference:
-                        dst_name = saferelpath(path, tex_dir_preference, strategy="outside")
+                        dst_name = saferelpath(current_path, tex_dir_preference, strategy="outside")
                     if dst_name.startswith(".."):
-                        # If the code reaches here the texture is somewhere else
-                        logging.warning("The texture %s is not inside the base texture folder", path)
-                        # Fall back to basename and textures folder
-                        dst_name = os.path.basename(path)
+                        logging.warning("The texture %s is not inside the base texture folder", current_path)
+                        dst_name = os.path.basename(current_path)
                         tex_dir = tex_dir_fallback
             else:
                 tex_dir = tex_dir_fallback
-            dest_path = os.path.join(tex_dir, dst_name)
-            if os.path.normcase(path) != os.path.normcase(dest_path):  # Only copy if the paths are different
-                tex_copy_list.append((texture, path, dest_path))
-            else:
-                path_set.add(os.path.normcase(path))
 
-        for texture, path, dest_path in tex_copy_list:
-            counter = 1
-            base, ext = os.path.splitext(dest_path)
-            while os.path.normcase(dest_path) in path_set:
-                dest_path = "%s_%d%s" % (base, counter, ext)
-                counter += 1
-            path_set.add(os.path.normcase(dest_path))
-            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-            shutil.copyfile(path, dest_path)
-            logging.info("Copy file %s --> %s", path, dest_path)
-            texture.path = dest_path
+            # Determine the full destination path and the final PMX relative path
+            full_dest_path = os.path.join(tex_dir, dst_name)
+            final_relative_path = os.path.relpath(full_dest_path, start=output_dir).replace("\\", "/")
+
+            texture.path = final_relative_path
+
+        # Step 2: Copy textures
+        if copy_textures_mode in {"SKIP_EXISTING", "OVERWRITE"}:
+            for texture in self.__model.textures:
+                src_path = original_paths[texture]
+                dest_relative_path = texture.path
+                # Reconstruct the absolute destination path from the PMX's new relative path
+                full_dest_path = os.path.abspath(os.path.join(output_dir, dest_relative_path))
+
+                if os.path.exists(full_dest_path) and copy_textures_mode == "SKIP_EXISTING":
+                    logging.info("Skipping copy for existing texture: '%s'", full_dest_path)
+                    continue
+
+                os.makedirs(os.path.dirname(full_dest_path), exist_ok=True)
+
+                # Check if the source is a packed image
+                packed_image = None
+                for image in bpy.data.images:
+                    if image.packed_file and (image.filepath == src_path or os.path.basename(image.filepath) == os.path.basename(src_path)):
+                        packed_image = image
+                        break
+
+                # Handle packed images first by extracting them
+                if packed_image:
+                    logging.info("Extracting packed texture '%s' -> '%s'", packed_image.name, full_dest_path)
+                    try:
+                        with open(full_dest_path, "wb") as f:
+                            f.write(packed_image.packed_file.data)
+                    except PermissionError:
+                        logging.warning(f"Permission denied. Could not write texture to '{full_dest_path}'. Skipping.")
+                    except Exception as e:
+                        logging.exception(f"An unexpected error occurred while writing packed texture: {e}")
+
+                # If not packed, handle existing external files by copying them
+                elif os.path.isfile(src_path):
+                    if os.path.normcase(src_path) != os.path.normcase(full_dest_path):
+                        logging.info("Copying external texture '%s' -> '%s'", src_path, full_dest_path)
+                        try:
+                            shutil.copy2(src_path, full_dest_path)
+                        except PermissionError:
+                            logging.warning(f"Permission denied. Could not copy texture to '{full_dest_path}'. Skipping.")
+                        except Exception as e:
+                            logging.exception(f"An unexpected error occurred while copying external texture: {e}")
+                else:
+                    logging.warning("Source for texture '%s' not found. Cannot copy.", src_path)
 
     def __exportMaterial(self, material, num_faces):
         p_mat = pmx.Material()
@@ -315,8 +355,7 @@ class __PmxExporter:
     def __countBoneDepth(cls, bone):
         if bone.parent is None:
             return 0
-        else:
-            return cls.__countBoneDepth(bone.parent) + 1
+        return cls.__countBoneDepth(bone.parent) + 1
 
     def __exportBones(self, root, meshes):
         """Export bones.
@@ -333,9 +372,9 @@ class __PmxExporter:
         world_mat = arm.matrix_world
         r = {}
 
-        sorted_bones = sorted(pose_bones, key=lambda x: x.mmd_bone.bone_id if x.mmd_bone.bone_id >= 0 else float("inf"))
+        sorted_bones = sorted(pose_bones, key=lambda x: (x.mmd_bone.bone_id if x.mmd_bone.bone_id >= 0 else float("inf"), x.name))
+        bone_id_map = {p_bone.mmd_bone.bone_id: p_bone for p_bone in sorted_bones}
 
-        Vector = mathutils.Vector
         pmx_matrix = world_mat * self.__scale
         pmx_matrix[1], pmx_matrix[2] = pmx_matrix[2].copy(), pmx_matrix[1].copy()
 
@@ -389,21 +428,29 @@ class __PmxExporter:
                     )
                     and p_bone.parent.mmd_bone.is_tip
                 ):
-                    logging.debug(' * fix location of bone %s, parent %s is tip', bone.name, pmx_bone.parent.name)
+                    logging.debug(" * fix location of bone %s, parent %s is tip", bone.name, pmx_bone.parent.name)
                     pmx_bone.location = boneMap[pmx_bone.parent].location
                 # fmt: on
 
-                if mmd_bone.display_connection_type == "BONE":
-                    if mmd_bone.is_tip:
+                if mmd_bone.is_tip:
+                    if mmd_bone.display_connection_type == "BONE":
                         pmx_bone.displayConnection = -1
-                    else:
-                        pmx_bone.displayConnection = mmd_bone.display_connection_bone_id
-                elif mmd_bone.display_connection_type == "OFFSET":
-                    if mmd_bone.is_tip:
+                    elif mmd_bone.display_connection_type == "OFFSET":
                         pmx_bone.displayConnection = (0.0, 0.0, 0.0)
-                    else:
+                elif mmd_bone.display_connection_type == "BONE" and mmd_bone.display_connection_bone_id >= 0:
+                    target_bone_id = mmd_bone.display_connection_bone_id
+                    target_p_bone = bone_id_map.get(target_bone_id)
+
+                    # Force OFFSET if target bone is too far.
+                    if target_p_bone and (target_p_bone.head - p_bone.tail).length > 0.01:
+                        logging.warning('Bone "%s": Target bone "%s" is too far. Automatically switching display connection to OFFSET.', p_bone.name, target_p_bone.name)
                         tail_loc = __to_pmx_location(p_bone.tail)
                         pmx_bone.displayConnection = tail_loc - pmx_bone.location
+                    else:
+                        pmx_bone.displayConnection = target_bone_id
+                else:  # mmd_bone.display_connection_type == "OFFSET" or display_connection_bone_id invalid
+                    tail_loc = __to_pmx_location(p_bone.tail)
+                    pmx_bone.displayConnection = tail_loc - pmx_bone.location
 
                 if mmd_bone.enabled_fixed_axis:
                     pmx_bone.axis = __to_pmx_axis(mmd_bone.fixed_axis, p_bone)
@@ -435,7 +482,7 @@ class __PmxExporter:
         self.__exportIK(root, r)
         return r
 
-    def __exportIKLinks(self, pose_bone, count, bone_map, ik_links, custom_bone):
+    def __exportIKLinks(self, pose_bone, count, bone_map, ik_links, custom_bone, ik_export_option):
         if count <= 0 or pose_bone is None or pose_bone.name not in bone_map:
             return ik_links
 
@@ -443,31 +490,37 @@ class __PmxExporter:
         ik_link = pmx.IKLink()
         ik_link.target = bone_map[pose_bone.name]
 
-        from math import pi
-
-        minimum, maximum = [-pi] * 3, [pi] * 3
+        minimum, maximum = [-math.pi] * 3, [math.pi] * 3
         unused_counts = 0
-        ik_limit_custom = next((c for c in custom_bone.constraints if c.type == "LIMIT_ROTATION" and c.name == "mmd_ik_limit_custom%d" % len(ik_links)), None)
-        ik_limit_override = next((c for c in pose_bone.constraints if c.type == "LIMIT_ROTATION" and not c.mute), None)
-        for i, axis in enumerate("xyz"):
-            if ik_limit_custom:  # custom ik limits for MMD only
-                if getattr(ik_limit_custom, "use_limit_" + axis):
-                    minimum[i] = getattr(ik_limit_custom, "min_" + axis)
-                    maximum[i] = getattr(ik_limit_custom, "max_" + axis)
+
+        if ik_export_option == "IGNORE_ALL":
+            unused_counts = 3
+        else:
+            ik_limit_custom = next((c for c in custom_bone.constraints if c.type == "LIMIT_ROTATION" and c.name == "mmd_ik_limit_custom%d" % len(ik_links)), None)
+            ik_limit_override = next((c for c in pose_bone.constraints if c.type == "LIMIT_ROTATION" and not c.mute), None)
+
+            for i, axis in enumerate("xyz"):
+                if ik_limit_custom:  # custom ik limits for MMD only
+                    if getattr(ik_limit_custom, "use_limit_" + axis):
+                        minimum[i] = getattr(ik_limit_custom, "min_" + axis)
+                        maximum[i] = getattr(ik_limit_custom, "max_" + axis)
+                    else:
+                        unused_counts += 1
+                    continue
+
+                if getattr(pose_bone, "lock_ik_" + axis):
+                    minimum[i] = maximum[i] = 0
+                elif ik_limit_override is not None and getattr(ik_limit_override, "use_limit_" + axis):
+                    minimum[i] = getattr(ik_limit_override, "min_" + axis)
+                    maximum[i] = getattr(ik_limit_override, "max_" + axis)
+                elif ik_limit_override is not None and ik_export_option == "OVERRIDE_CONTROLLED":
+                    # mmd_ik_limit_override exists but axis disabled, don't check other sources
+                    unused_counts += 1
+                elif getattr(pose_bone, "use_ik_limit_" + axis):
+                    minimum[i] = getattr(pose_bone, "ik_min_" + axis)
+                    maximum[i] = getattr(pose_bone, "ik_max_" + axis)
                 else:
                     unused_counts += 1
-                continue
-
-            if getattr(pose_bone, "lock_ik_" + axis):
-                minimum[i] = maximum[i] = 0
-            elif ik_limit_override is not None and getattr(ik_limit_override, "use_limit_" + axis):
-                minimum[i] = getattr(ik_limit_override, "min_" + axis)
-                maximum[i] = getattr(ik_limit_override, "max_" + axis)
-            elif getattr(pose_bone, "use_ik_limit_" + axis):
-                minimum[i] = getattr(pose_bone, "ik_min_" + axis)
-                maximum[i] = getattr(pose_bone, "ik_max_" + axis)
-            else:
-                unused_counts += 1
 
         if unused_counts < 3:
             convertIKLimitAngles = pmx.importer.PMXImporter.convertIKLimitAngles
@@ -476,7 +529,7 @@ class __PmxExporter:
             ik_link.minimumAngle = list(minimum)
             ik_link.maximumAngle = list(maximum)
 
-        return self.__exportIKLinks(pose_bone.parent, count - 1, bone_map, ik_links + [ik_link], custom_bone)
+        return self.__exportIKLinks(pose_bone.parent, count - 1, bone_map, ik_links + [ik_link], custom_bone, ik_export_option)
 
     def __exportIK(self, root, bone_map):
         """Export IK constraints
@@ -486,6 +539,8 @@ class __PmxExporter:
         arm = self.__armature
         ik_loop_factor = root.mmd_root.ik_loop_factor
         pose_bones = arm.pose.bones
+
+        logging.info("IK angle limits handling: %s", self.__ik_angle_limits)
 
         ik_target_custom_map = {getattr(b.constraints.get("mmd_ik_target_custom", None), "subtarget", None): b for b in pose_bones if not b.is_mmd_shadow_bone}
 
@@ -529,7 +584,7 @@ class __PmxExporter:
                     else:
                         pmx_ik_bone.rotationConstraint = bone.mmd_bone.ik_rotation_constraint
                     pmx_ik_bone.target = bone_map[ik_target_bone.name]
-                    pmx_ik_bone.ik_links = self.__exportIKLinks(ik_chain0, c.chain_count, bone_map, [], ik_pose_bone)
+                    pmx_ik_bone.ik_links = self.__exportIKLinks(ik_chain0, c.chain_count, bone_map, [], ik_pose_bone, self.__ik_angle_limits)
 
     def __get_ik_control_bone(self, ik_constraint):
         arm = ik_constraint.target
@@ -587,13 +642,13 @@ class __PmxExporter:
             for vtx_morph in root.mmd_root.vertex_morphs:
                 morph_english_names[vtx_morph.name] = vtx_morph.name_e
                 morph_categories[vtx_morph.name] = categories.get(vtx_morph.category, pmx.Morph.CATEGORY_OHTER)
-            shape_key_names.sort(key=lambda x: root.mmd_root.vertex_morphs.find(x))
+            shape_key_names.sort(key=root.mmd_root.vertex_morphs.find)
 
         for i in shape_key_names:
             morph = pmx.VertexMorph(name=i, name_e=morph_english_names.get(i, ""), category=morph_categories.get(i, pmx.Morph.CATEGORY_OHTER))
             self.__model.morphs.append(morph)
 
-        append_table = dict(zip(shape_key_names, [m.offsets.append for m in self.__model.morphs]))
+        append_table = dict(zip(shape_key_names, [m.offsets.append for m in self.__model.morphs], strict=False))
         for v in self.__exported_vertices:
             for i, offset in v.offsets.items():
                 mo = pmx.VertexMorphOffset()
@@ -630,7 +685,7 @@ class __PmxExporter:
             self.__model.morphs.append(mat_morph)
 
     def __sortMaterials(self):
-        """sort materials for alpha blending
+        """Sort materials for alpha blending
 
         モデル内全頂点の平均座標をモデルの中心と考えて、
         モデル中心座標とマテリアルがアサインされている全ての面の構成頂点との平均距離を算出。
@@ -638,23 +693,24 @@ class __PmxExporter:
         モデル中心座標から離れている位置で使用されているマテリアルほどリストの後ろ側にくるように。
         かなりいいかげんな実装
         """
-        center = mathutils.Vector([0, 0, 0])
         vertices = self.__model.vertices
         vert_num = len(vertices)
-        for v in self.__model.vertices:
-            center += mathutils.Vector(v.co) / vert_num
+        if vert_num > 0:
+            center = sum((Vector(v.co) for v in vertices), Vector((0, 0, 0))) / vert_num
+        else:
+            center = Vector((0, 0, 0))
 
         faces = self.__model.faces
         offset = 0
         distances = []
-        for mat, bl_mat_name in zip(self.__model.materials, self.__material_name_table):
+        for mat, bl_mat_name in zip(self.__model.materials, self.__material_name_table, strict=False):
             d = 0
             face_num = int(mat.vertex_count / 3)
             for i in range(offset, offset + face_num):
                 face = faces[i]
-                d += (mathutils.Vector(vertices[face[0]].co) - center).length
-                d += (mathutils.Vector(vertices[face[1]].co) - center).length
-                d += (mathutils.Vector(vertices[face[2]].co) - center).length
+                d += (Vector(vertices[face[0]].co) - center).length
+                d += (Vector(vertices[face[1]].co) - center).length
+                d += (Vector(vertices[face[2]].co) - center).length
             distances.append((d / mat.vertex_count, mat, offset, face_num, bl_mat_name))
             offset += face_num
         sorted_faces = []
@@ -759,8 +815,8 @@ class __PmxExporter:
             group_morph = pmx.GroupMorph(name=morph.name, name_e=morph.name_e, category=categories.get(morph.category, pmx.Morph.CATEGORY_OHTER))
             self.__model.morphs.append(group_morph)
 
-        morph_map = self.__get_pmx_morph_map()
-        for morph, group_morph in zip(mmd_root.group_morphs, self.__model.morphs[start_index:]):
+        morph_map = self.__get_pmx_morph_map(root)
+        for morph, group_morph in zip(mmd_root.group_morphs, self.__model.morphs[start_index:], strict=False):
             for data in morph.data:
                 morph_index = morph_map.get((data.morph_type, data.name), -1)
                 if morph_index < 0:
@@ -773,7 +829,7 @@ class __PmxExporter:
 
     def __exportDisplayItems(self, root, bone_map):
         res = []
-        morph_map = self.__get_pmx_morph_map()
+        morph_map = self.__get_pmx_morph_map(root)
         for i in root.mmd_root.display_item_frames:
             d = pmx.Display()
             d.name = i.name
@@ -784,32 +840,63 @@ class __PmxExporter:
                 if j.type == "BONE" and j.name in bone_map:
                     items.append((0, bone_map[j.name]))
                 elif j.type == "MORPH" and (j.morph_type, j.name) in morph_map:
-                    items.append((1, morph_map[(j.morph_type, j.name)]))
+                    items.append((1, morph_map[j.morph_type, j.name]))
                 else:
                     logging.warning("Display item (%s, %s) was not found.", j.type, j.name)
             d.data = items
             res.append(d)
         self.__model.display = res
 
-    def __get_pmx_morph_map(self):
-        morph_types = {
-            pmx.GroupMorph: "group_morphs",
-            pmx.VertexMorph: "vertex_morphs",
-            pmx.BoneMorph: "bone_morphs",
-            pmx.UVMorph: "uv_morphs",
-            pmx.MaterialMorph: "material_morphs",
-        }
+    def __get_facial_frame(self, root):
+        for frame in root.mmd_root.display_item_frames:
+            if frame.name == "表情":
+                return frame
+        return None
+
+    def __get_pmx_morph_map(self, root):
+        assert root is not None, "root should not be None when __get_pmx_morph_map is called"
+
         morph_map = {}
-        for i, m in enumerate(self.__model.morphs):
-            morph_map[(morph_types[type(m)], m.name)] = i
+        index = 0
+
+        # Build set of actually existing morphs to filter against
+        existing_morphs = set()
+        existing_morphs.update((self.MORPH_TYPES[type(m)], m.name) for m in self.__model.morphs)
+
+        # Priority: Display Panel order (only for existing morphs)
+        facial_frame = self.__get_facial_frame(root)
+        if facial_frame:
+            for item in facial_frame.data:
+                if item.type == "MORPH":
+                    key = (item.morph_type, item.name)
+                    # Only add if morph actually exists and not already mapped
+                    if key not in morph_map and key in existing_morphs:
+                        morph_map[key] = index
+                        index += 1
+
+        # Fallback: remaining morphs in original order
+        for m in self.__model.morphs:
+            key = (self.MORPH_TYPES[type(m)], m.name)
+            if key not in morph_map:
+                morph_map[key] = index
+                index += 1
+
         return morph_map
 
     def __exportRigidBodies(self, rigid_bodies, bone_map):
         rigid_map = {}
         rigid_cnt = 0
-        Vector = mathutils.Vector
         for obj in rigid_bodies:
             t, r, s = obj.matrix_world.decompose()
+            if any(math.isnan(val) for val in t):
+                logging.warning(f"Rigid body '{obj.name}' has invalid position coordinates, using default position")
+                t = Vector((0.0, 0.0, 0.0))
+            if any(math.isnan(val) for val in r):
+                logging.warning(f"Rigid body '{obj.name}' has invalid rotation coordinates, using default rotation")
+                r = Euler((0.0, 0.0, 0.0), "YXZ")
+            if any(math.isnan(val) for val in s):
+                logging.warning(f"Rigid body '{obj.name}' has invalid scale coordinates, using default scale")
+                s = Vector((1.0, 1.0, 1.0))
             r = r.to_euler("YXZ")
             rb = obj.rigid_body
             if rb is None:
@@ -857,7 +944,6 @@ class __PmxExporter:
         return rigid_map
 
     def __exportJoints(self, joints, rigid_map):
-        Vector = mathutils.Vector
         for joint in joints:
             t, r, s = joint.matrix_world.decompose()
             r = r.to_euler("YXZ")
@@ -885,21 +971,67 @@ class __PmxExporter:
     @staticmethod
     def __convertFaceUVToVertexUV(vert_index, uv, normal, vertices_map):
         vertices = vertices_map[vert_index]
+        assert vertices, f"Empty vertices list for vertex index {vert_index}"
+
         for i in vertices:
             if i.uv is None:
                 i.uv = uv
                 i.normal = normal
                 return i
-            elif (i.uv - uv).length < 0.001 and (normal - i.normal).length < 0.01:
+            if (i.uv - uv).length < 0.001 and (normal - i.normal).length < 0.01:
                 return i
-        n = copy.copy(i)  # shallow copy should be fine
+        n = copy.copy(vertices[0])  # shallow copy should be fine
         n.uv = uv
         n.normal = normal
         vertices.append(n)
         return n
 
+    def __convertFaceUVToVertexUVSmooth(self, vert_index, uv, normal, vertices_map, face_area, loop_angle):
+        """Convert face UV to vertex UV with weighted normal averaging."""
+        vertices = vertices_map[vert_index]
+        assert vertices, f"Empty vertices list for vertex index {vert_index}"
+
+        v = None
+        for i in vertices:
+            if i.uv is None:
+                i.uv = uv
+                v = i
+                break
+            if (i.uv - uv).length < 0.001:  # UV requires exact matching
+                v = i
+                break
+
+        if v is None:
+            # Create new vertex for different UV
+            v = copy.copy(vertices[0])
+            v.uv = uv
+            vertices.append(v)
+
+        # Initialize averaging lists if needed
+        for attr_name in ["_normal_list", "_area_list", "_angle_list"]:
+            if not hasattr(v, attr_name):
+                setattr(v, attr_name, [])
+
+        # Append current values to averaging lists
+        v._normal_list.append(normal)
+        v._area_list.append(face_area)
+        v._angle_list.append(loop_angle)
+
+        # Average normals
+        if v._normal_list.count(v._normal_list[0]) == len(v._normal_list):  # All normals identical
+            v.normal = normal
+        else:
+            weights = [angle * area for angle, area in zip(v._angle_list, v._area_list, strict=False)]
+            total_weight = sum(weights) or 1.0  # Avoid division by zero
+            weighted_normal_sum = sum((n * w for n, w in zip(v._normal_list, weights, strict=False)), Vector((0, 0, 0)))
+            v.normal = (weighted_normal_sum / total_weight).normalized()
+
+        return v
+
     @staticmethod
     def __convertAddUV(vert, adduv, addzw, uv_index, vertices, rip_vertices):
+        assert vertices, "Empty vertices list for additional UV processing"
+
         if vert.add_uvs[uv_index] is None:
             vert.add_uvs[uv_index] = (adduv, addzw)
             return vert
@@ -916,45 +1048,6 @@ class __PmxExporter:
         return n
 
     @staticmethod
-    def __triangulate(mesh, custom_normals):
-        bm = bmesh.new()
-        bm.from_mesh(mesh)
-
-        is_triangulated = True
-        face_verts_to_loop_id_map = {}
-
-        loop_id = 0
-        for f in bm.faces:
-            vert_to_loop_id = face_verts_to_loop_id_map.setdefault(f, {})
-            if is_triangulated and len(f.verts) != 3:
-                is_triangulated = False
-            for v in f.verts:
-                vert_to_loop_id[v] = loop_id
-                loop_id += 1
-
-        loop_normals, face_indices = None, None
-        if is_triangulated:
-            loop_normals = custom_normals
-        else:
-            face_map = bmesh.ops.triangulate(bm, faces=bm.faces, quad_method="FIXED", ngon_method="EAR_CLIP")["face_map"]
-            logging.debug(" - Remapping custom normals...")
-            loop_normals, face_indices = [], []
-            for f in bm.faces:
-                f_orig = face_map.get(f, f)
-                face_indices.append(f_orig.index)
-                vert_to_loop_id = face_verts_to_loop_id_map[f_orig]
-                for v in f.verts:
-                    loop_normals.append(custom_normals[vert_to_loop_id[v]])
-            logging.debug("   - Done (faces:%d)", len(bm.faces))
-            bm.to_mesh(mesh)
-            face_map.clear()
-        face_verts_to_loop_id_map.clear()
-        bm.free()
-
-        assert len(loop_normals) == len(mesh.loops)
-        return loop_normals, face_indices
-
-    @staticmethod
     def __get_normals(mesh, matrix):
         logging.debug(" - Get normals...")
         custom_normals = [(matrix @ cn.vector).normalized() for cn in mesh.corner_normals]
@@ -962,28 +1055,76 @@ class __PmxExporter:
         return custom_normals
 
     def __doLoadMeshData(self, meshObj, bone_map):
-        vg_to_bone = {i: bone_map[x.name] for i, x in enumerate(meshObj.vertex_groups) if x.name in bone_map}
-        vg_edge_scale = meshObj.vertex_groups.get("mmd_edge_scale", None)
-        vg_vertex_order = meshObj.vertex_groups.get("mmd_vertex_order", None)
-
-        pmx_matrix = meshObj.matrix_world * self.__scale
-        pmx_matrix[1], pmx_matrix[2] = pmx_matrix[2].copy(), pmx_matrix[1].copy()
-        sx, sy, sz = meshObj.matrix_world.to_scale()
-        normal_matrix = pmx_matrix.to_3x3()
-        if not (sx == sy == sz):
-            invert_scale_matrix = mathutils.Matrix([[1.0 / sx, 0, 0], [0, 1.0 / sy, 0], [0, 0, 1.0 / sz]])
-            normal_matrix = normal_matrix @ invert_scale_matrix  # reset the scale of meshObj.matrix_world
-            normal_matrix = normal_matrix @ invert_scale_matrix  # the scale transform of normals
-
         def _to_mesh(obj):
             bpy.context.view_layer.update()
             depsgraph = bpy.context.evaluated_depsgraph_get()
             return obj.evaluated_get(depsgraph).to_mesh(depsgraph=depsgraph, preserve_all_data_layers=True)
 
-        _to_mesh_clear = lambda obj, mesh: obj.to_mesh_clear()
+        def _to_mesh_clear(obj, mesh):
+            return obj.to_mesh_clear()
 
-        base_mesh = _to_mesh(meshObj)
-        loop_normals, face_indices = self.__triangulate(base_mesh, self.__get_normals(base_mesh, normal_matrix))
+        # Use try-finally pattern to guarantee temporary modifier cleanup, preventing scene pollution
+        base_mesh = None
+        temp_tri_mod = None
+        original_smooth_states = None
+        try:
+            # Clear any existing mesh data before processing
+            _to_mesh_clear(meshObj, base_mesh)
+
+            # SMOOTH_KEEP_SHARP: Apply smooth shading while preserving sharp edges
+            if self.__normal_handling == "SMOOTH_KEEP_SHARP":
+                # Save original smooth states
+                original_smooth_states = [False] * len(meshObj.data.polygons)
+                meshObj.data.polygons.foreach_get("use_smooth", original_smooth_states)
+                meshObj.data.polygons.foreach_set("use_smooth", [True] * len(meshObj.data.polygons))
+
+            # Check if triangulation is needed
+            base_mesh = _to_mesh(meshObj)
+            needs_triangulation = any(len(poly.vertices) > 3 for poly in base_mesh.polygons)
+            if needs_triangulation:
+                # Add triangulation modifier
+                temp_tri_mod = meshObj.modifiers.new(name="temp_triangulate_modifier", type="TRIANGULATE")
+                temp_tri_mod.quad_method = "BEAUTY"
+                temp_tri_mod.ngon_method = "BEAUTY"
+                temp_tri_mod.keep_custom_normals = True
+
+            # Re-evaluate mesh with all modifiers applied
+            base_mesh = _to_mesh(meshObj)
+        except Exception:
+            logging.exception("Error occurred while applying mesh modifiers")
+            raise
+        finally:
+            # Restore original smooth states
+            if original_smooth_states is not None:
+                meshObj.data.polygons.foreach_set("use_smooth", original_smooth_states)
+            # Clean up modifier
+            if temp_tri_mod:
+                meshObj.modifiers.remove(temp_tri_mod)
+
+        # Process vertex groups after triangulation
+        vg_to_bone = {i: bone_map[x.name] for i, x in enumerate(meshObj.vertex_groups) if x.name in bone_map}
+        vg_edge_scale = meshObj.vertex_groups.get("mmd_edge_scale", None)
+        vg_vertex_order = meshObj.vertex_groups.get("mmd_vertex_order", None)
+
+        # Setup transformation matrices
+        pmx_matrix = meshObj.matrix_world * self.__scale
+        pmx_matrix[1], pmx_matrix[2] = pmx_matrix[2].copy(), pmx_matrix[1].copy()
+        sx, sy, sz = meshObj.matrix_world.to_scale()
+        normal_matrix = pmx_matrix.to_3x3()
+        if not (sx == sy == sz):
+            invert_scale_matrix = Matrix([[1.0 / sx, 0, 0], [0, 1.0 / sy, 0], [0, 0, 1.0 / sz]])
+            normal_matrix @= invert_scale_matrix  # reset the scale of meshObj.matrix_world
+            normal_matrix @= invert_scale_matrix  # the scale transform of normals
+
+        # Extract normals and angles before apply transformation
+        loop_normals = self.__get_normals(base_mesh, normal_matrix)
+        bm_temp = bmesh.new()
+        bm_temp.from_mesh(base_mesh)
+        loop_angles = []
+        for face in bm_temp.faces:
+            loop_angles.extend(loop.calc_angle() for loop in face.loops)
+        bm_temp.free()
+        # Apply transformation to triangulated mesh
         base_mesh.transform(pmx_matrix)
 
         def _get_weight(vertex_group_index, vertex, default_weight):
@@ -994,32 +1135,38 @@ class __PmxExporter:
 
         get_edge_scale = None
         if vg_edge_scale:
-            get_edge_scale = lambda x: _get_weight(vg_edge_scale.index, x, 1)
+            def get_edge_scale(x):
+                return _get_weight(vg_edge_scale.index, x, 1)
         else:
-            get_edge_scale = lambda x: 1
+            def get_edge_scale(x):
+                return 1
 
         get_vertex_order = None
         if self.__vertex_order_map:  # sort vertices
             mesh_id = self.__vertex_order_map.setdefault("mesh_id", 0)
             self.__vertex_order_map["mesh_id"] += 1
             if vg_vertex_order and self.__vertex_order_map["method"] == "CUSTOM":
-                get_vertex_order = lambda x: (mesh_id, _get_weight(vg_vertex_order.index, x, 2), x.index)
+                def get_vertex_order(x):
+                    return (mesh_id, _get_weight(vg_vertex_order.index, x, 2), x.index)
             else:
-                get_vertex_order = lambda x: (mesh_id, x.index)
+                def get_vertex_order(x):
+                    return (mesh_id, x.index)
         else:
-            get_vertex_order = lambda x: None
+            def get_vertex_order(x):
+                return None
 
         uv_morph_names = {g.index: (n, x) for g, n, x in FnMorph.get_uv_morph_vertex_groups(meshObj)}
-
+        AXIS_MAP = {"X": 0, "Y": 1, "Z": 2, "W": 3}
         def get_uv_offsets(v):
             uv_offsets = {}
             for x in v.groups:
-                if x.group in uv_morph_names and x.weight > 0:
+                if x.weight > 0 and x.group in uv_morph_names:
                     name, axis = uv_morph_names[x.group]
                     d = uv_offsets.setdefault(name, [0, 0, 0, 0])
-                    d["XYZW".index(axis[1])] += -x.weight if axis[0] == "-" else x.weight
+                    d[AXIS_MAP[axis[1]]] += -x.weight if axis[0] == "-" else x.weight
             return uv_offsets
 
+        # Create base vertices from triangulated mesh
         base_vertices = {}
         for v in base_mesh.vertices:
             base_vertices[v.index] = [
@@ -1030,17 +1177,50 @@ class __PmxExporter:
                     get_edge_scale(v),
                     get_vertex_order(v),
                     get_uv_offsets(v),
-                )
+                ),
             ]
 
-        # load face data
+        # Extract vertex colors as ADD UV2
+        vertex_colors = None
+        vertex_colors_data = None
+        if self.__export_vertex_colors_as_adduv2:
+            vertex_colors = base_mesh.vertex_colors.active
+            if vertex_colors:
+                vertex_colors_data = [c.color for c in vertex_colors.data]
+
+                if "UV1" not in base_mesh.uv_layers:
+                    uv1_layer = base_mesh.uv_layers.new(name="UV1")
+                    for loop_data in uv1_layer.data:
+                        loop_data.uv = (0, 1.0)
+
+                if "UV2" not in base_mesh.uv_layers:
+                    base_mesh.uv_layers.new(name="UV2")
+                if "_UV2" not in base_mesh.uv_layers:
+                    base_mesh.uv_layers.new(name="_UV2")
+
+                uv2_layer = base_mesh.uv_layers["UV2"]
+                uv2_zw_layer = base_mesh.uv_layers["_UV2"]
+
+                for loop_idx, color in enumerate(vertex_colors_data):
+                    if loop_idx < len(uv2_layer.data):
+                        # Pre-flip V coordinates to compensate for flipUV_V processing
+                        uv2_layer.data[loop_idx].uv = (color[0], 1.0 - color[1])
+                        uv2_zw_layer.data[loop_idx].uv = (color[2], 1.0 - color[3])
+                logging.info("Export vertex colors as ADD UV2")
+
+        # Process UV layers
+        bl_add_uvs = [i for i in base_mesh.uv_layers[1:] if not i.name.startswith("_")]
+        self.__add_uv_count = min(max(self.__add_uv_count, len(bl_add_uvs)), 4)
+
+        # Process faces from triangulated mesh
         class _DummyUV:
-            uv1 = uv2 = uv3 = mathutils.Vector((0, 1))
+            uv1 = uv2 = uv3 = Vector((0, 1))
 
             def __init__(self, uvs):
                 self.uv1, self.uv2, self.uv3 = (v.uv.copy() for v in uvs)
 
-        _UVWrapper = lambda x: (_DummyUV(x[i : i + 3]) for i in range(0, len(x), 3))
+        def _UVWrapper(x):
+            return (_DummyUV(x[i : i + 3]) for i in range(0, len(x), 3))
 
         material_faces = {}
         uv_data = base_mesh.uv_layers.active
@@ -1048,45 +1228,52 @@ class __PmxExporter:
             uv_data = _UVWrapper(uv_data.data)
         else:
             uv_data = iter(lambda: _DummyUV, None)
-        face_seq = []
-        for face, uv, face_index in zip(base_mesh.polygons, uv_data, face_indices or iter(lambda: -1, None)):
-            if len(face.vertices) != 3:
-                raise Exception
-            idx = face.index * 3
-            n1, n2, n3 = loop_normals[idx : idx + 3]
-            v1 = self.__convertFaceUVToVertexUV(face.vertices[0], uv.uv1, n1, base_vertices)
-            v2 = self.__convertFaceUVToVertexUV(face.vertices[1], uv.uv2, n2, base_vertices)
-            v3 = self.__convertFaceUVToVertexUV(face.vertices[2], uv.uv3, n3, base_vertices)
 
-            t = _Face([v1, v2, v3], face_index)
+        face_seq = []
+        for face_idx, (face, uv) in enumerate(zip(base_mesh.polygons, uv_data, strict=False)):
+            if len(face.vertices) != 3:
+                raise ValueError(f"Face should be triangulated. Face index: {face.index}, Mesh name: {base_mesh.name}")
+
+            loop_indices = list(face.loop_indices)
+            n1, n2, n3 = [loop_normals[idx] for idx in loop_indices]
+            a1, a2, a3 = [loop_angles[idx] for idx in loop_indices]
+            face_area = face.area
+
+            if self.__normal_handling == "SMOOTH_ALL_NORMALS":
+                v1 = self.__convertFaceUVToVertexUVSmooth(face.vertices[0], uv.uv1, n1, base_vertices, face_area, a1)
+                v2 = self.__convertFaceUVToVertexUVSmooth(face.vertices[1], uv.uv2, n2, base_vertices, face_area, a2)
+                v3 = self.__convertFaceUVToVertexUVSmooth(face.vertices[2], uv.uv3, n3, base_vertices, face_area, a3)
+            else:  # PRESERVE_ALL_NORMALS, SMOOTH_KEEP_SHARP(Already smoothed using modifier)
+                v1 = self.__convertFaceUVToVertexUV(face.vertices[0], uv.uv1, n1, base_vertices)
+                v2 = self.__convertFaceUVToVertexUV(face.vertices[1], uv.uv2, n2, base_vertices)
+                v3 = self.__convertFaceUVToVertexUV(face.vertices[2], uv.uv3, n3, base_vertices)
+
+            t = _Face([v1, v2, v3], face.index)
             face_seq.append(t)
             if face.material_index not in material_faces:
                 material_faces[face.material_index] = []
             material_faces[face.material_index].append(t)
 
-        if face_indices:
-            for f in material_faces.values():
-                f.sort(key=lambda x: x.index)
-        _mat_name = lambda x: x.name if x else self.__getDefaultMaterial().name
+        def _mat_name(x):
+            return x.name if x else self.__getDefaultMaterial().name
         material_names = {i: _mat_name(m) for i, m in enumerate(base_mesh.materials)}
-        material_names = {i: material_names.get(i, None) or _mat_name(None) for i in material_faces.keys()}
+        material_names = {i: material_names.get(i) or _mat_name(None) for i in material_faces.keys()}
 
-        # export add UV
-        bl_add_uvs = [i for i in base_mesh.uv_layers[1:] if not i.name.startswith("_")]
-        self.__add_uv_count = max(self.__add_uv_count, len(bl_add_uvs))
+        # Export additional UV layers
         for uv_n, uv_tex in enumerate(bl_add_uvs):
             if uv_n > 3:
-                logging.warning(" * extra addUV%d+ are not supported", uv_n + 1)
-                break
+                logging.warning(f" * extra addUV{uv_n + 1} ({uv_tex.name}) are not supported")
+                continue
             uv_data = _UVWrapper(uv_tex.data)
             zw_data = base_mesh.uv_layers.get("_" + uv_tex.name, None)
-            logging.info(" # exporting addUV%d: %s [zw: %s]", uv_n + 1, uv_tex.name, zw_data)
+            logging.info(f" # exporting addUV{uv_n + 1}: {uv_tex.name} [zw: {zw_data.name if zw_data else zw_data}]")
             if zw_data:
                 zw_data = _UVWrapper(zw_data.data)
             else:
                 zw_data = iter(lambda: _DummyUV, None)
             rip_vertices_map = {}
-            for f, face, uv, zw in zip(face_seq, base_mesh.polygons, uv_data, zw_data):
+
+            for f, face, uv, zw in zip(face_seq, base_mesh.polygons, uv_data, zw_data, strict=False):
                 vertices = [base_vertices[x] for x in face.vertices]
                 rip_vertices = [rip_vertices_map.setdefault(x, [x]) for x in f.vertices]
                 f.vertices[0] = self.__convertAddUV(f.vertices[0], uv.uv1, zw.uv1, uv_n, vertices[0], rip_vertices[0])
@@ -1095,7 +1282,7 @@ class __PmxExporter:
 
         _to_mesh_clear(meshObj, base_mesh)
 
-        # calculate offsets
+        # Calculate shape key offsets
         shape_key_list = []
         if meshObj.data.shape_keys:
             for i, kb in enumerate(meshObj.data.shape_keys.key_blocks):
@@ -1160,6 +1347,18 @@ class __PmxExporter:
         return _Mesh(material_faces, shape_key_names, material_names)
 
     def __loadMeshData(self, meshObj, bone_map):
+        # Check if object is excluded from view layer
+        # Note: Use meshObj.name instead of meshObj with the 'in' operator,
+        # because bpy_prop_collection.__contains__ expects a string or a tuple of strings.
+        if meshObj.name not in bpy.context.view_layer.objects:
+            logging.info("Skipping mesh excluded from view layer: %s", meshObj.name)
+            return _Mesh({}, [], {})
+
+        # Check if mesh has valid geometry
+        if not meshObj.data or len(meshObj.data.vertices) == 0:
+            logging.info("Skipping empty mesh: %s", meshObj.name)
+            return _Mesh({}, [], {})
+
         show_only_shape_key = meshObj.show_only_shape_key
         active_shape_key_index = meshObj.active_shape_key_index
         meshObj.active_shape_key_index = 0
@@ -1195,7 +1394,7 @@ class __PmxExporter:
         FnTranslations.clear_data(root_object.mmd_root.translation)
 
     def execute(self, filepath, **args):
-        root = args.get("root", None)
+        root = args.get("root")
         self.__model = pmx.Model()
         self.__model.name = "test"
         self.__model.name_e = "test eng"
@@ -1203,7 +1402,11 @@ class __PmxExporter:
         self.__model.comment_e = "exported by mmd_tools_local"
 
         if root is not None:
-            self.__model.name = root.mmd_root.name or root.name
+            if root.mmd_root.name:
+                self.__model.name = root.mmd_root.name
+            else:
+                logging.warning(f"Model name is empty, using root object name '{root.name}' instead")
+                self.__model.name = root.name
             self.__model.name_e = root.mmd_root.name_e
             txt = bpy.data.texts.get(root.mmd_root.comment_text, None)
             if txt:
@@ -1212,15 +1415,20 @@ class __PmxExporter:
             if txt:
                 self.__model.comment_e = txt.as_string().replace("\n", "\r\n")
 
-        self.__armature = args.get("armature", None)
+        self.__armature = args.get("armature")
         meshes = sorted(args.get("meshes", []), key=lambda x: x.name)
         rigids = sorted(args.get("rigid_bodies", []), key=lambda x: x.name)
         joints = sorted(args.get("joints", []), key=lambda x: x.name)
 
-        bpy.ops.mmd_tools_local.fix_bone_order()
+        FnModel.clean_invalid_bone_id_references(root)
+        if args.get("fix_bone_order", True):
+            bpy.ops.mmd_tools_local.fix_bone_order()
 
         self.__scale = args.get("scale", 1.0)
         self.__disable_specular = args.get("disable_specular", False)
+        self.__normal_handling = args.get("normal_handling", "SMOOTH_KEEP_SHARP")
+        self.__export_vertex_colors_as_adduv2 = args.get("export_vertex_colors_as_adduv2", False)
+        self.__ik_angle_limits = args.get("ik_angle_limits", "EXPORT_ALL")
         sort_vertices = args.get("sort_vertices", "NONE")
         if sort_vertices != "NONE":
             self.__vertex_order_map = {"method": sort_vertices}
@@ -1244,28 +1452,53 @@ class __PmxExporter:
             self.__export_material_morphs(root)
             self.__export_uv_morphs(root)
             self.__export_group_morphs(root)
+
+            # Sort morphs by Display Panel facial frame order for PMX export
+            # Reference: https://github.com/MMD-Blender/blender_mmd_tools_local/issues/77
+            morph_map = self.__get_pmx_morph_map(root)
+            self.__model.morphs.sort(key=lambda m: morph_map.get((self.MORPH_TYPES[type(m)], m.name), float("inf")))
+
             self.__exportDisplayItems(root, nameMap)
 
         rigid_map = self.__exportRigidBodies(rigids, nameMap)
         self.__exportJoints(joints, rigid_map)
 
-        if args.get("copy_textures", False):
-            output_dir = os.path.dirname(filepath)
-            import_folder = root.get("import_folder", "") if root else ""
-            base_folder = FnContext.get_addon_preferences_attribute(FnContext.ensure_context(), "base_texture_folder", "")
-            self.__copy_textures(output_dir, import_folder or base_folder)
+        output_dir = os.path.dirname(filepath)
+        import_folder = root.get("import_folder", "") if root else ""
+        base_folder = FnContext.get_addon_preferences_attribute(FnContext.ensure_context(), "base_texture_folder", "")
+        self.__copy_textures(output_dir, import_folder or base_folder, copy_textures_mode=args.get("copy_textures_mode", "NONE"))
+
+        # Output Changes in Vertex and Face Count
+        original_vertex_count = 0
+        original_face_count = 0
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        for mesh_obj in meshes:
+            obj_eval = mesh_obj.evaluated_get(depsgraph)
+            mesh_eval = obj_eval.data
+            original_vertex_count += len(mesh_eval.vertices)
+            original_face_count += len(mesh_eval.polygons)
+        final_vertex_count = len(self.__model.vertices)
+        final_face_count = len(self.__model.faces)
+        vertex_diff = final_vertex_count - original_vertex_count
+        face_diff = final_face_count - original_face_count
+        triangulation_ratio = final_face_count / original_face_count if original_face_count > 0 else 0
+        logging.info("Changes in Vertex and Face Count:")
+        logging.info("  Normal Handling: %s", self.__normal_handling)
+        logging.info("  Vertices: Original %d -> Output %d (%+d)", original_vertex_count, final_vertex_count, vertex_diff)
+        logging.info("  Faces: Original %d -> Output %d (%+d)", original_face_count, final_face_count, face_diff)
+        logging.info("  Face Triangulation Ratio: %.2fx (Output / Original)", triangulation_ratio)
 
         pmx.save(filepath, self.__model, add_uv_count=self.__add_uv_count)
 
 
 def export(filepath, **kwargs):
     logging.info("****************************************")
-    logging.info(" %s module" % __name__)
+    logging.info(" %s module", __name__)
     logging.info("----------------------------------------")
     start_time = time.time()
     exporter = __PmxExporter()
     exporter.execute(filepath, **kwargs)
     logging.info(" Finished exporting the model in %f seconds.", time.time() - start_time)
     logging.info("----------------------------------------")
-    logging.info(" %s module" % __name__)
+    logging.info(" %s module", __name__)
     logging.info("****************************************")

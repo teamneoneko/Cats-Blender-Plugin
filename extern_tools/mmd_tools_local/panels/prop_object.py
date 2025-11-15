@@ -15,7 +15,8 @@ class MMDModelObjectPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return FnModel.find_root_object(context.active_object)
+        root = FnModel.find_root_object(context.active_object)
+        return root is not None
 
     def draw(self, context):
         layout = self.layout

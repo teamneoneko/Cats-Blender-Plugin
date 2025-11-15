@@ -35,11 +35,11 @@ class MMDMeshSorter(PT_ProductionPanelBase, bpy.types.Panel):
 
 class mmd_tools_local_UL_ModelMeshes(bpy.types.UIList):
     def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname, _index):
-        if self.layout_type in {"DEFAULT"}:
+        if self.layout_type == "DEFAULT":
             layout.label(text=item.name, translate=False, icon="OBJECT_DATA")
-        elif self.layout_type in {"COMPACT"}:
+        elif self.layout_type == "COMPACT":
             pass
-        elif self.layout_type in {"GRID"}:
+        elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
             layout.label(text="", icon_value=icon)
 
@@ -53,7 +53,9 @@ class mmd_tools_local_UL_ModelMeshes(bpy.types.UIList):
         flt_neworder = list(range(len(objects)))
 
         armature = FnModel.find_armature_object(FnModel.find_root_object(context.active_object))
-        __is_child_of_armature = lambda x: x.parent and (x.parent == armature or __is_child_of_armature(x.parent))
+
+        def __is_child_of_armature(x):
+            return x.parent and (x.parent == armature or __is_child_of_armature(x.parent))
 
         name_dict = {}
         for i, obj in enumerate(objects):
