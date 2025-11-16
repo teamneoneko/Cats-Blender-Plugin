@@ -842,6 +842,8 @@
         "EyeTrackingPanel.troubleshooting.shapeKeys": "• Check shape keys are named correctly", 
         "EyeTrackingPanel.troubleshooting.boneWeights": "• Ensure eye bones are properly weighted",
         "EyeTrackingPanel.troubleshooting.restPosition": "• Confirm armature is in rest position",
-        "merge_armatures.error.mustapplytransforms": "Transform Issue Detected!\n\nYour armatures have non-uniform scaling or rotations that need to be fixed before merging.\nThis is important to prevent size changes and deformation issues.\n\nTo fix this:\n1. Enable the 'Apply Transforms' checkbox in the merge settings\n2. Try the merge again\n\nThe 'Apply Transforms' option will normalize all scale, rotation, and position values\nso your armatures merge correctly without changing size.\n\nIf you've already checked 'Apply Transforms' and still see this error,\nplease report this as a bug."
+        "merge_armatures.error.mustapplytransforms": "Transform Issue Detected!\n\nYour armatures have non-uniform scaling or rotations that need to be fixed before merging.\nThis is important to prevent size changes and deformation issues.\n\nTo fix this:\n1. Enable the 'Apply Transforms' checkbox in the merge settings\n2. Try the merge again\n\nThe 'Apply Transforms' option will normalize all scale, rotation, and position values\nso your armatures merge correctly without changing size.\n\nIf you've already checked 'Apply Transforms' and still see this error,\nplease report this as a bug.",
+        "Scene.progress_update.label": "Progress",
+        "Scene.progress_update.desc": "Progress indicator for operations"
     }
 }

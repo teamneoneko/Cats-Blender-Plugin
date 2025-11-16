@@ -814,6 +814,8 @@
         "EyeTrackingPanel.troubleshooting.shapeKeys": "• シェイプキーの名前が正しく付けられていることを確認",
         "EyeTrackingPanel.troubleshooting.boneWeights": "• 目のボーンが適切にウェイト付けされていることを確認",
         "EyeTrackingPanel.troubleshooting.restPosition": "• アーマチュアが静止位置にあることを確認",
-        "merge_armatures.error.mustapplytransforms": "アーマチュアのX、Y、Z軸のスケール値が異なっており、\n統一されたスケーリング（すべての軸が同じスケール値）になっていません。\n\nアーマチュアをマージする前にこれを修正することは、\n適切なボーンの変換と変形の問題を防ぐために重要です。\n\nこの警告があってもマージを続行したい場合は、\nマージを開始する前に「トランスフォームを適用」にチェックを入れてください。"
+        "merge_armatures.error.mustapplytransforms": "アーマチュアのX、Y、Z軸のスケール値が異なっており、\n統一されたスケーリング（すべての軸が同じスケール値）になっていません。\n\nアーマチュアをマージする前にこれを修正することは、\n適切なボーンの変換と変形の問題を防ぐために重要です。\n\nこの警告があってもマージを続行したい場合は、\nマージを開始する前に「トランスフォームを適用」にチェックを入れてください。",
+        "Scene.progress_update.label": "進行状況",
+        "Scene.progress_update.desc": "操作の進行状況インジケーター"
     }
 }

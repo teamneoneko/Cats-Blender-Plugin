@@ -2,6 +2,8 @@
     "localeCode": "en_US",
     "authors": ["My name here"],
     "messages":{
-        "Main.error.deleteFollowing": "ldawlwlkda;ldkal;wdk;la;lkd;kldaks;lkd;lawkd"
+        "Main.error.deleteFollowing": "ldawlwlkda;ldkal;wdk;la;lkd;kldaks;lkd;lawkd",
+        "Scene.progress_update.label": "Progress",
+        "Scene.progress_update.desc": "Progress indicator for operations"
     }
 }

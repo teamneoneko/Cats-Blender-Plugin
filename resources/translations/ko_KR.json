@@ -816,6 +816,8 @@
         "EyeTrackingPanel.troubleshooting.shapeKeys": "• 쉐이프 키의 이름이 올바른지 확인",
         "EyeTrackingPanel.troubleshooting.boneWeights": "• 눈 본이 올바르게 가중치가 적용되어 있는지 확인",
         "EyeTrackingPanel.troubleshooting.restPosition": "• 아마추어가 기본 자세에 있는지 확인",
-        "merge_armatures.error.mustapplytransforms": "아마추어의 X, Y, Z축 스케일 값이 서로 다르며,\n균일한 스케일링(모든 축이 동일한 스케일 값)이 되어있지 않습니다.\n\n아마추어 병합 전 이를 수정하는 것은\n올바른 본 변환과 변형 문제를 방지하는데 중요합니다.\n\n이 경고에도 불구하고 병합을 진행하려면\n병합을 시작하기 전에 '트랜스폼 적용'을 체크해주세요."
+        "merge_armatures.error.mustapplytransforms": "아마추어의 X, Y, Z축 스케일 값이 서로 다르며,\n균일한 스케일링(모든 축이 동일한 스케일 값)이 되어있지 않습니다.\n\n아마추어 병합 전 이를 수정하는 것은\n올바른 본 변환과 변형 문제를 방지하는데 중요합니다.\n\n이 경고에도 불구하고 병합을 진행하려면\n병합을 시작하기 전에 '트랜스폼 적용'을 체크해주세요.",
+        "Scene.progress_update.label": "진행률",
+        "Scene.progress_update.desc": "작업의 진행률 표시기"
     }
 }

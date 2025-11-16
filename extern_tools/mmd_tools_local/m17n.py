@@ -5503,8 +5503,8 @@ translations_tuple = (
         ("*", "Model Filter"),
         (
             (
-                "bpy.types.mmd_tools_local_UL_joints.model_filter",
-                "bpy.types.mmd_tools_local_UL_rigidbodies.model_filter",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_Joints.model_filter",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_RigidBodies.model_filter",
             ),
             (),
         ),
@@ -5515,8 +5515,8 @@ translations_tuple = (
         ("*", "Show items of active model or all models"),
         (
             (
-                "bpy.types.mmd_tools_local_UL_joints.model_filter",
-                "bpy.types.mmd_tools_local_UL_rigidbodies.model_filter",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_Joints.model_filter",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_RigidBodies.model_filter",
             ),
             (),
         ),
@@ -5527,8 +5527,8 @@ translations_tuple = (
         ("*", "Active Model"),
         (
             (
-                "bpy.types.mmd_tools_local_UL_joints.model_filter:'ACTIVE'",
-                "bpy.types.mmd_tools_local_UL_rigidbodies.model_filter:'ACTIVE'",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_Joints.model_filter:'ACTIVE'",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_RigidBodies.model_filter:'ACTIVE'",
             ),
             (),
         ),
@@ -5539,8 +5539,8 @@ translations_tuple = (
         ("*", "All Models"),
         (
             (
-                "bpy.types.mmd_tools_local_UL_joints.model_filter:'ALL'",
-                "bpy.types.mmd_tools_local_UL_rigidbodies.model_filter:'ALL'",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_Joints.model_filter:'ALL'",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_RigidBodies.model_filter:'ALL'",
             ),
             (),
         ),
@@ -5551,8 +5551,8 @@ translations_tuple = (
         ("*", "Only show visible items"),
         (
             (
-                "bpy.types.mmd_tools_local_UL_joints.visible_only",
-                "bpy.types.mmd_tools_local_UL_rigidbodies.visible_only",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_Joints.visible_only",
+                "bpy.types.MMD_TOOLS_LOCAL_UL_RigidBodies.visible_only",
             ),
             (),
         ),
