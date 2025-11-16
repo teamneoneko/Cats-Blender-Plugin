@@ -333,7 +333,7 @@
         "ImmersiveScalerButton.success": "Immersive Scaler link opened",
         "ImmersiveScalerButton.label": "Download Immersive Scaler",
         "ImmersiveScalerButton.desc": "Open latest Immersive Scaler release",
-        "ImmersiveScalerHelpButton.URL": "https://github.com/triazo/immersive_scaler",
+        "ImmersiveScalerHelpButton.URL": "https://github.com/teamneoneko/immersive_scaler",
         "ImmersiveScalerHelpButton.label": "Immersive Scaler Help",
         "ImmersiveScalerHelpButton.desc": "Open guide for Immersive Scaler",
         "ImmersiveScalerHelpButton.success": "Immersive Scaler Readme opened",
