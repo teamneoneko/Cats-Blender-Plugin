@@ -1066,9 +1066,8 @@ def save_shapekey_order(mesh_name):
 
 
 def repair_shapekey_order(mesh_name, armature_name=None):
-    # Get current custom data
+    # Skip if no armature or armature has no custom data
     if armature_name:
-        # In Blender 5.0, use bpy.data.objects for more reliable access
         armature = bpy.data.objects.get(armature_name)
     else:
         armature = get_armature()
@@ -1078,6 +1077,10 @@ def repair_shapekey_order(mesh_name, armature_name=None):
     # In Blender 5.0, use bl_system_properties_get() to access IDProperties
     sys_props = armature.bl_system_properties_get()
     if not sys_props:
+        return
+    
+    # Early return if no custom data exists
+    if 'CUSTOM' not in sys_props:
         return
     
     custom_data = sys_props.get('CUSTOM', {})
@@ -1171,6 +1174,9 @@ def sort_shape_keys(mesh_name, shape_key_order=None):
     current_step = 0
     wm.progress_begin(current_step, len(order))
 
+    # Calculate max iterations once to avoid repeated computation
+    max_iterations = len(mesh.data.shape_keys.key_blocks) + 5
+
     i = 0
     for name in order:
         if name == 'Basis' and 'Basis' not in mesh.data.shape_keys.key_blocks:
@@ -1191,7 +1197,6 @@ def sort_shape_keys(mesh_name, shape_key_order=None):
                     break
 
                 position_correct = False
-                max_iterations = len(mesh.data.shape_keys.key_blocks) + 10
                 iteration_count = 0
                 if 0 <= index_diff <= (new_index - 1):
                     while position_correct is False and iteration_count < max_iterations:

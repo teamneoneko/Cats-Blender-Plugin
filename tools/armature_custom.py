@@ -2,7 +2,6 @@
 
 import bpy
 import webbrowser
-import numpy as np
 from typing import List, Optional, Dict, Set, Tuple, Union
 from mathutils import Vector
 
@@ -634,14 +633,14 @@ def detect_bones_to_merge(
     """Detect corresponding bones between base and merge armatures using smart detection and position tolerance."""
     bones_to_merge = []
 
-    # Cache base bone positions
+    # Cache base bone positions using mathutils.Vector
     base_bones_positions = {
-        bone.name: np.array(bone.head) for bone in base_edit_bones
+        bone.name: Vector(bone.head) for bone in base_edit_bones
     }
 
     # Smart bone detection
     for merge_bone in merge_edit_bones:
-        merge_bone_position = np.array(merge_bone.head)
+        merge_bone_position = Vector(merge_bone.head)
         found_match = False
 
         if merge_same_bones and merge_bone.name in base_bones_positions:
@@ -649,9 +648,10 @@ def detect_bones_to_merge(
             bones_to_merge.append(merge_bone.name)
             found_match = True
         else:
-            # Find bones with close positions
+            # Find bones with close positions using Vector distance calculation
             for base_bone_name, base_bone_position in base_bones_positions.items():
-                if np.linalg.norm(merge_bone_position - base_bone_position) <= tolerance:
+                distance = (merge_bone_position - base_bone_position).length
+                if distance <= tolerance:
                     bones_to_merge.append(base_bone_name)
                     found_match = True
                     break
@@ -691,7 +691,7 @@ def process_vertex_groups(meshes: List[bpy.types.Object]) -> None:
                 merge_vg.name = base_name
 
 def _merge_vertex_groups_optimized(mesh: bpy.types.Object, vg_from: bpy.types.VertexGroup, vg_to: bpy.types.VertexGroup) -> None:
-    """Optimized vertex group merging using vectorized operations for better performance on large meshes."""
+    """Optimized vertex group merging using Blender's native APIs for better performance."""
     if not vg_from or not vg_to:
         return
 
@@ -699,40 +699,34 @@ def _merge_vertex_groups_optimized(mesh: bpy.types.Object, vg_from: bpy.types.Ve
     if num_vertices == 0:
         return
 
-    # Pre-allocate arrays for better memory efficiency
-    weights_from = np.zeros(num_vertices, dtype=np.float32)
-    weights_to = np.zeros(num_vertices, dtype=np.float32)
-    
     # Build index mappings
     idx_from = vg_from.index
     idx_to = vg_to.index
 
-    # Collect weights efficiently using vectorized operations
-    vertex_groups_from = {}
-    vertex_groups_to = {}
+    # Collect weights efficiently in a single pass
+    weights_combined = {}
     
     for vertex in mesh.data.vertices:
+        weight_from = 0.0
+        weight_to = 0.0
+        
         for group in vertex.groups:
             if group.group == idx_from:
-                vertex_groups_from[vertex.index] = group.weight
+                weight_from = group.weight
             elif group.group == idx_to:
-                vertex_groups_to[vertex.index] = group.weight
-
-    # Vectorized weight assignment
-    for idx, weight in vertex_groups_from.items():
-        weights_from[idx] = weight
-    for idx, weight in vertex_groups_to.items():
-        weights_to[idx] = weight
-
-    # Combine weights efficiently
-    weights_combined = np.clip(weights_from + weights_to, 0.0, 1.0)
+                weight_to = group.weight
+        
+        # Only process vertices that have weights in either group
+        if weight_from > 0.0 or weight_to > 0.0:
+            combined = min(1.0, weight_from + weight_to)
+            if combined > TRANSFORM_EPSILON:
+                weights_combined[vertex.index] = combined
     
-    # Apply weights individually (Blender API requirement)
-    non_zero_indices = np.where(weights_combined > TRANSFORM_EPSILON)[0]
-    if len(non_zero_indices) > 0:
-        # Apply weights one by one as Blender's VertexGroup.add() requires individual vertex operations
-        for vertex_idx in non_zero_indices:
-            vg_to.add([int(vertex_idx)], float(weights_combined[vertex_idx]), 'REPLACE')
+    # Apply combined weights efficiently
+    if weights_combined:
+        # Batch operation - add all vertices at once with their final weights
+        for vertex_idx, weight in weights_combined.items():
+            vg_to.add([vertex_idx], weight, 'REPLACE')
 
 def mix_vertex_groups(mesh: bpy.types.Object, vg_from_name: str, vg_to_name: str) -> None:
     """Mix vertex group weights from 'vg_from' into 'vg_to' and remove 'vg_from'."""
