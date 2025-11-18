@@ -774,7 +774,10 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
         bpy.ops.object.join()
     else:
         print('NO MESH COMBINED!')
-        
+    
+    # In Blender 5.0 we need to refresh the context after operations
+    context = bpy.context
+    
 
     # Delete meshes that somehow weren't deleted. Both pre and post join mesh deletion methods are needed!
     for mesh in get_meshes_objects(armature_name=armature_name):
@@ -1019,7 +1022,10 @@ def save_shapekey_order(mesh_name):
         return
 
     # Get current custom data
-    custom_data = armature.get('CUSTOM')
+    # In Blender 5.0, use bl_system_properties_get() to access IDProperties
+    sys_props = armature.bl_system_properties_get()
+    custom_data = sys_props.get('CUSTOM')
+    
     if not custom_data:
         # print('NEW DATA!')
         custom_data = {}
@@ -1048,7 +1054,9 @@ def save_shapekey_order(mesh_name):
     custom_data['shape_key_order'] = shape_key_order
 
     # Save custom data in armature
-    armature['CUSTOM'] = custom_data
+    # In Blender 5.0, use bl_system_properties_get() for custom properties
+    sys_props = armature.bl_system_properties_get()
+    sys_props['CUSTOM'] = custom_data
 
     # print(armature.get('CUSTOM').get('shape_key_order'))
 
@@ -1056,23 +1064,32 @@ def save_shapekey_order(mesh_name):
 def repair_shapekey_order(mesh_name, armature_name=None):
     # Get current custom data
     if armature_name:
-        armature = get_objects().get(armature_name)
+        # In Blender 5.0, use bpy.data.objects for more reliable access
+        armature = bpy.data.objects.get(armature_name)
     else:
         armature = get_armature()
     if not armature:
         return
-    custom_data = armature.get('CUSTOM', {})
+    
+    # In Blender 5.0, use bl_system_properties_get() to access IDProperties
+    sys_props = armature.bl_system_properties_get()
+    custom_data = sys_props.get('CUSTOM', {})
+    
+    if not isinstance(custom_data, dict):
+        return
 
     # Extract shape keys from string, using an empty list as default
     shape_key_order = custom_data.get('shape_key_order', [])
 
     if not shape_key_order:
         custom_data['shape_key_order'] = []
-        armature['CUSTOM'] = custom_data
+        sys_props = armature.bl_system_properties_get()
+        sys_props['CUSTOM'] = custom_data
     elif isinstance(shape_key_order, str):
         shape_key_order_temp = shape_key_order.split(',,,')
         custom_data['shape_key_order'] = shape_key_order_temp
-        armature['CUSTOM'] = custom_data
+        sys_props = armature.bl_system_properties_get()
+        sys_props['CUSTOM'] = custom_data
 
     # Only call sort_shape_keys if shape_key_order is not empty
     if custom_data.get('shape_key_order'):
