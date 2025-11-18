@@ -795,7 +795,7 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
         repair_mesh(mesh, armature_name)
 
         if repair_shape_keys:
-            repair_shapekey_order(mesh.name)
+            repair_shapekey_order(mesh.name, armature_name)
 
     # Update the material list of the Material Combiner
     update_material_list()
@@ -1053,9 +1053,14 @@ def save_shapekey_order(mesh_name):
     # print(armature.get('CUSTOM').get('shape_key_order'))
 
 
-def repair_shapekey_order(mesh_name):
+def repair_shapekey_order(mesh_name, armature_name=None):
     # Get current custom data
-    armature = get_armature()
+    if armature_name:
+        armature = get_objects().get(armature_name)
+    else:
+        armature = get_armature()
+    if not armature:
+        return
     custom_data = armature.get('CUSTOM', {})
 
     # Extract shape keys from string, using an empty list as default
