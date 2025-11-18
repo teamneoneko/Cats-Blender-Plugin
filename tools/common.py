@@ -1024,6 +1024,9 @@ def save_shapekey_order(mesh_name):
     # Get current custom data
     # In Blender 5.0, use bl_system_properties_get() to access IDProperties
     sys_props = armature.bl_system_properties_get()
+    if not sys_props:
+        return
+    
     custom_data = sys_props.get('CUSTOM')
     
     if not custom_data:
@@ -1056,7 +1059,8 @@ def save_shapekey_order(mesh_name):
     # Save custom data in armature
     # In Blender 5.0, use bl_system_properties_get() for custom properties
     sys_props = armature.bl_system_properties_get()
-    sys_props['CUSTOM'] = custom_data
+    if sys_props:
+        sys_props['CUSTOM'] = custom_data
 
     # print(armature.get('CUSTOM').get('shape_key_order'))
 
@@ -1073,6 +1077,9 @@ def repair_shapekey_order(mesh_name, armature_name=None):
     
     # In Blender 5.0, use bl_system_properties_get() to access IDProperties
     sys_props = armature.bl_system_properties_get()
+    if not sys_props:
+        return
+    
     custom_data = sys_props.get('CUSTOM', {})
     
     if not isinstance(custom_data, dict):
@@ -1083,13 +1090,13 @@ def repair_shapekey_order(mesh_name, armature_name=None):
 
     if not shape_key_order:
         custom_data['shape_key_order'] = []
-        sys_props = armature.bl_system_properties_get()
-        sys_props['CUSTOM'] = custom_data
+        if sys_props:
+            sys_props['CUSTOM'] = custom_data
     elif isinstance(shape_key_order, str):
         shape_key_order_temp = shape_key_order.split(',,,')
         custom_data['shape_key_order'] = shape_key_order_temp
-        sys_props = armature.bl_system_properties_get()
-        sys_props['CUSTOM'] = custom_data
+        if sys_props:
+            sys_props['CUSTOM'] = custom_data
 
     # Only call sort_shape_keys if shape_key_order is not empty
     if custom_data.get('shape_key_order'):
@@ -1184,22 +1191,27 @@ def sort_shape_keys(mesh_name, shape_key_order=None):
                     break
 
                 position_correct = False
+                max_iterations = len(mesh.data.shape_keys.key_blocks) + 10
+                iteration_count = 0
                 if 0 <= index_diff <= (new_index - 1):
-                    while position_correct is False:
+                    while position_correct is False and iteration_count < max_iterations:
                         if mesh.active_shape_key_index != new_index:
                             bpy.ops.object.shape_key_move(type='UP')
                         else:
                             position_correct = True
+                        iteration_count += 1
                 else:
                     if mesh.active_shape_key_index > new_index:
                         bpy.ops.object.shape_key_move(type='TOP')
 
                     position_correct = False
-                    while position_correct is False:
+                    iteration_count = 0
+                    while position_correct is False and iteration_count < max_iterations:
                         if mesh.active_shape_key_index != new_index:
                             bpy.ops.object.shape_key_move(type='DOWN')
                         else:
                             position_correct = True
+                        iteration_count += 1
 
                 i += 1
                 break
