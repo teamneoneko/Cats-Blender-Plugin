@@ -314,7 +314,7 @@ def remove_bone(find_bone):
 
 def remove_empty():
     armature = set_default_stage()
-    if armature.parent and armature.parent.type == 'EMPTY':
+    if armature and armature.parent and armature.parent.type == 'EMPTY':
         unselect_all()
         set_active(armature.parent)
         bpy.ops.object.delete(use_global=False)
