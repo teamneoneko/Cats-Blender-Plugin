@@ -419,7 +419,7 @@
         "EnableMMD.required1": "The plugin \"mmd_tools\" is required for this function.",
         "EnableMMD.required2": "Please restart Blender.",
         "XpsToolsButton.label": "Download XPS Tools",
-        "XpsToolsButton.URL": "https://github.com/Valerie-Bosco/XNALara-io-Tools",
+        "XpsToolsButton.URL": "https://github.com/johnzero7/XNALaraMesh",
         "XpsToolsButton.success": "XPS Tools link opened",
         "SourceToolsButton.label": "Download Source Tools",
         "SourceToolsButton.URL": "https://github.com/Artfunkel/BlenderSourceTools",

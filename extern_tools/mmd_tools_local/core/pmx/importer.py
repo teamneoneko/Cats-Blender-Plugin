@@ -188,7 +188,7 @@ class PMXImporter:
 
         self.__textureTable = []
         for i in pmxModel.textures:
-            self.__textureTable.append(i.path)
+            self.__textureTable.append(str(Path(i.path).resolve()))
 
     def __createEditBones(self, obj, pmx_bones):
         """Create EditBones from pmx file data.
@@ -576,24 +576,12 @@ class PMXImporter:
                 self.__imageTable[len(self.__materialTable) - 1] = texture_slot.texture.image
 
             if i.is_shared_toon_texture:
-                # Try to load shared toon texture from model directory first
-                toon_filename = "toon%02d.bmp" % (i.toon_texture + 1)
-                toon_path = os.path.join(os.path.dirname(pmxModel.filepath), toon_filename)
-                # If not in model directory, try embedded MMD Tools folder
-                if not os.path.exists(toon_path):
-                    mmd_tools_dir = Path(__file__).parent.parent.parent / "externals" / "MikuMikuDance"
-                    toon_path = str(mmd_tools_dir / toon_filename)
-                # Load the texture if it exists
-                if os.path.exists(toon_path):
-                    texture_slot = fnMat.create_toon_texture(toon_path)
-                    # Store metadata but don't trigger update callbacks
-                    mmd_mat.is_shared_toon_texture = True
-                    mmd_mat.shared_toon_texture = i.toon_texture
+                mmd_mat.is_shared_toon_texture = True
+                mmd_mat.shared_toon_texture = i.toon_texture
             else:
                 mmd_mat.is_shared_toon_texture = False
                 if i.toon_texture >= 0:
                     mmd_mat.toon_texture = self.__textureTable[i.toon_texture]
-                    texture_slot = fnMat.create_toon_texture(self.__textureTable[i.toon_texture])
 
             if i.sphere_texture_mode == 2:
                 amount = self.__spa_blend_factor

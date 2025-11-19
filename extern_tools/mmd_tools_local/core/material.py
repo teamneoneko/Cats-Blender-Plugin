@@ -170,12 +170,6 @@ class FnMaterial:
         if self._nodes_are_readonly:
             return
         mmd_mat: MMDMaterial = self.__material.mmd_material
-        # Check if toon texture is already loaded in shader nodes
-        toon_tex_node = self.__get_texture_node("mmd_toon_tex")
-        if toon_tex_node is not None:
-            # Toon texture is already loaded, skip update
-            return
-        
         if mmd_mat.is_shared_toon_texture:
             shared_toon_folder = FnContext.get_addon_preferences_attribute(FnContext.ensure_context(), "shared_toon_folder", "")
             toon_path = os.path.join(shared_toon_folder, "toon%02d.bmp" % (mmd_mat.shared_toon_texture + 1))

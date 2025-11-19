@@ -8,70 +8,43 @@ from ..tools.register import register_wrap
 from ..tools.translations import t
 
 @register_wrap
-class SearchMenuOperatorMouthA(bpy.types.Operator):
+class SearchMenuOperatorMouthA(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.mouth_a.desc')
     bl_idname = "scene.search_menu_mouth_a"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "mouth_a"
     
     my_enum: bpy.props.EnumProperty(
         name="shapekeys",
         description=t('Scene.mouth_a.desc'),
-        items=Common.get_shapekeys_mouth_ah,
+        items=Common.wrap_dynamic_enum_items(Common.get_shapekeys_mouth_ah, bl_idname, sort=False, is_holder=False),
     )
 
-    def execute(self, context):
-        context.scene.mouth_a = self.my_enum
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
-
 @register_wrap
-class SearchMenuOperatorMouthO(bpy.types.Operator):
+class SearchMenuOperatorMouthO(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.mouth_o.desc')
     bl_idname = "scene.search_menu_mouth_o"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "mouth_o"
     
     my_enum: bpy.props.EnumProperty(
         name="shapekeys",
         description=t('Scene.mouth_o.desc'),
-        items=Common.get_shapekeys_mouth_oh,
+        items=Common.wrap_dynamic_enum_items(Common.get_shapekeys_mouth_oh, bl_idname, sort=False, is_holder=False),
     )
 
-    def execute(self, context):
-        context.scene.mouth_o = self.my_enum
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
-
 @register_wrap
-class SearchMenuOperatorMouthCH(bpy.types.Operator):
+class SearchMenuOperatorMouthCH(SearchMenuOperatorBase, bpy.types.Operator):
     bl_description = t('Scene.mouth_ch.desc')
     bl_idname = "scene.search_menu_mouth_ch"
     bl_label = ""
-    bl_property = "my_enum"
+    scene_property = "mouth_ch"
     
     my_enum: bpy.props.EnumProperty(
         name="shapekeys",
         description=t('Scene.mouth_ch.desc'),
-        items=Common.get_shapekeys_mouth_ch,
+        items=Common.wrap_dynamic_enum_items(Common.get_shapekeys_mouth_ch, bl_idname, sort=False, is_holder=False),
     )
-
-    def execute(self, context):
-        context.scene.mouth_ch = self.my_enum
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.invoke_search_popup(self)
-        return {'FINISHED'}
 
 @register_wrap
 class VisemePanel(ToolPanel, bpy.types.Panel):

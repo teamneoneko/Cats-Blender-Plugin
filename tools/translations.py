@@ -24,11 +24,10 @@ translations_dir = os.path.join(resources_dir, "translations")
 dictionary: dict[str, str] = dict()
 languages = []
 verbose = True
-last_loaded_language = None
 dictionary_download_link = "https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/blob/4.3-translations/dictionary.json"
 
 def load_translations():
-    global dictionary, languages, last_loaded_language
+    global dictionary, languages
     dictionary = dict()
     languages = ["auto"]
 
@@ -38,39 +37,33 @@ def load_translations():
     language = get_language_from_settings()
     print(f"Selected language: {language}")
     
+    # Set default language to "en_US" if language is None
+    if language is None:
+        language = "en_US"
+    
     # Get all current languages
     for i in os.listdir(translations_dir):
         languages.append(i.split(".")[0])
     print(f"Available languages: {languages}")
     
-    # Determine the language to load
-    language_to_load = language if language and language in languages else None
-    
-    # If language is not available, fallback to en_US
-    if language_to_load is None:
-        print(f"Language '{language}' not available, defaulting to en_US")
-        language_to_load = "en_US"
-    
     # Load the translation file
-    translation_file = os.path.join(translations_dir, language_to_load + ".json")
+    translation_file = os.path.join(translations_dir, language + ".json")
     if os.path.exists(translation_file):
         print(f"Loading translation file: {translation_file}")
         with open(translation_file, 'r') as file:
             dictionary = json.load(fp=file)["messages"]
-        last_loaded_language = language_to_load
-        print(f"Loaded {len(dictionary)} translations from {language_to_load}")
+        print(f"Loaded {len(dictionary)} translations")
     else:
-        print(f"Translation file not found for language: {language_to_load}")
-        # Load the default "en_US" translation file as last resort
+        print(f"Translation file not found for language: {language}")
+        # Load the default "en_US" translation file
         default_file = os.path.join(translations_dir, "en_US.json")
         if os.path.exists(default_file):
-            print(f"Loading fallback translation file: {default_file}")
+            print(f"Loading default translation file: {default_file}")
             with open(default_file, 'r') as file:
                 dictionary = json.load(fp=file)["messages"]
-            last_loaded_language = "en_US"
-            print(f"Loaded {len(dictionary)} translations from en_US (fallback)")
+            print(f"Loaded {len(dictionary)} translations")
         else:
-            print("DEFAULT TRANSLATION FILE 'en_US.json' NOT FOUND.")
+            print("Default translation file 'en_US.json' not found.")
     
     check_missing_translations()
 
@@ -106,19 +99,11 @@ def get_languages_list(self, context):
 
 def update_ui(self, context):
     print("update_ui function called")
-    # Check if language actually changed
-    current_language = get_language_from_settings()
-    print(f"Current language from settings: {current_language}, Last loaded: {last_loaded_language}")
-    
-    if current_language != last_loaded_language:
-        print(f"Language changed from {last_loaded_language} to {current_language}, reloading translations")
-        load_translations()
-        # Update settings to reflect the change
-        if settings.update_settings_core(None, None):
-            print("Reloading scripts")
-            bpy.ops.script.reload()
+    if settings.update_settings_core(None, None):
+        print("Reloading scripts")
+        bpy.ops.script.reload()
     else:
-        print("Language unchanged, no reload needed")
+        print("Settings not updated, scripts not reloaded")
 
 
 def get_language_from_settings():
@@ -139,43 +124,9 @@ def get_language_from_settings():
 
     lang = settings_data.get("ui_lang")
     if not lang or "auto" in lang.lower():
-        # Auto-detect language from Blender's locale
-        detected_lang = convert_locale_to_language_code(locale)
-        print(f"Auto-detecting language from Blender locale: {locale} -> {detected_lang}")
-        return detected_lang
+        return locale
 
     return lang
-
-
-def convert_locale_to_language_code(blender_locale):
-    """
-    Convert Blender's locale format to supported language code format.
-    Blender uses formats like 'en_US', 'ja_JP', 'ko_KR', etc.
-    """
-    if not blender_locale:
-        return None
-    
-    # Blender locale is already in the format we need (e.g., 'en_US')
-    locale_str = str(blender_locale)
-    
-    # Check if exact match exists in available languages
-    for lang_file in os.listdir(translations_dir):
-        lang_code = lang_file.split(".")[0]
-        if locale_str == lang_code:
-            print(f"Found exact locale match: {lang_code}")
-            return lang_code
-    
-    # Try to match by language code (first part before underscore)
-    language_only = locale_str.split("_")[0].lower() if "_" in locale_str else locale_str.lower()
-    for lang_file in os.listdir(translations_dir):
-        lang_code = lang_file.split(".")[0]
-        if lang_code.lower().startswith(language_only):
-            print(f"Found language match: {lang_code}")
-            return lang_code
-    
-    # Fallback to English if no match
-    print(f"No language match found for locale: {locale_str}, defaulting to en_US")
-    return None
 
 @register_wrap
 class DownloadTranslations(bpy.types.Operator):
