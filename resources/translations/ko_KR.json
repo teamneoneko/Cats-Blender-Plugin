@@ -556,7 +556,7 @@
         "Scene.eye_rotation_x.desc": "세로 축에서 눈 뼈를 회전시킵니다",
         "select_this_to_only_merge_the_weights_of_the_visible_meshes": "보이는 메쉬의 무게 만 병합하려면 이것을 선택하십시오.",
         "ImportFBX.desc": "FBX 모델 가져 오기 (.FBX)",
-        "XpsToolsButton.URL": "https://github.com/johnzero7/XNALaraMesh",
+        "XpsToolsButton.URL": "https://github.com/Valerie-Bosco/XNALara-io-Tools",
         "Scene.merge_armatures_cleanup_shape_keys.desc": "메쉬 모양 키를 정리합니다.\n유지하려는 모양 키가 삭제 된 경우 이것을 선택 취소하십시오.",
         "decimate.cantDecimate1": "모델은 {number} tris로 소멸 될 수 없습니다.",
         "ImportSource.desc": "소스 모델 가져 오기 (.smd/.qc/.vta/.dmx)",
