@@ -1,4 +1,5 @@
-# Cats Blender Plugin Blender 4.3.
+# Cats Blender Plugin Blender 5.x.
+#### Note Cats is basically on life Support unto Avatar Toolkit is more stable, we will stop pushing updates to Cats once Avatar Toolkit is stable.
 
 The non official version of Cats Blender Plugin which is maintained by Yusarina, Cats is an tool designed to shorten steps needed to import and optimize models into VRChat. Compatible models are: MMD, XNALara, Mixamo, Source Engine, Unreal Engine, DAZ/Poser, Blender Rigify, Sims 2, Motion Builder, 3DS Max and potentially more.
 

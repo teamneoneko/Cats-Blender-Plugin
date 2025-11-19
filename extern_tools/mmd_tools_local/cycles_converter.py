@@ -114,6 +114,7 @@ def convertToBlenderShader(obj: bpy.types.Object, use_principled=False, clean_no
     for i in obj.material_slots:
         if not i.material:
             continue
+        # use_nodes is deprecated in 5.0 but always returns True and setting it is safe
         if not i.material.use_nodes:
             i.material.use_nodes = True
             __convertToMMDBasicShader(i.material)
@@ -128,6 +129,7 @@ def convertToMMDShader(obj):
     for i in obj.material_slots:
         if not i.material:
             continue
+        # use_nodes is deprecated in 5.0 but always returns True and setting it is safe
         if not i.material.use_nodes:
             i.material.use_nodes = True
         FnMaterial.convert_to_mmd_material(i.material)

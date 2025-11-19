@@ -125,6 +125,7 @@ class MergeMaterials(Operator):
 
         # Check each material
         for i, material in enumerate(obj.data.materials):
+            # use_nodes is deprecated in 5.0 but always returns True, so check is safe
             if not material or not material.use_nodes:
                 continue
 

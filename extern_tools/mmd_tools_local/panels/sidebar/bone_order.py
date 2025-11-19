@@ -329,7 +329,7 @@ class MMDToolsCleanInvalidBoneIdReferences(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class mmd_tools_local_UL_ModelBones(bpy.types.UIList):
+class MMD_TOOLS_LOCAL_UL_ModelBones(bpy.types.UIList):
     # Static data for bone relationships
     _IK_MAP = {}
     _IK_BONES = {}
@@ -620,14 +620,14 @@ class MMDBoneOrder(PT_ProductionPanelBase, bpy.types.Panel):
             return
 
         # Update bone tables
-        valid_bone_count = mmd_tools_local_UL_ModelBones.update_bone_tables(armature)
+        valid_bone_count = MMD_TOOLS_LOCAL_UL_ModelBones.update_bone_tables(armature)
 
         # UI
         col = layout.column(align=True)
         row = col.row()
 
         # Bone list sorted by bone_id
-        row.template_list("mmd_tools_local_UL_ModelBones", "", armature.pose, "bones", root.mmd_root, "active_bone_index")
+        row.template_list("MMD_TOOLS_LOCAL_UL_ModelBones", "", armature.pose, "bones", root.mmd_root, "active_bone_index")
 
         # Bone order controls
         tb = row.column()

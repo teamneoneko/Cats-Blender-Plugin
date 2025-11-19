@@ -1255,7 +1255,8 @@ class Model:
             val = obj.get(attr_name, None)
             if val is not None:
                 setattr(obj, attr, val)
-                del obj[attr_name]
+                # Use property_unset instead of del for Blender 5.0 compatibility
+                obj.property_unset(attr_name)
 
     def __backupTransforms(self, obj):
         for attr in ("location", "rotation_euler"):

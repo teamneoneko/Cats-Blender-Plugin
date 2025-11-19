@@ -211,7 +211,7 @@ class TranslateMMDModel(bpy.types.Operator):
 DEFAULT_SHOW_ROW_COUNT = 20
 
 
-class mmd_tools_local_UL_MMDTranslationElementIndex(bpy.types.UIList):
+class MMD_TOOLS_LOCAL_UL_MMDTranslationElementIndex(bpy.types.UIList):
     def draw_item(
         self,
         context,
@@ -321,7 +321,7 @@ class GlobalTranslationPopup(bpy.types.Operator):
             row.label(text="", icon="BLANK1")
 
         col.template_list(
-            "mmd_tools_local_UL_MMDTranslationElementIndex",
+            "MMD_TOOLS_LOCAL_UL_MMDTranslationElementIndex",
             "",
             mmd_translation,
             "filtered_translation_element_indices",

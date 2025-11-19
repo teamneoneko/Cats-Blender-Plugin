@@ -22,7 +22,7 @@ class OtherOptionsPanel(ToolPanel, bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         box = layout.box()
-        button_height = 1
+        button_height = 1.0
 
         col = box.column(align=True)
         row = layout_split(col, factor=0.32, align=True)
@@ -48,7 +48,7 @@ class OtherOptionsPanel(ToolPanel, bpy.types.Panel):
         split = layout_split(col, factor=0.27, align=True)
 
         row = split.row(align=True)
-        row.scale_y = 2
+        row.scale_y = 1.3
         row.operator(Translate.TranslateAllButton.bl_idname, text=t('OtherOptionsPanel.TranslateAllButton.label'), icon=globs.ICON_ALL)
 
         row = split.column(align=True)

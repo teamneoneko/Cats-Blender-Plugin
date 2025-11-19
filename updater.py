@@ -429,18 +429,30 @@ def get_github_releases(repo):
     if not data:
         return False
     
-    if bpy.app.version >= (4, 5) and bpy.app.version < (4, 6):
-        tag_prefix = "4.5."
+    # Determine tag prefix based on Blender version
+    tag_prefix = ""
+    if bpy.app.version >= (5, 0) and bpy.app.version < (5, 1):
+        tag_prefix = "5.0."
 
     for version in data:
         full_tag = version.get('tag_name')
-        if not full_tag.startswith(tag_prefix):
+        
+        # If we have a tag prefix, skip versions that don't match
+        if tag_prefix and not full_tag.startswith(tag_prefix):
             continue   
             
-        version_tag = full_tag[len(tag_prefix):]
+        version_tag = full_tag
+        
+        # Remove prefix if present
+        if tag_prefix and version_tag.startswith(tag_prefix):
+            version_tag = version_tag[len(tag_prefix):]
         
         # Normalize version_tag 
         version_tag = version_tag.replace('-', '.')
+        if version_tag.startswith('v.'):
+            version_tag = version_tag[2:]
+        if version_tag.startswith('v'):
+            version_tag = version_tag[1:]
         
         # Store full tag  
         version_list[full_tag] = [

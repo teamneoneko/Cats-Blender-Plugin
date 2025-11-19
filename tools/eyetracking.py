@@ -773,12 +773,13 @@ class StartTestingButton(bpy.types.Operator):
         for shape_key in Common.get_objects()[context.scene.mesh_name_eye].data.shape_keys.key_blocks:
             shape_key.value = 0
 
-        for pb in Common.get_armature().data.bones:
+        armature_obj = Common.get_armature()
+        for pb in armature_obj.pose.bones:
             pb.select = True
         bpy.ops.pose.rot_clear()
         bpy.ops.pose.scale_clear()
         bpy.ops.pose.transforms_clear()
-        for pb in Common.get_armature().data.bones:
+        for pb in armature_obj.pose.bones:
             pb.select = False
             pb.hide = True
 
@@ -811,13 +812,14 @@ class StopTestingButton(bpy.types.Operator):
             Common.remove_rigidbodies_global()
             Common.switch('POSE')
 
-        for pb in Common.get_armature().data.bones:
+        armature_obj = Common.get_armature()
+        for pb in armature_obj.pose.bones:
             pb.hide = False
             pb.select = True
         bpy.ops.pose.rot_clear()
         bpy.ops.pose.scale_clear()
         bpy.ops.pose.transforms_clear()
-        for pb in Common.get_armature().data.bones:
+        for pb in armature_obj.pose.bones:
             pb.select = False
 
         armature = Common.set_default_stage()

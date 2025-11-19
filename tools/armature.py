@@ -690,8 +690,10 @@ class FixArmature(bpy.types.Operator):
         # Translate bones and unhide them all
         to_translate = []
         for bone in armature.data.bones:
-            bone.hide = False
             to_translate.append(bone.name)
+        # Unhide all pose bones for visibility in object/pose mode
+        for pb in armature.pose.bones:
+            pb.hide = False
         Translate.update_dictionary(to_translate)
         for bone in armature.data.bones:
             bone.name, translated = Translate.translate(bone.name)

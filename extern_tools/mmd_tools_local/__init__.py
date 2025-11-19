@@ -19,10 +19,10 @@
 bl_info = {
     "name": "mmd_tools_local",
     "author": "sugiany",
-    "version": (4, 5, 2),
+    "version": (5, 0, 0),
     "blender": (4, 5, 2),
     "location": "View3D > Sidebar > MMD Panel",
-    "description": "Utility tools for MMD model editing. (UuuNyaa's forked version)",
+    "description": "Utility tools for MMD model editing. (UuuNyaa's forked version) - Blender 5.0 compatible",
     "warning": "",
     "doc_url": "https://mmd-blender.fandom.com/wiki/mmd_tools_local",
     "wiki_url": "https://mmd-blender.fandom.com/wiki/mmd_tools_local",
@@ -48,8 +48,12 @@ def register():
     import bpy
 
     from . import handlers
+    from .compat import action_compat
 
     auto_load.register()
+
+    # Register action compatibility layer for Blender 5.0+
+    action_compat.register()
 
     # pylint: disable=import-outside-toplevel
     from .m17n import translations_dict
@@ -63,12 +67,16 @@ def unregister():
     import bpy
 
     from . import handlers
+    from .compat import action_compat
 
     handlers.MMDHanders.unregister()
 
     bpy.app.translations.unregister(bl_info["name"])
 
     auto_load.unregister()
+
+    # Unregister action compatibility layer
+    action_compat.unregister()
 
 
 if __name__ == "__main__":
