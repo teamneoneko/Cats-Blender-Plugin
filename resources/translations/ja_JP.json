@@ -404,7 +404,7 @@
         "EnableMMD.required1": "この機能には \"mmd_tools\" プラグインが必要です。",
         "EnableMMD.required2": "Blenderを再起動してください。",
         "XpsToolsButton.label": "XPSツールをダウンロード",
-        "XpsToolsButton.URL": "https://github.com/johnzero7/XNALaraMesh",
+        "XpsToolsButton.URL": "https://github.com/Valerie-Bosco/XNALara-io-Tools",
         "XpsToolsButton.success": "XPSツールのリンクが開かれました",
         "SourceToolsButton.label": "ソースツールをダウンロード",
         "SourceToolsButton.URL": "https://github.com/Artfunkel/BlenderSourceTools",
