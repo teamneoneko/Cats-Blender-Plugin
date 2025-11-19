@@ -109,7 +109,8 @@
         "DecimationPanel.warn.noMeshSelected": "メッシュが選択されていません",
         "DecimationPanel.warn.emptyList": "両方のリストが空で、これは完全なデシメーションに等しい!",
         "DecimationPanel.warn.correctWhitelist": "両方のホワイトリストはデシメーション中に考慮されます",
-        "A hard limit will be established in the future that will not be much more than this.\"": "퀘스트용 아바타들을 위해 권장되는 삼각폴리곤(Tris)의 개수입니다.\n앞으로는 이보다 심하지는 않을 엄격한 제한이 설정될 것입니다。",
+        "Scene.skip_locked_shape_keys.label": "ロックされたシェイプキーをスキップ",
+        "Scene.skip_locked_shape_keys.desc": "チェックされている場合、ロックされたシェイプキーの翻訳をスキップします。シェイプキーをロック/ロック解除するには、その横のロックアイコンをクリックするか、複数のロックアイコンをクリックしてドラッグして複数をロック/ロック解除します。",
         "EyeTrackingPanel.label": "アイトラッキング",
         "EyeTrackingPanel.error.noMesh": "メッシュが見つかりません!",
         "EyeTrackingPanel.error.noArm": "モデルが見つかりません!",
@@ -793,9 +794,9 @@
         "RemoveDoubles.warning.shapekeys.impact": "重複を削除すると、シェイプキーの変形に影響を与える可能性があります",
         "RemoveDoubles.warning.shapekeys.continue": "続行しますか？",
         "CreditsPanel.label": "クレジット",
-        "CreditsPanel.desc1": "Cats ブレンダープラグイン (",
-        "CreditsPanel.desc4": "特別な感謝:",
-        "CreditsPanel.descContributors": "Feilen, Jordo, Ruubick, triazo, Mysteryem",
+        "CreditsPanel.desc1": "Cats Blender プラグイン (",
+        "CreditsPanel.desc4": "特別な感謝：",
+        "CreditsPanel.descContributors": "Feilen, Jordo, Ruubick, triazo, Mysteryem, rurre",
         "CreditsPanel.descContributors2": "Shotariya と Neitri",
         "CreditsPanel.maintainers1": "Neoneko チームによって維持されています",
         "CreditsPanel.maintainers2": "メンテナー: Yusarina と 989onan",
@@ -814,6 +815,6 @@
         "EyeTrackingPanel.troubleshooting.shapeKeys": "• シェイプキーの名前が正しく付けられていることを確認",
         "EyeTrackingPanel.troubleshooting.boneWeights": "• 目のボーンが適切にウェイト付けされていることを確認",
         "EyeTrackingPanel.troubleshooting.restPosition": "• アーマチュアが静止位置にあることを確認",
-        "merge_armatures.error.mustapplytransforms": "アーマチュアのX、Y、Z軸のスケール値が異なっており、\n統一されたスケーリング（すべての軸が同じスケール値）になっていません。\n\nアーマチュアをマージする前にこれを修正することは、\n適切なボーンの変換と変形の問題を防ぐために重要です。\n\nこの警告があってもマージを続行したい場合は、\nマージを開始する前に「トランスフォームを適用」にチェックを入れてください。"
+        "merge_armatures.error.mustapplytransforms": "変換の問題が検出されました！\n\nアーマチュアには、マージする前に修正する必要がある均一でないスケーリングまたは回転があります。\nこれは、サイズの変更と変形の問題を防ぐために重要です。\n\nこれを修正するには：\n1. マージ設定で「トランスフォームを適用」チェックボックスを有効にします\n2. もう一度マージしてみてください\n\n「トランスフォームを適用」オプションは、すべてのスケール、回転、および位置の値を正規化するため、\nアーマチュアはサイズを変更せずに正しくマージされます。\n\n既に「トランスフォームを適用」をチェックしてもこのエラーが表示される場合は、\nこれをバグとして報告してください。"
     }
 }
