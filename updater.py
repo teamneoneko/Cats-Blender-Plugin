@@ -544,7 +544,7 @@ def update_now(version=None, latest=False, dev=False):
         return
     if dev:
         print('UPDATE TO DEVELOPMENT')
-        update_link = 'https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-/archive/blender-43-dev.zip'
+        update_link = 'https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-/archive/blender-5x-dev.zip'
     elif latest or not version:
         print('UPDATE TO ' + latest_version_str)
         update_link = version_list.get(latest_version_str)[0]
