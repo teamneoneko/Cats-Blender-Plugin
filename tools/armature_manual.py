@@ -167,7 +167,7 @@ def start_pose_mode(reset_pose=True):
             for shape_key in mesh.data.shape_keys.key_blocks:
                 shape_key.value = 0
 
-    for pb in armature.data.bones:
+    for pb in armature.pose.bones:
         pb.select = True
 
     if reset_pose:
@@ -177,11 +177,11 @@ def start_pose_mode(reset_pose=True):
 
     bone = armature.data.bones.get(current)
     if bone is not None:
-        for pb in armature.data.bones:
+        for pb in armature.pose.bones:
             if bone.name != pb.name:
                 pb.select = False
     else:
-        for index, pb in enumerate(armature.data.bones):
+        for index, pb in enumerate(armature.pose.bones):
             if index != 0:
                 pb.select = False
         bpy.ops.wm.tool_set_by_id(name="builtin.rotate")
