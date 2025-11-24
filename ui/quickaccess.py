@@ -25,6 +25,9 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         layout = self.layout
         col = layout.column(align=True)
 
+        # Validate armature selection in case one was deleted
+        Common.validate_armature_selection()
+
         # Update notifications section
         updater.check_for_update_background(check_on_startup=True)
         updater.draw_update_notification_panel(col)

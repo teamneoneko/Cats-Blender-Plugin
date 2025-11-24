@@ -127,6 +127,11 @@ def get_armature(armature_name=None):
         for obj in objects:
             if obj and obj.type == 'ARMATURE':
                 return obj
+    
+    # Fallback: if the selected armature doesn't exist, return the first available armature
+    for obj in objects:
+        if obj and obj.type == 'ARMATURE':
+            return obj
                 
     return None
 
@@ -424,8 +429,51 @@ def get_armature_list(self, context):
         # 2. Will be shown in lists
         # 3. will be shown in the hover description (below description)
         choices.append((armature.name, name, armature.name))
+    
+    # Blender 5.0 fix: Clear invalid enum selection to prevent warnings
+    # In Blender 5.0, bpy.props are no longer in the custom properties container
+    # We need to access them via bl_system_properties_get() and use property_unset()
+    if context and context.scene:
+        try:
+            sys_props = context.scene.bl_system_properties_get()
+            current_value = sys_props.get('armature')
+            
+            if current_value is not None:
+                valid_identifiers = [choice[0] for choice in choices]
+                if current_value not in valid_identifiers:
+                    context.scene.property_unset('armature')
+        except:
+            pass
 
     return choices
+
+
+def validate_armature_selection():
+    """Validate and fix the scene's armature selection if it's invalid. Safe to call from operators."""
+    try:
+        context = bpy.context
+        if not context or not context.scene:
+            return
+        
+        current_armature = context.scene.armature
+        available_armatures = [obj.name for obj in get_armature_objects()]
+        
+        # If current selection is invalid, update to first available
+        if available_armatures and current_armature not in available_armatures:
+            context.scene.armature = available_armatures[0]
+    except:
+        pass
+
+
+def update_armature_selection(self, context):
+    """Update callback for armature selection. Validates and updates material list."""
+    try:
+        # First validate the selection
+        validate_armature_selection()
+        # Then update the material list
+        update_material_list(self, context)
+    except:
+        pass
 
 
 def get_armature_merge_list(self, context):
