@@ -58,7 +58,7 @@ def register():
         name=t('Scene.armature.label'),
         description=t('Scene.armature.desc'),
         items=wrap_dynamic_enum_items(Common.get_armature_list, 'armature', sort=False, in_place=False),
-        update=Common.update_material_list,
+        update=Common.update_armature_selection,
     )
 
     Scene.zip_content = EnumProperty(
