@@ -46,6 +46,42 @@ def get_objects():
     return bpy.context.view_layer.objects
 
 
+def get_enum_property_value(property_holder, property_name, items_func=None):
+    """Safely get an enum property value, handling integer indices from Blender 5.0.
+    
+    Args:
+        property_holder: The object holding the property (e.g., context.scene)
+        property_name: Name of the enum property
+        items_func: Optional function to get valid items. If provided, integer indices
+                   will be converted to their corresponding identifier strings.
+    
+    Returns:
+        The string identifier value of the enum, or empty string if invalid.
+    """
+    try:
+        value = getattr(property_holder, property_name, None)
+        if value is None:
+            return ''
+        
+        # If it's already a valid string, return it
+        if isinstance(value, str):
+            return value
+        
+        # Handle integer index (Blender 5.0 compatibility)
+        if isinstance(value, int) and items_func is not None:
+            try:
+                # Get the items to convert index to identifier
+                items = items_func(property_holder, bpy.context)
+                if items and 0 <= value < len(items):
+                    return items[value][0]  # Return the identifier
+            except:
+                pass
+        
+        return str(value) if value is not None else ''
+    except:
+        return ''
+
+
 class SavedData:
     __object_properties = {}
     __active_object = None
@@ -109,7 +145,17 @@ class SavedData:
 
 def get_armature(armature_name=None):
     if not armature_name:
-        armature_name = bpy.context.scene.armature
+        # Use safe enum getter for Blender 5.0 compatibility
+        armature_name = get_enum_property_value(bpy.context.scene, 'armature', get_armature_list)
+        
+    # Handle case where armature_name might still be an integer (e.g., passed directly)
+    if isinstance(armature_name, int):
+        armatures = get_armature_objects()
+        if 0 <= armature_name < len(armatures):
+            return armatures[armature_name]
+        elif armatures:
+            return armatures[0]
+        return None
         
     # Get all objects in the scene
     objects = get_objects()
@@ -434,7 +480,7 @@ def get_armature_list(self, context):
 
 
 def validate_armature_selection():
-    """Validate and fix the scene's armature selection if it's invalid. Safe to call from operators."""
+    """Validate and fix the scene's armature selection if it's invalid. Safe to call from UI draw or operators."""
     try:
         context = bpy.context
         if not context or not context.scene:
@@ -443,9 +489,36 @@ def validate_armature_selection():
         current_armature = context.scene.armature
         available_armatures = [obj.name for obj in get_armature_objects()]
         
-        # If current selection is invalid, update to first available
-        if available_armatures and current_armature not in available_armatures:
-            context.scene.armature = available_armatures[0]
+        if not available_armatures:
+            return
+        
+        # Determine if we need to fix the selection
+        new_armature = None
+        
+        # Handle case where current_armature might be an integer index (Blender 5.0)
+        if isinstance(current_armature, int):
+            # Only fix if the index is out of bounds
+            if current_armature < 0 or current_armature >= len(available_armatures):
+                new_armature = available_armatures[0]
+            # If it's a valid index, leave it alone - Blender handles this fine
+        elif isinstance(current_armature, str):
+            # Only fix if the string identifier is not in the available armatures
+            if current_armature not in available_armatures:
+                new_armature = available_armatures[0]
+        
+        # If we need to update, try direct update first, then schedule via timer
+        if new_armature:
+            try:
+                context.scene.armature = new_armature
+            except (AttributeError, TypeError):
+                # Can't update during UI draw, schedule it via timer
+                def fix_armature_selection():
+                    try:
+                        bpy.context.scene.armature = new_armature
+                    except:
+                        pass
+                    return None  # Don't repeat
+                bpy.app.timers.register(fix_armature_selection)
     except:
         pass
 
@@ -463,7 +536,8 @@ def update_armature_selection(self, context):
 
 def get_armature_merge_list(self, context):
     choices = []
-    current_armature = context.scene.merge_armature_into
+    # Use safe getter to handle integer indices from Blender 5.0
+    current_armature = get_enum_property_value(context.scene, 'merge_armature_into', get_armature_list)
 
     for armature in get_armature_objects():
         if armature.name != current_armature:
@@ -501,7 +575,8 @@ def get_bones_eye_r(self, context):
 
 
 def get_bones_merge(self, context):
-    return get_bones(armature_name=bpy.context.scene.merge_armature_into)
+    armature_name = get_enum_property_value(bpy.context.scene, 'merge_armature_into', get_armature_list)
+    return get_bones(armature_name=armature_name)
 
 
 # names - The first object will be the first one in the list. So the first one has to be the one that exists in the most models
@@ -509,7 +584,7 @@ def get_bones(names=None, armature_name=None, check_list=False):
     if not names:
         names = []
     if not armature_name:
-        armature_name = bpy.context.scene.armature
+        armature_name = get_enum_property_value(bpy.context.scene, 'armature', get_armature_list)
 
     choices = []
     armature = get_armature(armature_name=armature_name)
@@ -624,9 +699,9 @@ def get_shapekeys(context, names, is_mouth, no_basis, return_list):
 
 def fix_armature_names(armature_name=None):
     if not armature_name:
-        armature_name = bpy.context.scene.armature
-    base_armature = get_armature(armature_name=bpy.context.scene.merge_armature_into)
-    merge_armature = get_armature(armature_name=bpy.context.scene.merge_armature)
+        armature_name = get_enum_property_value(bpy.context.scene, 'armature', get_armature_list)
+    base_armature = get_armature(armature_name=get_enum_property_value(bpy.context.scene, 'merge_armature_into', get_armature_list))
+    merge_armature = get_armature(armature_name=get_enum_property_value(bpy.context.scene, 'merge_armature', get_armature_merge_list))
 
     # Armature should be named correctly (has to be at the end because of multiple armatures)
     armature = get_armature(armature_name=armature_name)
@@ -2199,125 +2274,99 @@ def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_na
         choices = choices.copy()
 
     num_choices = len(choices)
+    if num_choices == 0:
+        return choices
 
     # Getting property_holder.property_name isn't possible since it will cause infinite recursion, but we can get the
-    # index without issue
-    current_choice_index = property_holder.get(property_name)
+    # raw stored value without issue
+    current_choice_value = property_holder.get(property_name)
     # If the property is not yet initialised, it should get set to a valid index automatically, so we only care
     # if it has already been initialised
-    is_initialised = current_choice_index is not None
+    is_initialised = current_choice_value is not None
     
-    # Blender 5.0 compatibility: Convert integer indices to identifiers
-    if is_initialised and isinstance(current_choice_index, int) and 0 <= current_choice_index < num_choices:
-        # Convert valid integer index to the identifier
-        replacement_identifier = choices[current_choice_index][0]
-        try:
-            property_holder[property_name] = replacement_identifier
-        except AttributeError:
-            # During UI drawing, schedule the fix
-            scene_name = scene.name
-            scheduled_property_set = _enum_choice_fix_scheduled.setdefault(scene_name, set())
-            property_path_key = property_path + "_int_fix"
-            if property_path_key not in scheduled_property_set:
-                scheduled_property_set.add(property_path_key)
-                def fix_int_to_identifier_task():
-                    scene_by_name = bpy.data.scenes.get(scene_name)
-                    if scene_by_name:
-                        try:
-                            setattr(property_holder, property_name, replacement_identifier)
-                        except:
-                            pass
-                    scheduled_property_set.discard(property_path_key)
-                    return None
-                bpy.app.timers.register(fix_int_to_identifier_task)
-        # Reset current_choice_index to check for out of bounds again with the new identifier
-        current_choice_index = property_holder.get(property_name)
-        is_initialised = current_choice_index is not None
+    if not is_initialised:
+        return choices
     
-    if is_initialised and current_choice_index >= num_choices:
-        # If the index is out of bounds, the last choice is suitable
-        replacement_idx = num_choices - 1
-        replacement_choice = choices[replacement_idx]
-
-        # Setting the current choice index won't affect the current process of getting the property value, e.g.
-        # if current_choice_index was 5, setting scene[property_name] will have no affect until attempting to
-        # get the property a second time.
-        # What we can do is temporarily add duplicates of the replacement choice until there is a choice at the current,
-        # invalid index.
-        # Adding extra choices will prevent the console from being spammed with warnings about no enum existing for the
-        # current, invalid index.
-        # Note that Blender 2.79 would return the first choice when the index is out of bounds while newer versions
-        # return '', so this is slightly different behaviour.
-        num_extra_to_add = current_choice_index - num_choices + 1
-        # print(f"Current index of {property_name} is {current_choice_index}, but there are only {num_choices} values. Temporarily adding {num_extra_to_add} extra choices")
-        extra_choices = [replacement_choice, ] * num_extra_to_add
-        choices.extend(extra_choices)
-
-        try:
-            # If possible, set the current choice index to a valid one, this will raise an Attribute error if called
-            # when drawing UI.
-            property_holder[property_name] = replacement_idx
-            # print(f"Detected '{property_path}' enum in '{scene.name}' with an invalid value, it has been fixed automatically")
-        except AttributeError:
-            # bpy.app.timers is 2.80+
-            # For older Blender versions, it is possible to use a Thread to run the task until it works, but this
-            # would result in EnumProperty update functions being called from a separate Thread which does not
-            # sound like a good idea. It also might not be safe in general to get a scene and update one if its
-            # properties from a separate Thread, e.g., what if the scene is deleted in the time between getting the
-            # scene and updating the property's value?
-            # Without the scheduled task on 2.79, if the index is out of bounds, the temporary duplicates will
-            # be added every time the items function is called, until the EnumProperty is updated or retrieved
-            # outside of UI drawing. This causes the temporary duplicates to be visible in the UI. Though, selecting
-            # any of the temporary duplicates poses no problem as it causes the property to be updated outside of UI
-            # drawing, thus fixing the out-of-bounds index and causing the temporary duplicates to disappear.
-            # No modification is allowed when called as part of drawing UI, so we must schedule a task instead
-            # First check if a fix has not already been scheduled, otherwise around 4 or 5 tasks could get scheduled
-            # before the first one fixes the invalid choice
-            scene_name = scene.name
-            # _enum_choice_fix_scheduled is a global variable
-            scheduled_property_set = _enum_choice_fix_scheduled.setdefault(scene_name, set())
-            if property_path not in scheduled_property_set:
-                replacement_identifier = replacement_choice[0]
-
-                scheduled_property_set.add(property_path)
-
-                # Closure task to fix the property
-                def fix_out_of_bounds_enum_choice_task():
-                    scene_by_name = bpy.data.scenes.get(scene_name)
-                    # It's unlikely, but it is possible that the scene could have been deleted or renamed by the
-                    # time the task executes. If it was renamed, another task would end up getting scheduled with
-                    # the new name, so no problems there.
-                    if scene_by_name:
-                        # False argument to not coerce into a Python object (the value of the property) and instead
-                        # return the prop itself
-                        prop = scene_by_name.path_resolve(property_path, False)
-                        # .id_data is the owner of the property, the scene in this case, and .data is the holder of
-                        # the property
-                        prop_holder = prop.data
-                        # Setting the index
-                        #   prop_holder[property_name] = replacement_idx
-                        # doesn't cause UI to update the list of items.
-                        # However, setting the property itself does, and since this is scheduled and called
-                        # separately, there's no issue of causing infinite recursion.
-                        # This will result in fix_invalid_enum_choices getting called again, but that will only fix
-                        # the index and not cause the UI to update.
-                        # Equivalent to: scene_by_name.property = replacement_identifier
-                        setattr(prop_holder, property_name, replacement_identifier)
-                        # print(f"Fixed '{property_path}' EnumProperty in '{scene_name}'")
-                    else:
-                        print("An EnumProperty fix was scheduled to set '{}.{}' to '{}', but the scene '{}' could not be found."
-                              .format(scene_name, property_path, replacement_identifier, scene_name))
-                    scheduled_property_set.remove(property_path)
-                    # Returning None indicates that the timer should be removed after being executed; here for
-                    # clarity.
-                    return None
-
-                # Schedule the task to immediately execute when possible (this will be after UI drawing has
-                # finished)
-                bpy.app.timers.register(fix_out_of_bounds_enum_choice_task)
-                # print(f"Detected '{property_path}' enum in '{scene_name}' with an invalid value during UI drawing, a fix has been scheduled")
+    # Build a set of valid identifiers for quick lookup
+    valid_identifiers = {choice[0] for choice in choices}
+    
+    # Check if the current value is a valid string identifier
+    if isinstance(current_choice_value, str):
+        if current_choice_value in valid_identifiers:
+            # Current value is valid, nothing to fix
+            return choices
+        else:
+            # Current string value is not in the valid choices
+            # Check if it might be a numeric string (legacy data)
+            try:
+                numeric_value = int(current_choice_value)
+                if numeric_value >= num_choices:
+                    # Add padding for numeric string that's out of bounds
+                    num_extra_to_add = numeric_value - num_choices + 1
+                    for i in range(num_extra_to_add):
+                        temp_identifier = f"__temp_choice_{num_choices + i}__"
+                        temp_choice = (temp_identifier, choices[0][1], choices[0][2])
+                        choices.append(temp_choice)
+            except (ValueError, TypeError):
+                pass
+            # Schedule fix to set to first valid choice
+            replacement_identifier = choices[0][0]
+            _schedule_enum_fix(property_holder, scene, property_name, property_path, replacement_identifier)
+            return choices
+    
+    # Handle integer indices (Blender 5.0 compatibility)
+    if isinstance(current_choice_value, int):
+        if 0 <= current_choice_value < num_choices:
+            # Valid index - DO NOT schedule a fix, let user selection work normally
+            # Just return the choices as-is, Blender will handle the integer index
+            return choices
+        else:
+            # Out of bounds index - add temporary padding choices to prevent warnings
+            # and schedule a fix to set it to the first valid choice
+            num_extra_to_add = current_choice_value - num_choices + 1
+            for i in range(num_extra_to_add):
+                # Create a unique temporary identifier
+                temp_identifier = f"__temp_choice_{num_choices + i}__"
+                temp_choice = (temp_identifier, choices[0][1], choices[0][2])
+                choices.append(temp_choice)
+            
+            replacement_identifier = choices[0][0]
+            _schedule_enum_fix(property_holder, scene, property_name, property_path, replacement_identifier)
 
     return choices
+
+
+def _schedule_enum_fix(property_holder, scene, property_name, property_path, new_value):
+    """Schedule a fix for an enum property to be applied outside of the UI draw context."""
+    # First try to set it directly using setattr (works better for Scene properties)
+    try:
+        setattr(property_holder, property_name, new_value)
+        return
+    except (AttributeError, TypeError, RuntimeError):
+        pass
+    
+    # If direct setting failed (likely in UI draw context), schedule via timer
+    scene_name = scene.name
+    scheduled_property_set = _enum_choice_fix_scheduled.setdefault(scene_name, set())
+    
+    if property_path in scheduled_property_set:
+        # Already scheduled, don't duplicate
+        return
+    
+    scheduled_property_set.add(property_path)
+    
+    def fix_enum_task():
+        scene_by_name = bpy.data.scenes.get(scene_name)
+        if scene_by_name:
+            try:
+                # Try to set via setattr on the scene
+                setattr(scene_by_name, property_name, new_value)
+            except:
+                pass
+        scheduled_property_set.discard(property_path)
+        return None  # Return None to not repeat the timer
+
+    bpy.app.timers.register(fix_enum_task)
 
 
 def is_enum_empty(string):
@@ -2343,14 +2392,15 @@ def wrap_dynamic_enum_items(items_func, property_name, sort=True, in_place=True,
     Only works for properties whose owner is a scene.
     By setting is_holder=false, the fix for out of bounds values will be disabled."""
     def wrapped_items_func(self, context):
-        nonlocal in_place
+        # Use local variable to avoid modifying the closure's in_place on subsequent calls
+        do_in_place = in_place
         items = items_func(self, context)
         if sort:
-            items = _sort_enum_choices_by_identifier_lower(items, in_place=in_place)
-            if not in_place:
+            items = _sort_enum_choices_by_identifier_lower(items, in_place=do_in_place)
+            if not do_in_place:
                 # Sorting has already created a new list in this case, so the rest can be done in place
-                in_place = True
-        items = _ensure_enum_choices_not_empty(items, in_place=in_place)
+                do_in_place = True
+        items = _ensure_enum_choices_not_empty(items, in_place=do_in_place)
         property_path = self.path_from_id(property_name) if is_holder else property_name
         # If ensuring the list wasn't empty wasn't done in place, then a new list has been created and the rest can
         # be done in place

@@ -39,9 +39,9 @@ class MergeArmature(bpy.types.Operator):
         Common.unselect_all()
         wm.progress_update(10)
 
-        # Get both armatures
-        base_armature_name = bpy.context.scene.merge_armature_into
-        merge_armature_name = bpy.context.scene.merge_armature
+        # Get both armatures (use safe enum getter for Blender 5.0 compatibility)
+        base_armature_name = Common.get_enum_property_value(bpy.context.scene, 'merge_armature_into', Common.get_armature_list)
+        merge_armature_name = Common.get_enum_property_value(bpy.context.scene, 'merge_armature', Common.get_armature_merge_list)
         base_armature = Common.get_objects().get(base_armature_name)
         merge_armature = Common.get_objects().get(merge_armature_name)
         armature = Common.set_default_stage()
@@ -110,10 +110,10 @@ class AttachMesh(bpy.types.Operator):
         Common.unselect_all()
         wm.progress_update(5)
 
-        # Get armature and mesh
-        mesh_name = context.scene.attach_mesh
-        base_armature_name = context.scene.merge_armature_into
-        attach_bone_name = context.scene.attach_to_bone
+        # Get armature and mesh (use safe enum getter for Blender 5.0 compatibility)
+        mesh_name = Common.get_enum_property_value(context.scene, 'attach_mesh', Common.get_top_meshes)
+        base_armature_name = Common.get_enum_property_value(context.scene, 'merge_armature_into', Common.get_armature_list)
+        attach_bone_name = Common.get_enum_property_value(context.scene, 'attach_to_bone', Common.get_bones_merge)
         mesh = Common.get_objects().get(mesh_name)
         armature = Common.get_objects().get(base_armature_name)
         wm.progress_update(10)
