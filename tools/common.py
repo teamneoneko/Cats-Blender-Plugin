@@ -430,21 +430,6 @@ def get_armature_list(self, context):
         # 3. will be shown in the hover description (below description)
         choices.append((armature.name, name, armature.name))
     
-    # Blender 5.0 fix: Clear invalid enum selection to prevent warnings
-    # In Blender 5.0, bpy.props are no longer in the custom properties container
-    # We need to access them via bl_system_properties_get() and use property_unset()
-    if context and context.scene:
-        try:
-            sys_props = context.scene.bl_system_properties_get()
-            current_value = sys_props.get('armature')
-            
-            if current_value is not None:
-                valid_identifiers = [choice[0] for choice in choices]
-                if current_value not in valid_identifiers:
-                    context.scene.property_unset('armature')
-        except:
-            pass
-
     return choices
 
 
@@ -2221,6 +2206,34 @@ def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_na
     # If the property is not yet initialised, it should get set to a valid index automatically, so we only care
     # if it has already been initialised
     is_initialised = current_choice_index is not None
+    
+    # Blender 5.0 compatibility: Convert integer indices to identifiers
+    if is_initialised and isinstance(current_choice_index, int) and 0 <= current_choice_index < num_choices:
+        # Convert valid integer index to the identifier
+        replacement_identifier = choices[current_choice_index][0]
+        try:
+            property_holder[property_name] = replacement_identifier
+        except AttributeError:
+            # During UI drawing, schedule the fix
+            scene_name = scene.name
+            scheduled_property_set = _enum_choice_fix_scheduled.setdefault(scene_name, set())
+            property_path_key = property_path + "_int_fix"
+            if property_path_key not in scheduled_property_set:
+                scheduled_property_set.add(property_path_key)
+                def fix_int_to_identifier_task():
+                    scene_by_name = bpy.data.scenes.get(scene_name)
+                    if scene_by_name:
+                        try:
+                            setattr(property_holder, property_name, replacement_identifier)
+                        except:
+                            pass
+                    scheduled_property_set.discard(property_path_key)
+                    return None
+                bpy.app.timers.register(fix_int_to_identifier_task)
+        # Reset current_choice_index to check for out of bounds again with the new identifier
+        current_choice_index = property_holder.get(property_name)
+        is_initialised = current_choice_index is not None
+    
     if is_initialised and current_choice_index >= num_choices:
         # If the index is out of bounds, the last choice is suitable
         replacement_idx = num_choices - 1
