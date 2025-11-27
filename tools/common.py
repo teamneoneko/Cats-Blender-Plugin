@@ -2375,8 +2375,6 @@ def is_enum_empty(string):
     Returns False in all other cases."""
     return _empty_enum_identifier == string
 
-
-# This function isn't needed since you can 'not is_enum_empty(string)', but is included for code clarity and readability
 def is_enum_non_empty(string):
     """Returns False only if the tested string is not the string that signifies that an EnumProperty is empty.
 
