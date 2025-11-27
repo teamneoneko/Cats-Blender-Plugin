@@ -22,7 +22,7 @@ class SearchMenuOperator_merge_armature_into(bpy.types.Operator):
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.merge_armature_into.label'),
         description=t('Scene.merge_armature_into.desc'),
-        items=Common.get_armature_list,
+        items=Common.wrap_dynamic_enum_items(Common.get_armature_list, 'my_enum', sort=False, in_place=False, is_holder=False),
     )
 
     def execute(self, context):
@@ -44,7 +44,7 @@ class SearchMenuOperator_merge_armature(bpy.types.Operator):
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.merge_armature.label'),
         description=t('Scene.merge_armature.desc'),
-        items=Common.get_armature_merge_list,
+        items=Common.wrap_dynamic_enum_items(Common.get_armature_merge_list, 'my_enum', sort=False, in_place=False, is_holder=False),
     )
 
     def execute(self, context):
@@ -66,7 +66,7 @@ class SearchMenuOperator_attach_to_bone(bpy.types.Operator):
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.attach_to_bone.label'),
         description=t('Scene.attach_to_bone.desc'),
-        items=Common.get_bones_merge,
+        items=Common.wrap_dynamic_enum_items(Common.get_bones_merge, 'my_enum', sort=False, in_place=False, is_holder=False),
     )
 
     def execute(self, context):
@@ -88,7 +88,7 @@ class SearchMenuOperator_attach_mesh(bpy.types.Operator):
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.attach_mesh.label'),
         description=t('Scene.attach_mesh.desc'),
-        items=Common.get_top_meshes,
+        items=Common.wrap_dynamic_enum_items(Common.get_top_meshes, 'my_enum', sort=False, in_place=False, is_holder=False),
     )
 
     def execute(self, context):
