@@ -44,7 +44,7 @@ def selectSingleBone(context, armature, bone_name, reset_pose=False):
     try:
         bpy.ops.object.mode_set(mode="OBJECT")
     except Exception as e:
-        logging.warning(f"Failed to set object mode: {e}")
+        logging.warning("Failed to set object mode: %s", e)
     for i in context.selected_objects:
         i.select_set(False)
     FnContext.set_active_object(context, armature)
@@ -84,11 +84,11 @@ __CONVERT_R_TO_NAME_REGEXP = re.compile(r"(?P<lr>(?P<separator>[._])[rR])(?P<aft
 def convertLRToName(name):
     match = __CONVERT_L_TO_NAME_REGEXP.search(name)
     if match:
-        return f"左{name[0:match.start()]}{match['after']}{name[match.end():]}"
+        return f"左{name[0 : match.start()]}{match['after']}{name[match.end() :]}"
 
     match = __CONVERT_R_TO_NAME_REGEXP.search(name)
     if match:
-        return f"右{name[0:match.start()]}{match['after']}{name[match.end():]}"
+        return f"右{name[0 : match.start()]}{match['after']}{name[match.end() :]}"
 
     return name
 
@@ -113,55 +113,35 @@ def separateByMaterials(meshObj: bpy.types.Object, keep_normals: bool = False):
     if len(meshData.materials) < 2:
         selectAObject(meshObj)
         return
-
-    dummy_parent = None
+    matrix_parent_inverse = meshObj.matrix_parent_inverse.copy()
+    prev_parent = meshObj.parent
+    dummy_parent = bpy.data.objects.new(name="tmp", object_data=None)
+    meshObj.parent = dummy_parent
+    meshObj.active_shape_key_index = 0
     try:
-        dummy_parent = bpy.data.objects.new(name="tmp", object_data=None)
-        matrix_parent_inverse = meshObj.matrix_parent_inverse.copy()
-        prev_parent = meshObj.parent
-        meshObj.parent = dummy_parent
-        meshObj.active_shape_key_index = 0
-        mmd_normal_name = None  # To avoid conflict ("mmd_normal.001", etc.)
         if keep_normals:
-            existing_custom_normal = meshData.attributes.get("custom_normal")
-            if existing_custom_normal:
-                if existing_custom_normal.data_type == "INT16_2D":
-                    normals_data = np.empty(len(meshData.loops) * 2, dtype=np.int16)
-                    existing_custom_normal.data.foreach_get("value", normals_data)
-                    mmd_normal = meshData.attributes.new("mmd_normal", "INT16_2D", "CORNER")
-                    mmd_normal_name = mmd_normal.name
-                    mmd_normal.data.foreach_set("value", normals_data)
-                else:
-                    raise TypeError(f"Unsupported custom_normal data type: '{existing_custom_normal.data_type}'. Supported types: 'INT16_2D'")
-
-        try:
-            enterEditMode(meshObj)
-            bpy.ops.mesh.separate(type="MATERIAL")
-        finally:
-            bpy.ops.object.mode_set(mode="OBJECT")
-
-        for i in dummy_parent.children:
-            materials = i.data.materials
-            i.name = getattr(materials[0], "name", "None") if len(materials) else "None"
-            i.parent = prev_parent
-            i.matrix_parent_inverse = matrix_parent_inverse
-
-            if keep_normals and mmd_normal_name:
-                mmd_normal = i.data.attributes.get(mmd_normal_name)
-                if mmd_normal:
-                    if mmd_normal.data_type == "INT16_2D":
-                        normals_data = np.empty(len(i.data.loops) * 2, dtype=np.int16)
-                        mmd_normal.data.foreach_get("value", normals_data)
-                        custom_normal_attr = i.data.attributes.get("custom_normal")
-                        if not custom_normal_attr:
-                            custom_normal_attr = i.data.attributes.new("custom_normal", "INT16_2D", "CORNER")
-                        custom_normal_attr.data.foreach_set("value", normals_data)
-                    else:
-                        raise TypeError(f"Unsupported custom_normal data type: '{mmd_normal.data_type}'. Supported types: 'INT16_2D'")
-                    i.data.attributes.remove(mmd_normal)
+            mmd_normal = meshData.attributes.new("mmd_normal", "FLOAT_VECTOR", "CORNER")
+            normals_data = np.empty(len(meshData.loops) * 3, dtype=np.float32)
+            meshData.loops.foreach_get("normal", normals_data)
+            mmd_normal.data.foreach_set("vector", normals_data)
+        enterEditMode(meshObj)
+        bpy.ops.mesh.separate(type="MATERIAL")
     finally:
-        if dummy_parent and dummy_parent.name in bpy.data.objects:
-            bpy.data.objects.remove(dummy_parent)
+        bpy.ops.object.mode_set(mode="OBJECT")
+    for i in dummy_parent.children:
+        materials = i.data.materials
+        i.name = getattr(materials[0], "name", "None") if len(materials) else "None"
+        i.parent = prev_parent
+        i.matrix_parent_inverse = matrix_parent_inverse
+        if keep_normals:
+            mmd_normal = i.data.attributes.get("mmd_normal")
+            if mmd_normal:
+                normals_data = np.empty(len(i.data.loops) * 3, dtype=np.float32)
+                mmd_normal.data.foreach_get("vector", normals_data)
+                i.data.attributes.remove(mmd_normal)
+                i.data.normals_split_custom_set(normals_data.reshape(-1, 3))
+
+    bpy.data.objects.remove(dummy_parent)
 
 
 def clearUnusedMeshes():

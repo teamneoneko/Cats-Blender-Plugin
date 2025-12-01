@@ -11,7 +11,7 @@ from bpy.utils import register_class
 class TestAddon(unittest.TestCase):
     def test_extensions(self):
         bpy.context.scene.debug_translations = True
-        bpy.context.scene.use_custom_mmd_tools = True
+        bpy.context.scene.use_custom_mmd_tools_local = True
         bpy.context.scene.embed_textures = True
         bpy.context.scene.show_mmd_tabs = True
         bpy.context.scene.disable_eye_blinking = True
@@ -40,7 +40,7 @@ class TestAddon(unittest.TestCase):
         bpy.context.scene.keep_upper_chest = True
 
         bpy.context.scene.debug_translations = False
-        bpy.context.scene.use_custom_mmd_tools = False
+        bpy.context.scene.use_custom_mmd_tools_local = False
         bpy.context.scene.embed_textures = False
         bpy.context.scene.show_mmd_tabs = False
         bpy.context.scene.disable_eye_blinking = False

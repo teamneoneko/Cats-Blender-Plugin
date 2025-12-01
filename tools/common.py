@@ -1804,7 +1804,7 @@ def update_material_list(self=None, context=None):
 def bake_mmd_colors(node_base_tex: ShaderNodeTexImage, node_mmd_shader: ShaderNodeGroup):
     """Bake the mmd ambient color and diffuse color into the base tex or return the combined color if there is no base
     tex. This process follows the same steps that the mmd_shader group node follows."""
-    # Input names used by mmd_shader group node from the mmd_tools addon
+    # Input names used by mmd_shader group node from the mmd_tools_local addon
     ambient_color_input_name = "Ambient Color"
     diffuse_color_input_name = "Diffuse Color"
 
