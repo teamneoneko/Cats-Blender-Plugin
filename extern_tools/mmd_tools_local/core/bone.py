@@ -453,12 +453,36 @@ class FnBone:
                 remove_constraint(constraints, name)
                 return
             c = TransformConstraintOp.create(constraints, name, map_type)
-            # FIXME: Some bones require specific rotation modes to match MMD behavior.
-            # Currently using hardcoded bone names as a temporary solution.
-            # See https://github.com/MMD-Blender/blender_mmd_tools_local/issues/242
-            if bone_name in {"左肩C", "右肩C", "肩C.L", "肩C.R", "肩C_L", "肩C_R"}:
-                c.from_rotation_mode = "ZYX"  # Best matches MMD behavior for shoulder bones
             c.target = p_bone.id_data
+            # NOTE: In MMD:
+            # Negative influence (influence < 0) is used to cancel rotation (e.g., 肩C, 目戻, 腰キャンセル).
+            # Positive influence (influence >= 0) is used to add rotation.
+            # To achieve correct inverse rotation (for influence < 0) in Blender, we use a Transformation constraint with the following settings:
+            #     Set from_rotation_mode to ZYX
+            #     Map from_min/from_max to an inverted to_min/to_max range (e.g., -180° to +180° -> +180° to -180°)
+            #     Set to_euler_order to XYZ
+            #     Set mix_mode_rot to AFTER
+            #     Set target_space to LOCAL
+            #     Set owner_space to LOCAL
+            # See https://github.com/MMD-Blender/blender_mmd_tools_local/issues/242
+            # We don't use Copy Rotation for the following reasons:
+            # Copy Rotation tends to jump at ±180° boundary. Transformation is more stable.
+            # Also, the Invert option of a Copy Rotation constraint cannot directly produce correct inverse rotation.
+            # It requires using three Copy Rotation constraints, stacked in order (X, then Y, then Z):
+            #     The first copies and inverts only the X axis
+            #     The second copies and inverts only the Y axis
+            #     The third copies and inverts only the Z axis
+            #     For each Copy Rotation constraint:
+            #         Set euler_order to XYZ
+            #         Set mix_mode to AFTER
+            #         Set target_space to LOCAL
+            #         Set owner_space to LOCAL
+            if influence < 0:
+                c.from_rotation_mode = "ZYX"
+            else:
+                c.from_rotation_mode = "XYZ"
+            c.to_euler_order = "XYZ"  # Explicitly set to "XYZ" instead of "AUTO"
+            c.mix_mode_rot = "AFTER"  # Use "AFTER" instead of "ADD" to match MMD behavior
             shadow_bone.add_constraint(c)
             TransformConstraintOp.update_min_max(c, value, influence)
 

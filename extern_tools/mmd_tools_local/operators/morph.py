@@ -8,6 +8,7 @@ import bpy
 from mathutils import Quaternion, Vector
 
 from .. import bpyutils, utils
+from ..bpyutils import FnObject
 from ..core.exceptions import MaterialNotFoundError
 from ..core.material import FnMaterial
 from ..core.model import FnModel
@@ -594,7 +595,7 @@ class ViewUVMorph(bpy.types.Operator):
 
             base_uv_layers = [layer for layer in mesh.uv_layers if not layer.name.startswith("_")]
             if morph.uv_index >= len(base_uv_layers):
-                self.report({"ERROR"}, "Invalid uv index: %d" % morph.uv_index)
+                self.report({"ERROR"}, f"Invalid uv index: {morph.uv_index}")
                 return {"CANCELLED"}
 
             uv_layer_name = base_uv_layers[morph.uv_index].name
@@ -853,8 +854,7 @@ class ConvertBoneMorphToVertexMorph(bpy.types.Operator):
                 context.view_layer.objects.active = mesh_obj
 
                 # Ensure mesh object has shape keys
-                if mesh_obj.data.shape_keys is None:
-                    mesh_obj.shape_key_add(name="Basis", from_mix=False)
+                FnObject.mesh_ensure_basis_shape_key(mesh_object=mesh_obj)
 
                 # Delete existing shape key with same name
                 if target_name in mesh_obj.data.shape_keys.key_blocks:
@@ -902,7 +902,8 @@ class ConvertBoneMorphToVertexMorph(bpy.types.Operator):
 
             if not vertex_morph_exists:
                 mmd_root.active_morph_type = "vertex_morphs"
-                morph, mmd_root.active_morph = ItemOp.add_after(mmd_root.vertex_morphs, mmd_root.active_morph)
+                morph = mmd_root.vertex_morphs.add()
+                mmd_root.active_morph = len(mmd_root.vertex_morphs) - 1
                 morph.name = target_name
 
             # Step 9: Add to facial expression display frame
@@ -943,6 +944,44 @@ class ConvertBoneMorphToVertexMorph(bpy.types.Operator):
             self.report({"ERROR"}, f"Error during conversion: {str(e)}")
             return {"CANCELLED"}
 
+        return {"FINISHED"}
+
+
+class ConvertBoneMorphToVertexMorphBatch(bpy.types.Operator):
+    bl_idname = "mmd_tools_local.batch_convert_bone_morph_to_vertex_morph"
+    bl_label = "Batch Convert To Vertex Morph"
+    bl_description = "Convert all bone morphs into vertex morphs"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        root = FnModel.find_root_object(context.active_object)
+        if root is None:
+            return False
+        return root.mmd_root.active_morph_type == "bone_morphs"
+
+    def execute(self, context):
+        obj = context.active_object
+        root = FnModel.find_root_object(obj)
+        mmd_root = root.mmd_root
+
+        # Ensure we are on the correct morph type
+        mmd_root.active_morph_type = "bone_morphs"
+
+        morph_count = len(mmd_root.bone_morphs)
+        converted_count = 0
+
+        # Loop through all morphs by index
+        for i in range(morph_count):
+            mmd_root.active_morph_type = "bone_morphs"
+            mmd_root.active_morph = i
+            # Check if the morph has data, similar to the single operator's poll
+            morph = ItemOp.get_by_index(mmd_root.bone_morphs, i)
+            if morph and len(morph.data) > 0:
+                bpy.ops.mmd_tools_local.convert_bone_morph_to_vertex_morph()
+                converted_count += 1
+
+        self.report({"INFO"}, f"Batch conversion complete: Converted {converted_count} bone morphs.")
         return {"FINISHED"}
 
 
@@ -1031,11 +1070,7 @@ class ConvertGroupMorphToVertexMorph(bpy.types.Operator):
                         bpy.ops.object.shape_key_remove()
 
                 # Add shape key from mix
-                bpy.ops.object.shape_key_add(from_mix=True)
-
-                # Rename the newly created shape key
-                new_key = obj.data.shape_keys.key_blocks[-1]
-                new_key.name = target_name
+                FnObject.mesh_add_shape_key(mesh_object=obj, name=target_name, from_mix=True)
 
         # Check if a vertex morph with the target name already exists
         vertex_morph_exists = False
@@ -1048,11 +1083,9 @@ class ConvertGroupMorphToVertexMorph(bpy.types.Operator):
 
         # If not, create a new vertex morph
         if not vertex_morph_exists:
-            # Switch to vertex morphs panel
             mmd_root.active_morph_type = "vertex_morphs"
-
-            # Add new vertex morph
-            morph, mmd_root.active_morph = ItemOp.add_after(mmd_root.vertex_morphs, mmd_root.active_morph)
+            morph = mmd_root.vertex_morphs.add()
+            mmd_root.active_morph = len(mmd_root.vertex_morphs) - 1
             morph.name = target_name
 
         # Add the new vertex morph to the facial display frame
@@ -1093,4 +1126,51 @@ class ConvertGroupMorphToVertexMorph(bpy.types.Operator):
                     kb.value = 0
 
         self.report({"INFO"}, f"Successfully converted vertex morphs in group to vertex morph '{target_name}' and added to facial display frame")
+        return {"FINISHED"}
+
+
+class ConvertGroupMorphToVertexMorphBatch(bpy.types.Operator):
+    bl_idname = "mmd_tools_local.batch_convert_group_morph_to_vertex_morph"
+    bl_label = "Batch Convert To Vertex Morph"
+    bl_description = "Convert all group morphs (containing vertex morphs) into vertex morphs"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        root = FnModel.find_root_object(context.active_object)
+        if root is None:
+            return False
+        return root.mmd_root.active_morph_type == "group_morphs"
+
+    def execute(self, context):
+        obj = context.active_object
+        root = FnModel.find_root_object(obj)
+        mmd_root = root.mmd_root
+
+        # Ensure we are on the correct morph type
+        mmd_root.active_morph_type = "group_morphs"
+
+        morph_count = len(mmd_root.group_morphs)
+        converted_count = 0
+
+        for i in range(morph_count):
+            mmd_root.active_morph_type = "group_morphs"
+            mmd_root.active_morph = i
+            # Check poll condition from single operator
+            morph = ItemOp.get_by_index(mmd_root.group_morphs, i)
+            if not (morph and len(morph.data) > 0):
+                continue
+
+            # Check if it has vertex morphs
+            has_vertex_morphs = False
+            for offset in morph.data:
+                if offset.morph_type == "vertex_morphs":
+                    has_vertex_morphs = True
+                    break
+
+            if has_vertex_morphs:
+                bpy.ops.mmd_tools_local.convert_group_morph_to_vertex_morph()
+                converted_count += 1
+
+        self.report({"INFO"}, f"Batch conversion complete: Converted {converted_count} group morphs.")
         return {"FINISHED"}

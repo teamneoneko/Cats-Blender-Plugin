@@ -244,17 +244,10 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
             # Backup custom normals to the unique temporary attribute.
             for mesh_obj in mmd_model_mesh_objects:
                 mesh_data = mesh_obj.data
-                existing_custom_normal = mesh_data.attributes.get("custom_normal")
-                if not existing_custom_normal:
-                    continue
-
-                if existing_custom_normal.data_type == "INT16_2D":
-                    normals_data = np.empty(len(mesh_data.loops) * 2, dtype=np.int16)
-                    existing_custom_normal.data.foreach_get("value", normals_data)
-                    temp_normal_attr = mesh_data.attributes.new(temp_normal_name, "INT16_2D", "CORNER")
-                    temp_normal_attr.data.foreach_set("value", normals_data)
-                else:
-                    raise TypeError(f"Unsupported custom_normal data type: '{existing_custom_normal.data_type}'. Supported types: 'INT16_2D'")
+                temp_normal_attr = mesh_data.attributes.new(temp_normal_name, "FLOAT_VECTOR", "CORNER")
+                normals_data = np.empty(len(mesh_data.loops) * 3, dtype=np.float32)
+                mesh_data.loops.foreach_get("normal", normals_data)
+                temp_normal_attr.data.foreach_set("vector", normals_data)
 
             # Select meshes
             obj: bpy.types.Object
@@ -277,19 +270,10 @@ class ModelSeparateByBonesOperator(bpy.types.Operator):
                 temp_normal_attr = mesh_data.attributes.get(temp_normal_name)
                 if not temp_normal_attr:
                     continue
-
-                try:
-                    if temp_normal_attr.data_type == "INT16_2D":
-                        normals_data = np.empty(len(mesh_data.loops) * 2, dtype=np.int16)
-                        temp_normal_attr.data.foreach_get("value", normals_data)
-                        custom_normal_attr = mesh_data.attributes.get("custom_normal")
-                        if not custom_normal_attr:
-                            custom_normal_attr = mesh_data.attributes.new("custom_normal", "INT16_2D", "CORNER")
-                        custom_normal_attr.data.foreach_set("value", normals_data)
-                    else:
-                        raise TypeError(f"Unsupported custom_normal data type: '{temp_normal_attr.data_type}'. Supported types: 'INT16_2D'")
-                finally:
-                    mesh_data.attributes.remove(temp_normal_attr)
+                normals_data = np.empty(len(mesh_data.loops) * 3, dtype=np.float32)
+                temp_normal_attr.data.foreach_get("vector", normals_data)
+                mesh_data.attributes.remove(temp_normal_attr)
+                mesh_data.normals_split_custom_set(normals_data.reshape(-1, 3))
 
         if self.separate_armature and separate_armature_object:
             separate_armature_data = separate_armature_object.data

@@ -25,8 +25,7 @@ class FnMorph:
         if len(shape_key_names) < 1:
             return
         assert FnContext.get_active_object(FnContext.ensure_context()) == obj
-        if obj.data.shape_keys is None:
-            bpy.ops.object.shape_key_add()
+        FnObject.mesh_ensure_basis_shape_key(mesh_object=obj)
 
         def __move_to_bottom(key_blocks, name):
             obj.active_shape_key_index = key_blocks.find(name)
@@ -35,7 +34,7 @@ class FnMorph:
         key_blocks = obj.data.shape_keys.key_blocks
         for name in shape_key_names:
             if name not in key_blocks:
-                obj.shape_key_add(name=name, from_mix=False)
+                FnObject.mesh_add_shape_key(mesh_object=obj, name=name, from_mix=False)
             elif len(key_blocks) > 1:
                 __move_to_bottom(key_blocks, name)
 
@@ -118,13 +117,13 @@ class FnMorph:
 
         mesh_object.active_shape_key_index = key_blocks.find(src_name)
         mesh_object.show_only_shape_key, last = True, mesh_object.show_only_shape_key
-        mesh_object.shape_key_add(name=dest_name, from_mix=True)
+        FnObject.mesh_add_shape_key(mesh_object=mesh_object, name=dest_name, from_mix=True)
         mesh_object.show_only_shape_key = last
         mesh_object.active_shape_key_index = key_blocks.find(dest_name)
 
     @staticmethod
     def get_uv_morph_vertex_groups(obj, morph_name=None, offset_axes="XYZW"):
-        pattern = "UV_%s[+-][%s]$" % (morph_name or ".{1,}", offset_axes or "XYZW")
+        pattern = f"UV_{morph_name or '.{1,}'}[+-][{offset_axes or 'XYZW'}]$"
         # yield (vertex_group, morph_name, axis),...
         return ((g, g.name[3:-2], g.name[-2:]) for g in obj.vertex_groups if re.match(pattern, g.name))
 
@@ -194,7 +193,7 @@ class FnMorph:
                     vg_indices.remove(x.group)
         for i in sorted(vg_indices, reverse=True):
             vg = vertex_groups[i]
-            m = obj.modifiers.get("mmd_bind%s" % hash(vg.name), None)
+            m = obj.modifiers.get(f"mmd_bind{hash(vg.name)}", None)
             if m:
                 obj.modifiers.remove(m)
             vertex_groups.remove(vg)
@@ -332,7 +331,7 @@ class _MorphSlider:
             obj.parent = root
             FnContext.link_object(FnContext.ensure_context(), obj)
         if obj and obj.data.shape_keys is None:
-            key = obj.shape_key_add(name="--- morph sliders ---")
+            key = FnObject.mesh_add_shape_key(mesh_object=obj, name="--- morph sliders ---", from_mix=False)
             key.mute = True
             obj.active_shape_key_index = 0
         if binded and obj and obj.data.shape_keys.key_blocks[0].mute:
@@ -380,7 +379,7 @@ class _MorphSlider:
             # if name[-1] == '\\': # fix driver's bug???
             #    m.name = name = name + ' '
             if name and name not in morph_sliders:
-                obj.shape_key_add(name=name, from_mix=False)
+                FnObject.mesh_add_shape_key(mesh_object=obj, name=name, from_mix=False)
 
     @staticmethod
     def __driver_variables(id_data, path, index=-1):
@@ -512,15 +511,16 @@ class _MorphSlider:
                 if self.__shape_key_driver_check(kb, resolve_path=True):
                     name_bind, kb_bind = kb_name, kb
                 else:
-                    name_bind = "mmd_bind%s" % hash(morph_sliders[kb_name])
+                    name_bind = f"mmd_bind{hash(morph_sliders[kb_name])}"
                     if name_bind not in key_blocks:
-                        mesh_object.shape_key_add(name=name_bind, from_mix=False)
+                        FnObject.mesh_add_shape_key(mesh_object=mesh_object, name=name_bind, from_mix=False)
                     kb_bind = key_blocks[name_bind]
                     kb_bind.relative_key = kb
                 kb_bind.slider_min = -10
                 kb_bind.slider_max = 10
 
-                data_path = 'data.shape_keys.key_blocks["%s"].value' % kb_name.replace('"', '\\"')
+                kb_name_escaped = kb_name.replace('"', '\\"')
+                data_path = f'data.shape_keys.key_blocks["{kb_name_escaped}"].value'
                 groups = []
                 shape_key_map.setdefault(name_bind, []).append((kb_bind, data_path, groups))
                 group_map.setdefault(("vertex_morphs", kb_name), []).append(groups)
@@ -536,14 +536,14 @@ class _MorphSlider:
                 if uv_layer not in mesh_object.data.uv_layers:
                     continue
 
-                name_bind = "mmd_bind%s" % hash(vg.name)
+                name_bind = f"mmd_bind{hash(vg.name)}"
                 uv_morph_map.setdefault(name_bind, ())
                 mod = mesh_object.modifiers.get(name_bind, None) or mesh_object.modifiers.new(name=name_bind, type="UV_WARP")
                 mod.show_expanded = False
                 mod.vertex_group = vg.name
                 mod.axis_u, mod.axis_v = ("Y", "X") if axis[1] in "YW" else ("X", "Y")
                 mod.uv_layer = uv_layer
-                name_bind = "mmd_bind%s" % hash(morph_name)
+                name_bind = f"mmd_bind{hash(morph_name)}"
                 mod.object_from = mod.object_to = arm
                 if axis[0] == "-":
                     mod.bone_from, mod.bone_to = "mmd_bind_ctrl_base", name_bind
@@ -692,7 +692,7 @@ class _MorphSlider:
                 data_path, groups = group_dict[morph_name]
                 driver, variables = self.__driver_variables(mat.node_tree, node.inputs[0].path_from_id("default_value"))
                 var = self.__add_single_prop(variables, obj, data_path, "m")
-                driver.expression = "%s" % __config_groups(variables, var.name, groups)
+                driver.expression = __config_groups(variables, var.name, groups)
 
         for mat in (m for m in rig.materials() if m and m.use_nodes and not m.name.startswith("mmd_")):
             mul_all, add_all = material_offset_map.get("#", ([], []))

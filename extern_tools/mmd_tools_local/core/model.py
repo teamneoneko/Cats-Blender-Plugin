@@ -286,7 +286,7 @@ class FnModel:
         """
         # Validate new_bone_id is non-negative
         if new_bone_id < 0:
-            logging.warning(f"Attempted to set negative bone_id ({new_bone_id}) for bone '{bone.name}'. Using 0 instead.")
+            logging.warning("Attempted to set negative bone_id (%s) for bone '%s'. Using 0 instead.", new_bone_id, bone.name)
             new_bone_id = 0
 
         # Check if new_bone_id is already in use
@@ -298,8 +298,7 @@ class FnModel:
             current_id = new_bone_id
 
             # Sort all pose bones by bone ID
-            sorted_bones = sorted([pb for pb in pose_bones if pb.mmd_bone.bone_id >= new_bone_id],
-                                key=lambda pb: pb.mmd_bone.bone_id)
+            sorted_bones = sorted([pb for pb in pose_bones if pb.mmd_bone.bone_id >= new_bone_id], key=lambda pb: pb.mmd_bone.bone_id)
 
             # Add bones to shift until we find a gap
             for pb in sorted_bones:
@@ -329,10 +328,10 @@ class FnModel:
 
         # Check for invalid bone IDs
         if id_a < 0:
-            logging.warning(f"Cannot swap bone '{bone_a.name}' with invalid bone_id ({id_a})")
+            logging.warning("Cannot swap bone '%s' with invalid bone_id (%s)", bone_a.name, id_a)
             return
         if id_b < 0:
-            logging.warning(f"Cannot swap bone '{bone_b.name}' with invalid bone_id ({id_b})")
+            logging.warning("Cannot swap bone '%s' with invalid bone_id (%s)", bone_b.name, id_b)
             return
 
         # If both bones have the same ID, no swap needed
@@ -353,10 +352,10 @@ class FnModel:
         Other bones shift positions to accommodate the change while preserving relative order.
         """
         if old_bone_id < 0:
-            logging.warning(f"Cannot shift bone with invalid old_bone_id ({old_bone_id})")
+            logging.warning("Cannot shift bone with invalid old_bone_id (%s)", old_bone_id)
             return
         if new_bone_id < 0:
-            logging.warning(f"Cannot shift bone to invalid new_bone_id ({new_bone_id})")
+            logging.warning("Cannot shift bone to invalid new_bone_id (%s)", new_bone_id)
             return
         if old_bone_id == new_bone_id:
             return
@@ -381,7 +380,7 @@ class FnModel:
 
         # If old_bone_id doesn't exist, return directly
         if old_pos is None or moving_bone is None:
-            logging.warning(f"Could not find bone with ID {old_bone_id}")
+            logging.warning("Could not find bone with ID %s", old_bone_id)
             return
 
         # If new_bone_id doesn't exist, use safe_change_bone_id instead
@@ -450,9 +449,10 @@ class FnModel:
 
         def get_sort_key(bone):
             """Generate sorting key that only moves bones violating parent-child rules and additional transform rules"""
-            transform_order = getattr(bone.mmd_bone, "transform_order", 0)
+            transform_after_dynamics = bone.mmd_bone.transform_after_dynamics
+            transform_order = bone.mmd_bone.transform_order
             current_id = bone.mmd_bone.bone_id if bone.mmd_bone.bone_id >= 0 else float("inf")
-            additional_transform_bone_id = getattr(bone.mmd_bone, "additional_transform_bone_id", -1)
+            additional_transform_bone_id = bone.mmd_bone.additional_transform_bone_id
 
             # Check if this bone violates parent-child order rules
             violation_found = False
@@ -464,28 +464,32 @@ class FnModel:
                     parent = parent.parent
                     continue
 
-                parent_transform_order = getattr(parent.mmd_bone, "transform_order", 0)
+                parent_transform_after_dynamics = parent.mmd_bone.transform_after_dynamics
+                parent_transform_order = parent.mmd_bone.transform_order
                 parent_id = parent.mmd_bone.bone_id
 
                 # The rule that can be solved by sorting:
-                # if parent.transform_order == child.transform_order,
-                # then parent.bone_id must be < child.bone_id
-                if parent_transform_order == transform_order and parent_id >= 0 and current_id >= 0 and parent_id >= current_id:
+                # When transform_after_dynamics and transform_order are both equal,
+                # parent.bone_id must be < child.bone_id
+                if parent_transform_after_dynamics == transform_after_dynamics and parent_transform_order == transform_order and parent_id >= 0 and current_id >= 0 and parent_id >= current_id:
                     violation_found = True
                     max_ancestor_id = max(max_ancestor_id, parent_id)
 
                 parent = parent.parent
 
             # Check additional transform constraint
-            # additional_transform_bone_id must be smaller than current bone_id when transform_order is the same
-            if additional_transform_bone_id >= 0 and current_id >= 0 and additional_transform_bone_id >= current_id:
+            # additional_transform_bone must have smaller transform rank
+            if additional_transform_bone_id >= 0 and current_id >= 0:
                 additional_transform_bone = bone_id_to_pose_bone.get(additional_transform_bone_id)
                 if additional_transform_bone:
-                    additional_transform_order = getattr(additional_transform_bone.mmd_bone, "transform_order", 0)
-                    # Only apply constraint when transform_order is the same
-                    if additional_transform_order == transform_order:
-                        violation_found = True
-                        max_ancestor_id = max(max_ancestor_id, additional_transform_bone_id)
+                    additional_transform_after_dynamics = additional_transform_bone.mmd_bone.transform_after_dynamics
+                    additional_transform_order = additional_transform_bone.mmd_bone.transform_order
+
+                    # Only apply constraint when transform_after_dynamics and transform_order are both the same
+                    if additional_transform_after_dynamics == transform_after_dynamics and additional_transform_order == transform_order:
+                        if additional_transform_bone_id >= current_id:
+                            violation_found = True
+                            max_ancestor_id = max(max_ancestor_id, additional_transform_bone_id)
 
             if violation_found:
                 # Move this bone after its ancestors and additional transform dependencies
@@ -509,9 +513,11 @@ class FnModel:
 
         # Assign the new IDs to the bones themselves
         for bone in valid_bones:
+            old_id = bone.mmd_bone.bone_id
             new_id = bone_to_new_id_map[bone.name]
-            if bone.mmd_bone.bone_id != new_id:
+            if old_id != new_id:
                 bone.mmd_bone.bone_id = new_id
+                logging.info("Bone ID changed: %s: %d -> %d", bone.name, old_id, new_id)
 
         # Batch update all references (morphs and other bones) using the translation map
         if not id_translation_map:  # No changes needed
@@ -555,7 +561,7 @@ class FnModel:
         # Find armature
         armature = FnModel.find_armature_object(mmd_root_object)
         if not armature:
-            logging.warning(f"Armature not found for MMD model '{mmd_root_object.name}'")
+            logging.warning("Armature not found for MMD model '%s'", mmd_root_object.name)
             return 0
 
         pose_bones = armature.pose.bones
@@ -580,14 +586,14 @@ class FnModel:
                 mmd_bone.additional_transform_bone_id = -1
                 mmd_bone.is_additional_transform_dirty = True
                 cleaned_count += 1
-                logging.info(f"Cleaned invalid additional transform reference on bone '{bone.name}' (bone_id: {ref_bone_id} does not exist)")
+                logging.info("Cleaned invalid additional transform reference on bone '%s' (bone_id: %s does not exist)", bone.name, ref_bone_id)
 
             # --- Clean up Display Connection ---
             ref_bone_id = mmd_bone.display_connection_bone_id
             if ref_bone_id >= 0 and ref_bone_id not in valid_bone_ids:
                 mmd_bone.display_connection_bone_id = -1
                 cleaned_count += 1
-                logging.info(f"Cleaned invalid display connection reference on bone '{bone.name}' (bone_id: {ref_bone_id} does not exist)")
+                logging.info("Cleaned invalid display connection reference on bone '%s' (bone_id: %s does not exist)", bone.name, ref_bone_id)
 
         # Step 3: Clean up invalid references within Bone Morphs.
         if bone_morphs:
@@ -599,7 +605,7 @@ class FnModel:
                     if ref_bone_id >= 0 and ref_bone_id not in valid_bone_ids:
                         item.bone_id = -1
                         cleaned_count += 1
-                        logging.info(f"Cleaned invalid bone reference on morph '{morph.name}' (bone_id: {ref_bone_id} does not exist)")
+                        logging.info("Cleaned invalid bone reference on morph '%s' (bone_id: %s does not exist)", morph.name, ref_bone_id)
 
         return cleaned_count
 
@@ -632,9 +638,6 @@ class FnModel:
             FnContext.set_active_and_select_single_object(context, child_root_object)
             bpy.ops.mmd_tools_local.reset_object_visibility()
 
-        # Store material morph references for all child models
-        related_meshes = {}
-
         # Process each child model
         for child_root_object in child_root_objects:
             if child_root_object is None:
@@ -654,11 +657,12 @@ class FnModel:
             FnModel.realign_bone_ids(max_bone_id + 1, child_bone_morphs, child_pose_bones)
             max_bone_id = FnModel.get_max_bone_id(child_pose_bones)
 
-            # Save material morph references for this child model
+            # Store material morph mapping: (MorphName, Index) -> MeshObject
+            child_morph_links = []
             for material_morph in child_root_object.mmd_root.material_morphs:
-                for material_morph_data in material_morph.data:
+                for i, material_morph_data in enumerate(material_morph.data):
                     if material_morph_data.related_mesh_data is not None:
-                        related_meshes[material_morph_data] = material_morph_data.related_mesh_data
+                        child_morph_links.append((material_morph.name, i, material_morph_data.related_mesh_data))
                         material_morph_data.related_mesh_data = None
 
             # Move mesh objects to parent armature using parent_set
@@ -710,6 +714,14 @@ class FnModel:
             # Copy MMD root properties
             FnModel.copy_mmd_root(parent_root_object, child_root_object, overwrite=False)
 
+            # Restore material morph references
+            parent_morphs = parent_root_object.mmd_root.material_morphs
+            for morph_name, idx, mesh_data in child_morph_links:
+                if morph_name in parent_morphs:
+                    target_morph_data = parent_morphs[morph_name].data
+                    if idx < len(target_morph_data):
+                        target_morph_data[idx].related_mesh_data = mesh_data
+
         # Clean additional transform before join
         bpy.ops.object.mode_set(mode="OBJECT")
         FnContext.set_active_and_select_single_object(context, parent_root_object)
@@ -738,10 +750,6 @@ class FnModel:
         for child_root_object in child_root_objects:
             assert len(child_root_object.children) == 0
             bpy.data.objects.remove(child_root_object)
-
-        # Restore material morph references for all child models
-        for material_morph_data, mesh_data in related_meshes.items():
-            material_morph_data.related_mesh_data = mesh_data
 
         # Restore original transform matrix for parent root object
         parent_root_object.matrix_world = original_matrix_world
@@ -1255,8 +1263,7 @@ class Model:
             val = obj.get(attr_name, None)
             if val is not None:
                 setattr(obj, attr, val)
-                # Use property_unset instead of del for Blender 5.0 compatibility
-                obj.property_unset(attr_name)
+                del obj[attr_name]
 
     def __backupTransforms(self, obj):
         for attr in ("location", "rotation_euler"):

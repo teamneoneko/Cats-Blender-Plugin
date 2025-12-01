@@ -141,21 +141,21 @@ class FnMaterial:
             img_filepath = bpy.path.abspath(image.filepath)  # image.filepath_from_user()
             if img_filepath == filepath:
                 return True
-            # pylint: disable=bare-except
+            if not os.path.exists(img_filepath) or not os.path.exists(filepath):
+                return False
             try:
                 return os.path.samefile(img_filepath, filepath)
             except Exception as e:
-                logging.warning(f"Failed to compare files '{img_filepath}' and '{filepath}': {e}")
+                logging.warning("Failed to compare files '%s' and '%s': %s", img_filepath, filepath, e)
         return False
 
     def _load_image(self, filepath):
         img = next((i for i in bpy.data.images if self.__same_image_file(i, filepath)), None)
         if img is None:
-            # pylint: disable=bare-except
             try:
                 img = bpy.data.images.load(filepath)
             except Exception:
-                logging.warning("Cannot create a texture for %s. No such file.", filepath)
+                logging.warning("Cannot load texture '%s': No such file", filepath)
                 img = bpy.data.images.new(os.path.basename(filepath), 1, 1)
                 img.source = "FILE"
                 img.filepath = filepath
@@ -170,15 +170,9 @@ class FnMaterial:
         if self._nodes_are_readonly:
             return
         mmd_mat: MMDMaterial = self.__material.mmd_material
-        # Check if toon texture is already loaded in shader nodes
-        toon_tex_node = self.__get_texture_node("mmd_toon_tex")
-        if toon_tex_node is not None:
-            # Toon texture is already loaded, skip update
-            return
-        
         if mmd_mat.is_shared_toon_texture:
             shared_toon_folder = FnContext.get_addon_preferences_attribute(FnContext.ensure_context(), "shared_toon_folder", "")
-            toon_path = os.path.join(shared_toon_folder, "toon%02d.bmp" % (mmd_mat.shared_toon_texture + 1))
+            toon_path = os.path.join(shared_toon_folder, f"toon{mmd_mat.shared_toon_texture + 1:02d}.bmp")
             self.create_toon_texture(str(Path(toon_path).resolve()))
         elif mmd_mat.toon_texture != "":
             self.create_toon_texture(mmd_mat.toon_texture)
@@ -441,8 +435,8 @@ class FnMaterial:
 
             preferred_output_node_target = {
                 "CYCLES": "CYCLES",
-                "BLENDER_EEVEE": "EEVEE",
-                "BLENDER_EEVEE_NEXT": "EEVEE",  # Keep for backwards compatibility with 4.x
+                "BLENDER_EEVEE": "EEVEE",  # Blender 5.0+
+                "BLENDER_EEVEE_NEXT": "EEVEE",  # Blender 4.2-4.5
             }.get(active_render_engine, "ALL")
 
             tex_node = None
@@ -462,8 +456,8 @@ class FnMaterial:
             if tex_node:
                 tex_node.name = "mmd_base_tex"
             else:
-                # Take the Base Color from BSDF if there's no texture
-                bsdf_node = next((n for n in m.node_tree.nodes if n.type.startswith("BSDF_")), None)
+                # Take the Base Color from BSDF or Emission if there's no texture
+                bsdf_node = next((n for n in m.node_tree.nodes if n.type == "EMISSION" or n.type.startswith("BSDF_")), None)
                 if bsdf_node:
                     base_color_input = bsdf_node.inputs.get("Base Color") or bsdf_node.inputs.get("Color")
                     if base_color_input:
@@ -497,7 +491,7 @@ class FnMaterial:
 
         # delete bsdf node if it's there
         if m.use_nodes:
-            nodes_to_remove = [n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED" or n.type.startswith("BSDF_")]
+            nodes_to_remove = [n for n in m.node_tree.nodes if n.type == "EMISSION" or n.type.startswith("BSDF_")]
             for n in nodes_to_remove:
                 m.node_tree.nodes.remove(n)
 
@@ -549,13 +543,28 @@ class FnMaterial:
             node_uv.location = node_shader.location + Vector((-5 * 210, -2.5 * 220))
             node_uv.node_tree = self.__get_shader_uv()
 
-        if not (node_shader.outputs["Shader"].is_linked or node_shader.outputs["Color"].is_linked or node_shader.outputs["Alpha"].is_linked):
+        shader_out_socket = node_shader.outputs.get("Shader")
+        color_out_socket = node_shader.outputs.get("Color")
+        alpha_out_socket = node_shader.outputs.get("Alpha")
+        shader_linked = shader_out_socket and shader_out_socket.is_linked
+        color_linked = color_out_socket and color_out_socket.is_linked
+        alpha_linked = alpha_out_socket and alpha_out_socket.is_linked
+        if not (shader_linked or color_linked or alpha_linked):
             node_output = next((n for n in nodes if isinstance(n, bpy.types.ShaderNodeOutputMaterial) and n.is_active_output), None)
             if node_output is None:
                 node_output: bpy.types.ShaderNodeOutputMaterial = nodes.new("ShaderNodeOutputMaterial")
                 node_output.is_active_output = True
             node_output.location = node_shader.location + Vector((400, 0))
-            links.new(node_shader.outputs["Shader"], node_output.inputs["Surface"])
+            if shader_out_socket:
+                links.new(shader_out_socket, node_output.inputs["Surface"])
+            elif color_out_socket:
+                logging.info("Material '%s': MMDShaderDev node group is missing 'Shader' output. Falling back to 'Color' output. Material will render as an emission shader.", mat.name)
+                links.new(color_out_socket, node_output.inputs["Surface"])
+            elif alpha_out_socket:
+                logging.warning("Material '%s': MMDShaderDev node group is missing 'Shader' and 'Color' outputs. Falling back to 'Alpha' output. Material will render as grayscale.", mat.name)
+                links.new(alpha_out_socket, node_output.inputs["Surface"])
+            else:
+                raise RuntimeError(f"Material '{mat.name}': The 'mmd_shader' node group is invalid or corrupted. It is missing all expected outputs ('Shader', 'Color', and 'Alpha'). Unable to link material output.")
 
         for name_id in ("Base", "Toon", "Sphere"):
             texture = self.__get_texture_node(f"mmd_{name_id.lower()}_tex")
