@@ -53,6 +53,16 @@ class MergeArmature(bpy.types.Operator):
             Common.show_error(5.2, [t('MergeArmature.error.notFound', name=merge_armature_name)])
             return {'CANCELLED'}
 
+        # Check if armatures are single user
+        if base_armature.data.users > 1 or merge_armature.data.users > 1:
+            saved_data.load()
+            wm.progress_end()
+            Common.show_error(4, [t('MergeArmature.error.not_single_user'),
+                                t('MergeArmature.error.make_single_user'),
+                                t('MergeArmature.error.make_single_user1'),
+                                t('MergeArmature.error.make_single_user2')])
+            return {'CANCELLED'}
+
         # Remove Rigid Bodies and Joints
         delete_rigidbodies_and_joints(base_armature)
         delete_rigidbodies_and_joints(merge_armature)
@@ -135,6 +145,16 @@ class AttachMesh(bpy.types.Operator):
             wm.progress_end()
             return {'CANCELLED'}
         wm.progress_update(20)
+
+        # Check if armature and mesh are single user
+        if armature.data.users > 1 or mesh.data.users > 1:
+            saved_data.load()
+            wm.progress_end()
+            Common.show_error(4, [t('AttachMesh.error.not_single_user'),
+                                t('AttachMesh.error.make_single_user'),
+                                t('AttachMesh.error.make_single_user1'),
+                                t('AttachMesh.error.make_single_user2')])
+            return {'CANCELLED'}
 
         # Parent mesh to armature
         mesh.parent = armature
