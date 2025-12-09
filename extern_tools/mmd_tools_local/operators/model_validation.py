@@ -59,9 +59,9 @@ def log_message(prefix, message, level="INFO"):
 class MMDModelValidateBones(Operator):
     """Check MMD model bones for encoding issues and name length limits"""
 
-    bl_idname = "mmd_tools_local.validate_bone_limits"
+    bl_idname = "mmd_tools_local.validate_bones"
     bl_label = "Validate Bone Limits"
-    bl_description = "Check for bone name encoding issues"
+    bl_description = "Check MMD model bones for encoding issues and name length limits"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -112,11 +112,11 @@ class MMDModelValidateBones(Operator):
 
 
 class MMDModelValidateMorphs(Operator):
-    """Check MMD model morphs for encoding issues, name length limits and duplicates"""
+    """Check MMD model morphs for encoding issues, name length limits, and duplicate names"""
 
     bl_idname = "mmd_tools_local.validate_morphs"
     bl_label = "Validate Morphs"
-    bl_description = "Check for morph name issues and duplicates"
+    bl_description = "Check MMD model morphs for encoding issues, name length limits, and duplicate names"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -157,11 +157,11 @@ class MMDModelValidateMorphs(Operator):
 
 
 class MMDModelValidateTextures(Operator):
-    """Check MMD model textures for path and name conflicts"""
+    """Check MMD model textures for missing files, path conflicts, and duplicate filenames"""
 
     bl_idname = "mmd_tools_local.validate_textures"
     bl_label = "Validate Textures"
-    bl_description = "Check for texture path and name issues"
+    bl_description = "Check MMD model textures for missing files, path conflicts, and duplicate filenames"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):

@@ -78,7 +78,7 @@ class MMDToolsModelSetupPanel(PT_PanelBase, bpy.types.Panel):
         row.operator("mmd_tools_local.morph_slider_setup", text="", icon="TRASH").type = "UNBIND"
 
         row = grid.row(align=True)
-        row.active = getattr(context.scene.rigidbody_world, "enabled", False)
+        row.active = context.scene.rigidbody_world is not None
 
         mmd_root = mmd_root_object.mmd_root
         if not mmd_root.is_built:
@@ -154,6 +154,9 @@ class MMDToolsModelSetupPanel(PT_PanelBase, bpy.types.Panel):
         row.operator("mmd_tools_local.convert_materials", text="Convert to Blender", icon="BLENDER")
         row.operator("mmd_tools_local.merge_materials", text="", icon="LINK_BLEND")
         row.operator("mmd_tools_local.convert_bsdf_materials", text="Convert to MMD", icon="MATSPHERE")
+        row = grid.row(align=True)
+        row.operator("mmd_tools_local.material_setup_texture", text="Setup Textures", icon="TEXTURE")
+        row.operator("mmd_tools_local.material_cleanup_texture", text="Texture Cleanup", icon="BRUSH_DATA")
 
     def draw_misc(self, context, mmd_root_object):
         col = self.layout.column(align=True)

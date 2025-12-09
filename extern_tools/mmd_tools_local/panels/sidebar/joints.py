@@ -25,7 +25,7 @@ class MMDJointSelectorPanel(PT_ProductionPanelBase, bpy.types.Panel):
 
         row = c.row()
         row.template_list(
-            "MMD_TOOLS_LOCAL_UL_Joints",
+            "mmd_tools_local_UL_joints",
             "",
             context.scene,
             "objects",
@@ -44,7 +44,7 @@ class MMDJointSelectorPanel(PT_ProductionPanelBase, bpy.types.Panel):
         tb1.operator("mmd_tools_local.object_move", text="", icon="TRIA_DOWN").type = "DOWN"
 
 
-class MMD_TOOLS_LOCAL_UL_Joints(bpy.types.UIList, UL_ObjectsMixIn):
+class mmd_tools_local_UL_joints(bpy.types.UIList, UL_ObjectsMixIn):
     mmd_type = "JOINT"
     icon = "CONSTRAINT"
     prop_name = "mmd_joint"

@@ -1,7 +1,7 @@
 # MIT License
 
-CATS_VERSION = "5.0.1.6"
-dev_branch = False
+CATS_VERSION = "5.0.2.0"
+dev_branch = True
 
 import os
 import sys
@@ -50,7 +50,7 @@ from .tools import translations
 from .tools.translations import t
 
 
-# How to update mmd_tools:
+# How to update mmd_tools_local:
 # MMD Tools is no longer a drop in replacement, manually work is required please ask
 # us to update it instead.
 
@@ -219,18 +219,18 @@ def register():
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.restartAndEnable_alt'))
 
-    # if not tools.settings.use_custom_mmd_tools():
-    #     bpy.utils.unregister_module("mmd_tools")
+    # if not tools.settings.use_custom_mmd_tools_local():
+    #     bpy.utils.unregister_module("mmd_tools_local")
 
-    # Load mmd_tools
+    # Load mmd_tools_local
     try:
         mmd_tools_local.register()
     except NameError:
-        print('Could not register local mmd_tools')
+        print('Could not register local mmd_tools_local')
     except AttributeError:
-        print('Could not register local mmd_tools')
+        print('Could not register local mmd_tools_local')
     except ValueError:
-        print('mmd_tools is already registered')
+        print('mmd_tools_local is already registered')
 
     # Register immersive scaler if it's loaded
     if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
@@ -290,17 +290,17 @@ def unregister():
     # Unregister updater
     updater.unregister()
 
-    # Unload mmd_tools
+    # Unload mmd_tools_local
     try:
         mmd_tools_local.unregister()
     except NameError:
-        print('mmd_tools was not registered')
+        print('mmd_tools_local was not registered')
         pass
     except AttributeError:
-        print('Could not unregister local mmd_tools')
+        print('Could not unregister local mmd_tools_local')
         pass
     except ValueError:
-        print('mmd_tools was not registered')
+        print('mmd_tools_local was not registered')
         pass
 
     # Unload immersive scaler

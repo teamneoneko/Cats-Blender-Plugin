@@ -23,7 +23,7 @@ class MMDMeshSorter(PT_ProductionPanelBase, bpy.types.Panel):
 
         col = layout.column(align=True)
         row = col.row()
-        row.template_list("MMD_TOOLS_LOCAL_UL_ModelMeshes", "", context.scene, "objects", root.mmd_root, "active_mesh_index")
+        row.template_list("mmd_tools_local_UL_ModelMeshes", "", context.scene, "objects", root.mmd_root, "active_mesh_index")
         tb = row.column()
         tb1 = tb.column(align=True)
         tb1.enabled = active_obj.type == "MESH" and active_obj.mmd_type == "NONE"
@@ -33,7 +33,7 @@ class MMDMeshSorter(PT_ProductionPanelBase, bpy.types.Panel):
         tb1.operator("mmd_tools_local.object_move", text="", icon="TRIA_DOWN_BAR").type = "BOTTOM"
 
 
-class MMD_TOOLS_LOCAL_UL_ModelMeshes(bpy.types.UIList):
+class mmd_tools_local_UL_ModelMeshes(bpy.types.UIList):
     def draw_item(self, _context, layout, _data, item, icon, _active_data, _active_propname, _index):
         if self.layout_type == "DEFAULT":
             layout.label(text=item.name, translate=False, icon="OBJECT_DATA")

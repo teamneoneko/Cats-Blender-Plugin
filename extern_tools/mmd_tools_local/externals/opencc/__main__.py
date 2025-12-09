@@ -8,18 +8,12 @@ from opencc import OpenCC
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-i", "--input", metavar="<file>",
-                        help="Read original text from <file>.")
-    parser.add_argument("-o", "--output", metavar="<file>",
-                        help="Write converted text to <file>.")
-    parser.add_argument("-c", "--config", metavar="<conversion>",
-                        help="Conversion")
-    parser.add_argument("--in-enc", metavar="<encoding>", default="UTF-8",
-                        help="Encoding for input")
-    parser.add_argument("--out-enc", metavar="<encoding>", default="UTF-8",
-                        help="Encoding for output")
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-i", "--input", metavar="<file>", help="Read original text from <file>.")
+    parser.add_argument("-o", "--output", metavar="<file>", help="Write converted text to <file>.")
+    parser.add_argument("-c", "--config", metavar="<conversion>", help="Conversion")
+    parser.add_argument("--in-enc", metavar="<encoding>", default="UTF-8", help="Encoding for input")
+    parser.add_argument("--out-enc", metavar="<encoding>", default="UTF-8", help="Encoding for output")
     args = parser.parse_args()
 
     if args.config is None:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2012 MMD Tools authors
 # This file is part of MMD Tools.
 
@@ -41,24 +40,20 @@ PACKAGE_NAME = __package__
 
 from mmd_tools_local import auto_load
 
-auto_load.init()
+auto_load.init(PACKAGE_NAME)
 
 
 def register():
     import bpy
 
     from . import handlers
-    from .compat import action_compat
 
     auto_load.register()
-
-    # Register action compatibility layer for Blender 5.0+
-    action_compat.register()
 
     # pylint: disable=import-outside-toplevel
     from .m17n import translations_dict
 
-    bpy.app.translations.register(bl_info["name"],translations_dict)
+    bpy.app.translations.register(PACKAGE_NAME, translations_dict)
 
     handlers.MMDHanders.register()
 
@@ -67,16 +62,12 @@ def unregister():
     import bpy
 
     from . import handlers
-    from .compat import action_compat
 
     handlers.MMDHanders.unregister()
 
-    bpy.app.translations.unregister(bl_info["name"])
+    bpy.app.translations.unregister(PACKAGE_NAME)
 
     auto_load.unregister()
-
-    # Unregister action compatibility layer
-    action_compat.unregister()
 
 
 if __name__ == "__main__":
