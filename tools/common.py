@@ -2337,15 +2337,18 @@ def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_na
 
 
 def _schedule_enum_fix(property_holder, scene, property_name, property_path, new_value):
-    """Schedule a fix for an enum property to be applied outside of the UI draw context."""
-    # First try to set it directly using setattr (works better for Scene properties)
-    try:
-        setattr(property_holder, property_name, new_value)
-        return
-    except (AttributeError, TypeError, RuntimeError):
-        pass
-    
-    # If direct setting failed (likely in UI draw context), schedule via timer
+    """Schedule a fix for an enum property to be applied outside of the UI draw context.
+
+    IMPORTANT: This function must NEVER attempt to set the property directly via setattr(),
+    as doing so will cause Blender to re-validate the enum value by calling the items callback,
+    which leads to infinite recursion when called during object deletion or other state changes.
+    All fixes must be scheduled via timer to run outside the callback context.
+    """
+    # REMOVED: Direct setattr attempt that caused infinite recursion (issue #431)
+    # The direct setattr() call would trigger enum validation, which calls the items callback,
+    # which detects the out-of-bounds value again, leading to infinite recursion.
+
+    # Always schedule via timer to avoid recursion
     scene_name = scene.name
     scheduled_property_set = _enum_choice_fix_scheduled.setdefault(scene_name, set())
     
@@ -2359,14 +2362,20 @@ def _schedule_enum_fix(property_holder, scene, property_name, property_path, new
         scene_by_name = bpy.data.scenes.get(scene_name)
         if scene_by_name:
             try:
-                # Try to set via setattr on the scene
-                setattr(scene_by_name, property_name, new_value)
+                # Resolve the property path and set the value
+                # Use path_resolve to handle nested properties correctly
+                prop = scene_by_name.path_resolve(property_path, False)
+                setattr(prop.data, property_name, new_value)
             except:
-                pass
+                # If path resolution fails, try direct setattr as fallback
+                try:
+                    setattr(scene_by_name, property_name, new_value)
+                except:
+                    pass
         scheduled_property_set.discard(property_path)
         return None  # Return None to not repeat the timer
 
-    bpy.app.timers.register(fix_enum_task)
+    bpy.app.timers.register(fix_enum_task, first_interval=0.0)
 
 
 def is_enum_empty(string):
