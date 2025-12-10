@@ -162,10 +162,11 @@ def start_pose_mode(reset_pose=True):
     Common.switch('POSE')
     armature.data.pose_position = 'POSE'
 
-    for mesh in Common.get_meshes_objects():
-        if Common.has_shapekeys(mesh):
-            for shape_key in mesh.data.shape_keys.key_blocks:
-                shape_key.value = 0
+    if reset_pose:
+        for mesh in Common.get_meshes_objects():
+            if Common.has_shapekeys(mesh):
+                for shape_key in mesh.data.shape_keys.key_blocks:
+                    shape_key.value = 0
 
     for pb in armature.pose.bones:
         pb.select = True
@@ -250,11 +251,13 @@ def stop_pose_mode(reset_pose=True):
     Common.remove_rigidbodies_global()
     # armature.data.pose_position = 'REST'
 
-    for mesh in Common.get_meshes_objects():
-        if Common.has_shapekeys(mesh):
-            for shape_key in mesh.data.shape_keys.key_blocks:
-                shape_key.value = 0
-        bpy.ops.wm.tool_set_by_id(name="builtin.select_box")
+    if reset_pose:
+        for mesh in Common.get_meshes_objects():
+            if Common.has_shapekeys(mesh):
+                for shape_key in mesh.data.shape_keys.key_blocks:
+                    shape_key.value = 0
+
+    bpy.ops.wm.tool_set_by_id(name="builtin.select_box")
 
     Eyetracking.eye_left = None
 
