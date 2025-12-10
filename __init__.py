@@ -1,6 +1,6 @@
 # MIT License
 
-CATS_VERSION = "5.0.2.0"
+CATS_VERSION = "5.0.2.1"
 dev_branch = True
 
 import os
