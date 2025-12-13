@@ -38,10 +38,13 @@ def register():
         if hasattr(module, "register"):
             module.register()
 
-
+# Werid that the MMD tools devs removed this function...
 def unregister():
     for cls in reversed(ordered_classes):
-        bpy.utils.unregister_class(cls)
+        try:
+            bpy.utils.unregister_class(cls)
+        except RuntimeError:
+            pass
 
     for module in modules:
         if module.__name__ == __name__:
