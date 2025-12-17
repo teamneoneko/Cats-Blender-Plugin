@@ -26,31 +26,41 @@ languages = []
 verbose = True
 last_loaded_language = None
 dictionary_download_link = "https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/blob/4.3-translations/dictionary.json"
+_addon_startup_time = None
 
-def load_translations():
-    global dictionary, languages, last_loaded_language
+def load_translations(override_language=None):
+    global dictionary, languages, last_loaded_language, _addon_startup_time
+    import time
+
+    # Set startup time on first load
+    if _addon_startup_time is None:
+        _addon_startup_time = time.time()
+
     dictionary = dict()
     languages = ["auto"]
 
     print("Loading translations")
-    
-    # Check the settings which translation to load
-    language = get_language_from_settings()
-    print(f"Selected language: {language}")
-    
+
+    if override_language:
+        language = override_language
+        print(f"Using override language: {language}")
+    else:
+        language = get_language_from_settings()
+        print(f"Selected language: {language}")
+
     # Get all current languages
     for i in os.listdir(translations_dir):
         languages.append(i.split(".")[0])
     print(f"Available languages: {languages}")
-    
+
     # Determine the language to load
     language_to_load = language if language and language in languages else None
-    
+
     # If language is not available, fallback to en_US
     if language_to_load is None:
         print(f"Language '{language}' not available, defaulting to en_US")
         language_to_load = "en_US"
-    
+
     # Load the translation file
     translation_file = os.path.join(translations_dir, language_to_load + ".json")
     if os.path.exists(translation_file):
@@ -71,7 +81,7 @@ def load_translations():
             print(f"Loaded {len(dictionary)} translations from en_US (fallback)")
         else:
             print("DEFAULT TRANSLATION FILE 'en_US.json' NOT FOUND.")
-    
+
     check_missing_translations()
 
 
@@ -105,18 +115,49 @@ def get_languages_list(self, context):
 
 
 def update_ui(self, context):
+    global _addon_startup_time
+    import time
+
     print("update_ui function called")
-    # Check if language actually changed
-    current_language = get_language_from_settings()
-    print(f"Current language from settings: {current_language}, Last loaded: {last_loaded_language}")
-    
+
+    # Don't trigger reload during the first 2 seconds after addon load (initialization period or crashes may occur)
+    if _addon_startup_time and (time.time() - _addon_startup_time) < 2.0:
+        print("Skipping reload during initialization period")
+        return
+
+    # Get the NEW language value directly from the scene property (not from file)
+    # because the update callback is triggered BEFORE the settings file is saved
+    current_language = context.scene.ui_lang if context and hasattr(context, 'scene') else None
+
+    # Handle "auto" mode - detect from Blender locale
+    if current_language and "auto" in current_language.lower():
+        from bpy.app.translations import locale
+        current_language = convert_locale_to_language_code(locale)
+        if not current_language:
+            current_language = "en_US"
+
+    print(f"Current language from scene: {current_language}, Last loaded: {last_loaded_language}")
+
     if current_language != last_loaded_language:
         print(f"Language changed from {last_loaded_language} to {current_language}, reloading translations")
+
+        # Save the settings first so get_language_from_settings() will return the new value
+        settings.update_settings_core(None, None)
+
         load_translations()
-        # Update settings to reflect the change
-        if settings.update_settings_core(None, None):
-            print("Reloading scripts")
-            bpy.ops.script.reload()
+
+        # Automatically reload scripts after a delay to apply new translations (old method was unreliable)
+        def delayed_reload():
+            try:
+                print("Auto-reloading scripts to apply new language...")
+                bpy.ops.script.reload()
+                print("Language changed successfully!")
+            except Exception as e:
+                print(f"Script reload failed: {e}")
+            return None
+
+        # Delay by 2 seconds to ensure all dialogs are closed and operations complete (Or we get crashes due to gotchaes situation)
+        bpy.app.timers.register(delayed_reload, first_interval=2.0)
     else:
         print("Language unchanged, no reload needed")
 
@@ -140,8 +181,9 @@ def get_language_from_settings():
     lang = settings_data.get("ui_lang")
     if not lang or "auto" in lang.lower():
         # Auto-detect language from Blender's locale
-        detected_lang = convert_locale_to_language_code(locale)
-        print(f"Auto-detecting language from Blender locale: {locale} -> {detected_lang}")
+        from bpy.app.translations import locale as current_locale
+        detected_lang = convert_locale_to_language_code(current_locale)
+        print(f"Auto-detecting language from Blender locale: {current_locale} -> {detected_lang}")
         return detected_lang
 
     return lang
@@ -154,17 +196,17 @@ def convert_locale_to_language_code(blender_locale):
     """
     if not blender_locale:
         return None
-    
+
     # Blender locale is already in the format we need (e.g., 'en_US')
     locale_str = str(blender_locale)
-    
+
     # Check if exact match exists in available languages
     for lang_file in os.listdir(translations_dir):
         lang_code = lang_file.split(".")[0]
         if locale_str == lang_code:
             print(f"Found exact locale match: {lang_code}")
             return lang_code
-    
+
     # Try to match by language code (first part before underscore)
     language_only = locale_str.split("_")[0].lower() if "_" in locale_str else locale_str.lower()
     for lang_file in os.listdir(translations_dir):
@@ -172,7 +214,7 @@ def convert_locale_to_language_code(blender_locale):
         if lang_code.lower().startswith(language_only):
             print(f"Found language match: {lang_code}")
             return lang_code
-    
+
     # Fallback to English if no match
     print(f"No language match found for locale: {locale_str}, defaulting to en_US")
     return None
@@ -246,6 +288,8 @@ class DownloadTranslations(bpy.types.Operator):
 
         self.report({'INFO'}, "Successfully downloaded the translations and dictionary")
         return {'FINISHED'}
+
+
 
 
 load_translations()
