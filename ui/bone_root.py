@@ -10,20 +10,29 @@ from ..tools.common import wrap_dynamic_enum_items
 
 
 @register_wrap
-class SearchMenuOperator_root_bone(SearchMenuOperatorBase, bpy.types.Operator):
+class SearchMenuOperator_root_bone(bpy.types.Operator):
     bl_description = t('Scene.root_bone.desc')
     bl_idname = "scene.search_menu_root_bone"
     bl_label = ""
-    scene_property = "root_bone"
+    bl_property = "my_enum"
 
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.root_bone.label'),
         description=t('Scene.root_bone.desc'),
         # get_parent_root_bones caches results so the wrapper cannot run in-place
         items=wrap_dynamic_enum_items(
-            Rootbone.get_parent_root_bones, bl_idname, sort=False, in_place=False, is_holder=False
+            Rootbone.get_parent_root_bones, 'my_enum', sort=False, in_place=False, is_holder=False
         ),
     )
+
+    def execute(self, context):
+        context.scene.root_bone = self.my_enum
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        wm.invoke_search_popup(self)
+        return {'FINISHED'}
 
 
 @register_wrap

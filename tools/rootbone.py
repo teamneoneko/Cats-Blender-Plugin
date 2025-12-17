@@ -112,10 +112,13 @@ def get_parent_root_bones(self, context):
                 m = SequenceMatcher(None, rootbone.name, bone.name)
                 if m.ratio() >= 0.70:
                     accepted = False
-                    if bone.parent is not None:
-                        for child_bone in bone.parent.children:
-                            if child_bone.name == rootbone.name:
-                                accepted = True
+                    # Check if both bones have the same parent (are siblings)
+                    if bone.parent is not None and rootbone.parent is not None:
+                        if bone.parent.name == rootbone.parent.name:
+                            accepted = True
+                    elif bone.parent is None and rootbone.parent is None:
+                        # Both are root bones (no parent)
+                        accepted = True
 
                     check_these_bones.remove(bone.name)
                     if accepted:
