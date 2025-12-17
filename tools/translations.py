@@ -230,7 +230,7 @@ class DownloadTranslations(bpy.types.Operator):
         # GitHub repository and folder information
         repo_owner = "teamneoneko"
         repo_name = "Cats-Blender-Plugin-Unofficial-translations"
-        branch = "4.3-translations"
+        branch = "5x-translations"
         folder_path = "UI%20Tanslations"
 
         # Construct the API URL to get the list of files in the folder
