@@ -421,7 +421,7 @@ def get_github_releases(repo):
 
     try:
         ssl._create_default_https_context = ssl._create_unverified_context
-        with urllib.request.urlopen('https://api.github.com/repos/' + repo + '/Cats-Blender-Plugin-Unofficial-/releases') as url:
+        with urllib.request.urlopen('https://git.disroot.org/api/v1/repos/Neoneko/Cats-Blender-Plugin/releases') as url:
             data = json.loads(url.read().decode())
     except urllib.error.URLError:
         print('URL ERROR')
@@ -546,7 +546,7 @@ def update_now(version=None, latest=False, dev=False):
         print('UPDATE TO DEVELOPMENT')
         # Dynamically construct dev branch URL based on major version
         major_version = CATS_VERSION.split('.')[0]
-        update_link = f'https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-/archive/blender-{major_version}x-dev.zip'
+        update_link = f'https://git.disroot.org/Neoneko/Cats-Blender-Plugin/archive/blender-{major_version}x-dev.zip'
     elif latest or not version:
         print('UPDATE TO ' + latest_version_str)
         update_link = version_list.get(latest_version_str)[0]
@@ -997,4 +997,6 @@ def unregister():
             pass
 
     if hasattr(bpy.types.Scene, 'cats_updater_version_list'):
+        del bpy.types.Scene.cats_updater_version_list
+
         del bpy.types.Scene.cats_updater_version_list
