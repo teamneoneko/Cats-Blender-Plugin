@@ -1,4 +1,4 @@
-# Cats Blender Plugin
+[# Cats Blender Plugin
 
 > [!IMPORTANT]
 > ## 📦 CATS BLENDER PLUGIN IS NOW ARCHIVED
@@ -228,4 +228,4 @@ Thank you to the developers and contributors of these projects.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).](https://github.com/teamneoneko/Cats-Blender-Plugin/tree/cats-latest)
