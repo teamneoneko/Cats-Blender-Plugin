@@ -1,4 +1,4 @@
-[# Cats Blender Plugin
+# Cats Blender Plugin
 
 > [!IMPORTANT]
 > ## 📦 CATS BLENDER PLUGIN IS NOW ARCHIVED
