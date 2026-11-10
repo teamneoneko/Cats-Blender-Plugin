@@ -173,8 +173,8 @@ Cats is MIT licensed, so you are welcome to fork it and continue development. A 
 4. **Update the wiki links.** The `*.wikiURL` entries in `resources/translations/*.json` link to the NeoNeko wiki.
 5. **Supporting newer Blender.** Raise `blender_version_max` in `blender_manifest.toml` and the version check in `check_unsupported_blender_versions()` in `__init__.py`, then test.
 6. **Keep the versions in sync.** `CATS_VERSION` in `__init__.py` must match the `version` in `blender_manifest.toml` (a test checks this).
-7. **Tests and CI.** The test suites are in `tests/` (`run_tests.py` runs them; see `tests/README.md`). CI is written for Forgejo Actions in `.forgejo/workflows/` and needs adapting for GitHub Actions. Some tests check the NeoNeko URLs and will need updating along with them.
-8. **Updating MMD Tools.** MMD Tools is bundled as `mmd_tools_local`. Run `python scripts/vendor_mmd_tools.py <version>` to vendor a newer release.
+7. **Updating MMD Tools.** MMD Tools is bundled as `mmd_tools_local`. Run `python scripts/vendor_mmd_tools.py <version>` to vendor a newer release.
+8. The latest code is on the cats-latest branch see https://github.com/teamneoneko/Cats-Blender-Plugin/tree/cats-latest
 
 Please make it clear that your fork is your own project, and don't send users to NeoNeko for support.
 
