@@ -1,25 +1,54 @@
 # MIT License
-import os
-import pathlib
-
+from .tools import atlas as Atlas
 from .tools import common as Common
 from .tools.common import wrap_dynamic_enum_items
-from .tools import atlas as Atlas
 from .tools import eyetracking as Eyetracking
 from .tools import rootbone as Rootbone
 from .tools import settings as Settings
+from .tools import translation_providers as TranslationProviders
+from .tools import translate as Translate
 from .tools import importer as Importer
 from .tools import translations as Translations
 from .tools.translations import t
 from .tools import viseme as Viseme
+from .tools import scaler as Scaler
 
-from bpy.types import Scene
-from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
+from bpy.types import Material, Scene
+from bpy.props import (
+    BoolProperty,
+    CollectionProperty,
+    EnumProperty,
+    FloatProperty,
+    IntProperty,
+    PointerProperty,
+    StringProperty,
+)
 
-documents_folder = pathlib.Path.home() / "Documents"
-default_exports_dir = os.path.join(documents_folder, "Cats")
+# Names of the properties added by register(), so unregister() removes exactly those
+_registered_scene_props = []
+_registered_material_props = []
 
-def register(): 
+
+def register():
+    global _registered_scene_props, _registered_material_props
+    scene_props_before = set(Scene.bl_rna.properties.keys())
+    material_props_before = set(Material.bl_rna.properties.keys())
+
+    _register_properties()
+
+    _registered_scene_props = [name for name in Scene.bl_rna.properties.keys() if name not in scene_props_before]
+    _registered_material_props = [name for name in Material.bl_rna.properties.keys() if name not in material_props_before]
+
+
+def unregister():
+    for holder, names in ((Scene, _registered_scene_props), (Material, _registered_material_props)):
+        for name in names:
+            if hasattr(holder, name):
+                delattr(holder, name)
+        names.clear()
+
+
+def _register_properties():
     Scene.remove_rigidbodies_joints_global = BoolProperty(
         name=t('Scene.removerigidbodiesjointsglobal.label'),
         description=t('Scene.removerigidbodiesjointsglobal.desc'),
@@ -30,7 +59,7 @@ def register():
         name=t('Scene.customfoldershapekeycsv.label'),
         description=t('Scene.customfoldershapekeycsv.desc'),
         subtype = 'DIR_PATH',
-        default = default_exports_dir
+        default=Translate.DEFAULT_EXPORTS_DIR
     )
 
     Scene.export_translate_csv = BoolProperty(
@@ -92,7 +121,13 @@ def register():
     Scene.keep_end_bones = BoolProperty(
         name=t('Scene.keep_end_bones.label'),
         description=t('Scene.keep_end_bones.desc'),
-        default=False
+        default=True
+    )
+
+    Scene.protected_bones = StringProperty(
+        name=t('Scene.protected_bones.label'),
+        description=t('Scene.protected_bones.desc'),
+        default=''
     )
 
     Scene.keep_twist_bones = BoolProperty(
@@ -132,10 +167,29 @@ def register():
         default=False
     )
 
+    Scene.pose_to_shapekey_name = StringProperty(name="Pose Name")
+
     Scene.skip_locked_shape_keys = BoolProperty(
         name=t('Scene.skip_locked_shape_keys.label'),
         description=t('Scene.skip_locked_shape_keys.desc'),
         default=False
+    )
+
+    Scene.mmd_english_names_shapekeys = EnumProperty(
+        name=t('Scene.mmd_english_names_shapekeys.label'),
+        description=t('Scene.mmd_english_names_shapekeys.desc'),
+        items=[
+            (Translate.MMD_ENGLISH_NAMES_FALLBACK, t('Scene.mmd_english_names_shapekeys.fallback.label'), t('Scene.mmd_english_names_shapekeys.fallback.desc')),
+            (Translate.MMD_ENGLISH_NAMES_PREFER, t('Scene.mmd_english_names_shapekeys.prefer.label'), t('Scene.mmd_english_names_shapekeys.prefer.desc')),
+            (Translate.MMD_ENGLISH_NAMES_OFF, t('Scene.mmd_english_names_shapekeys.off.label'), t('Scene.mmd_english_names_shapekeys.off.desc')),
+        ],
+        default=Translate.MMD_ENGLISH_NAMES_FALLBACK
+    )
+
+    Scene.mmd_english_names_materials = BoolProperty(
+        name=t('Scene.mmd_english_names_materials.label'),
+        description=t('Scene.mmd_english_names_materials.desc'),
+        default=True
     )
 
     Scene.keep_merged_bones = BoolProperty(
@@ -200,6 +254,12 @@ def register():
         name=t('Scene.apply_transforms.label'),
         description=t('Scene.apply_transforms.desc'),
         default=False
+    )
+
+    Scene.rigify_merge_twist_bones = BoolProperty(
+        name=t('Scene.rigify_merge_twist_bones.label'),
+        description=t('Scene.rigify_merge_twist_bones.desc'),
+        default=True
     )
 
     Scene.merge_armatures_join_meshes = BoolProperty(
@@ -503,6 +563,181 @@ def register():
         items=wrap_dynamic_enum_items(Common.get_meshes, 'merge_mesh', sort=False),
     )
 
+    # Built-in atlas generator. Defaults are the VRChat/Unity preset: power-of-two
+    # output, a 4K cap, and a 4px dilation ring. Every one of them is adjustable.
+    Scene.cats_atlas_items = CollectionProperty(type=Atlas.CatsAtlasItem)
+
+    Scene.cats_atlas_active = IntProperty(default=0)
+
+    Scene.cats_atlas_size_mode = EnumProperty(
+        name=t('Scene.cats_atlas_size_mode.label'),
+        description=t('Scene.cats_atlas_size_mode.desc'),
+        items=[
+            ("PO2", t('Scene.cats_atlas_size_mode.po2.label'), t('Scene.cats_atlas_size_mode.po2.desc')),
+            ("QUAD", t('Scene.cats_atlas_size_mode.quad.label'), t('Scene.cats_atlas_size_mode.quad.desc')),
+            ("AUTO", t('Scene.cats_atlas_size_mode.auto.label'), t('Scene.cats_atlas_size_mode.auto.desc')),
+            ("CUST", t('Scene.cats_atlas_size_mode.cust.label'), t('Scene.cats_atlas_size_mode.cust.desc')),
+            ("STRICTCUST", t('Scene.cats_atlas_size_mode.strictcust.label'),
+             t('Scene.cats_atlas_size_mode.strictcust.desc')),
+        ],
+        default="PO2"
+    )
+
+    Scene.cats_atlas_max_width = IntProperty(
+        name=t('Scene.cats_atlas_max_width.label'),
+        description=t('Scene.cats_atlas_max_width.desc'),
+        default=4096,
+        min=8,
+        max=8192
+    )
+
+    Scene.cats_atlas_max_height = IntProperty(
+        name=t('Scene.cats_atlas_max_height.label'),
+        description=t('Scene.cats_atlas_max_height.desc'),
+        default=4096,
+        min=8,
+        max=8192
+    )
+
+    Scene.cats_atlas_padding = IntProperty(
+        name=t('Scene.cats_atlas_padding.label'),
+        description=t('Scene.cats_atlas_padding.desc'),
+        default=4,
+        min=0,
+        max=32
+    )
+
+    Scene.cats_atlas_crop_uv = BoolProperty(
+        name=t('Scene.cats_atlas_crop_uv.label'),
+        description=t('Scene.cats_atlas_crop_uv.desc'),
+        default=True
+    )
+
+    Scene.cats_atlas_pixel_art = BoolProperty(
+        name=t('Scene.cats_atlas_pixel_art.label'),
+        description=t('Scene.cats_atlas_pixel_art.desc'),
+        default=False
+    )
+
+    Scene.cats_atlas_color_size = IntProperty(
+        name=t('Scene.cats_atlas_color_size.label'),
+        description=t('Scene.cats_atlas_color_size.desc'),
+        default=32,
+        min=8,
+        max=256
+    )
+
+    Scene.cats_atlas_map_normal = BoolProperty(
+        name=t('Scene.cats_atlas_map_normal.label'),
+        description=t('Scene.cats_atlas_map_normal.desc'),
+        default=True
+    )
+
+    Scene.cats_atlas_map_emission = BoolProperty(
+        name=t('Scene.cats_atlas_map_emission.label'),
+        description=t('Scene.cats_atlas_map_emission.desc'),
+        default=True
+    )
+
+    Scene.cats_atlas_map_roughness = BoolProperty(
+        name=t('Scene.cats_atlas_map_roughness.label'),
+        description=t('Scene.cats_atlas_map_roughness.desc'),
+        default=False
+    )
+
+    Scene.cats_atlas_map_metallic = BoolProperty(
+        name=t('Scene.cats_atlas_map_metallic.label'),
+        description=t('Scene.cats_atlas_map_metallic.desc'),
+        default=False
+    )
+
+    Scene.cats_atlas_map_ao = BoolProperty(
+        name=t('Scene.cats_atlas_map_ao.label'),
+        description=t('Scene.cats_atlas_map_ao.desc'),
+        default=False
+    )
+
+    Scene.cats_atlas_map_height = BoolProperty(
+        name=t('Scene.cats_atlas_map_height.label'),
+        description=t('Scene.cats_atlas_map_height.desc'),
+        default=False
+    )
+
+    Scene.cats_atlas_pack_metallic_smoothness = BoolProperty(
+        name=t('Scene.cats_atlas_pack_metallic_smoothness.label'),
+        description=t('Scene.cats_atlas_pack_metallic_smoothness.desc'),
+        default=False
+    )
+
+    Scene.cats_atlas_secondary_scale = EnumProperty(
+        name=t('Scene.cats_atlas_secondary_scale.label'),
+        description=t('Scene.cats_atlas_secondary_scale.desc'),
+        items=[
+            ("FULL", t('Scene.cats_atlas_secondary_scale.full.label'),
+             t('Scene.cats_atlas_secondary_scale.full.desc')),
+            ("HALF", t('Scene.cats_atlas_secondary_scale.half.label'),
+             t('Scene.cats_atlas_secondary_scale.half.desc')),
+            ("QUARTER", t('Scene.cats_atlas_secondary_scale.quarter.label'),
+             t('Scene.cats_atlas_secondary_scale.quarter.desc')),
+        ],
+        default="FULL"
+    )
+    
+    Scene.cats_atlas_bake_size = IntProperty(
+        name=t('Scene.cats_atlas_bake_size.label'),
+        description=t('Scene.cats_atlas_bake_size.desc'),
+        default=1024,
+        min=8,
+        max=4096
+    )
+
+    Scene.cats_atlas_bake_samples = IntProperty(
+        name=t('Scene.cats_atlas_bake_samples.label'),
+        description=t('Scene.cats_atlas_bake_samples.desc'),
+        default=8,
+        min=1,
+        max=256
+    )
+
+    Scene.cats_atlas_max_tiles = IntProperty(
+        name=t('Scene.cats_atlas_max_tiles.label'),
+        description=t('Scene.cats_atlas_max_tiles.desc'),
+        default=8,
+        min=1,
+        max=25
+    )
+
+    Scene.cats_atlas_remap_all_uv_layers = BoolProperty(
+        name=t('Scene.cats_atlas_remap_all_uv_layers.label'),
+        description=t('Scene.cats_atlas_remap_all_uv_layers.desc'),
+        default=False
+    )
+
+    Scene.cats_atlas_remove_originals = BoolProperty(
+        name=t('Scene.cats_atlas_remove_originals.label'),
+        description=t('Scene.cats_atlas_remove_originals.desc'),
+        default=True
+    )
+
+    Scene.cats_atlas_output = EnumProperty(
+        name=t('Scene.cats_atlas_output.label'),
+        description=t('Scene.cats_atlas_output.desc'),
+        items=[
+            ("PACK", t('Scene.cats_atlas_output.pack.label'), t('Scene.cats_atlas_output.pack.desc')),
+            ("DISK", t('Scene.cats_atlas_output.disk.label'), t('Scene.cats_atlas_output.disk.desc')),
+        ],
+        default="PACK"
+    )
+
+    Scene.cats_atlas_save_path = StringProperty(
+        name=t('Scene.cats_atlas_save_path.label'),
+        description=t('Scene.cats_atlas_save_path.desc'),
+        default="",
+        subtype='DIR_PATH'
+    )
+
+    Material.cats_atlas = PointerProperty(type=Atlas.CatsAtlasMaterialSettings)
+
     Scene.merge_bone = EnumProperty(
         name=t('Scene.merge_bone.label'),
         description=t('Scene.merge_bone.desc'),
@@ -517,6 +752,51 @@ def register():
         default=False,
         update=Settings.update_settings
     )
+
+    # Translation backend selection + credentials (persisted globally via Settings)
+    Scene.translation_service = EnumProperty(
+        name=t('Scene.translation_service.label'),
+        description=t('Scene.translation_service.desc'),
+        items=[
+            (TranslationProviders.SERVICE_INTERNAL, t('Scene.translation_service.internal.label'), t('Scene.translation_service.internal.desc')),
+            (TranslationProviders.SERVICE_GOOGLE, t('Scene.translation_service.google.label'), t('Scene.translation_service.google.desc')),
+            (TranslationProviders.SERVICE_DEEPL, t('Scene.translation_service.deepl.label'), t('Scene.translation_service.deepl.desc')),
+            (TranslationProviders.SERVICE_LIBRE, t('Scene.translation_service.libretranslate.label'), t('Scene.translation_service.libretranslate.desc')),
+            (TranslationProviders.SERVICE_MYMEMORY, t('Scene.translation_service.mymemory.label'), t('Scene.translation_service.mymemory.desc')),
+        ],
+        default=TranslationProviders.SERVICE_GOOGLE,
+        update=Settings.update_settings
+    )
+    deepl_key_get, deepl_key_set = Settings.credential_accessors('deepl_api_key')
+    Scene.deepl_api_key = StringProperty(
+        name=t('Scene.deepl_api_key.label'),
+        description=t('Scene.deepl_api_key.desc'),
+        subtype='PASSWORD',
+        get=deepl_key_get,
+        set=deepl_key_set
+    )
+    libre_url_get, libre_url_set = Settings.credential_accessors('libretranslate_url')
+    Scene.libretranslate_url = StringProperty(
+        name=t('Scene.libretranslate_url.label'),
+        description=t('Scene.libretranslate_url.desc'),
+        get=libre_url_get,
+        set=libre_url_set
+    )
+    libre_key_get, libre_key_set = Settings.credential_accessors('libretranslate_api_key')
+    Scene.libretranslate_api_key = StringProperty(
+        name=t('Scene.libretranslate_api_key.label'),
+        description=t('Scene.libretranslate_api_key.desc'),
+        subtype='PASSWORD',
+        get=libre_key_get,
+        set=libre_key_set
+    )
+    mymemory_email_get, mymemory_email_set = Settings.credential_accessors('mymemory_email')
+    Scene.mymemory_email = StringProperty(
+        name=t('Scene.mymemory_email.label'),
+        description=t('Scene.mymemory_email.desc'),
+        get=mymemory_email_get,
+        set=mymemory_email_set
+    )
     Scene.ui_lang = EnumProperty(
         name=t('Scene.ui_lang.label'),
         description=t('Scene.ui_lang.desc'),
@@ -528,3 +808,5 @@ def register():
         description=t('Scene.debug_translations.desc'),
         default=False
     )
+
+    Scaler.register_scene_properties()

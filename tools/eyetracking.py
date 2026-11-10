@@ -3,10 +3,11 @@
 import os
 import bpy
 import copy
+import json
 import math
 import bmesh
 import mathutils
-from typing import Optional, Dict, Tuple, Set
+from typing import Optional, Dict, Tuple
 
 from collections import OrderedDict
 from random import random
@@ -384,8 +385,6 @@ class CreateEyesButton(bpy.types.Operator):
 
             # Use cached vertex groups for performance
             VertexGroupCache.clear_cache()
-            left_eye_verts = VertexGroupCache.get_vertex_indices(mesh_name, 'LeftEye')
-            right_eye_verts = VertexGroupCache.get_vertex_indices(mesh_name, 'RightEye')
             wm.progress_update(30)
             context.scene.progress_update = 30
 
@@ -402,8 +401,19 @@ class CreateEyesButton(bpy.types.Operator):
             context.scene.progress_update = 50
 
             # Calculate their new positions
-            fix_eye_position(context, old_eye_left, new_left_eye, head, False)
-            fix_eye_position(context, old_eye_right, new_right_eye, head, True)
+            left_placed = fix_eye_position(context, old_eye_left, new_left_eye, head, False)
+            right_placed = fix_eye_position(context, old_eye_right, new_right_eye, head, True)
+
+            if not left_placed or not right_placed:
+                unusable = old_eye_left.name if not left_placed else old_eye_right.name
+                # Drop the half-built bones, so a failed run doesn't leave a
+                # LeftEye/RightEye behind for the testing mode to pick up.
+                for stray in (new_left_eye, new_right_eye):
+                    armature.data.edit_bones.remove(stray)
+                saved_data.load()
+                wm.progress_end()
+                self.report({'ERROR'}, t('AdjustEyesButton.error.noVertex', bone=unusable))
+                return {'CANCELLED'}
             wm.progress_update(60)
             context.scene.progress_update = 60
 
@@ -559,7 +569,7 @@ class CreateEyesButton(bpy.types.Operator):
             try:
                 self.mesh.vertex_groups[bone_name].weight(i)
                 return True
-            except:
+            except (RuntimeError, KeyError):
                 pass
 
         return False
@@ -577,14 +587,8 @@ def fix_eye_position(context, old_eye, new_eye, head, right_side):
         else:
             coords_eye = Common.find_center_vector_of_vertex_group(mesh, new_eye.name)
 
-        if coords_eye is False:
-            return
-
-        if head:
-            p1 = mesh.matrix_world @ head.head
-            p2 = mesh.matrix_world @ coords_eye
-            length = (p1 - p2).length
-            print(length)  # TODO calculate scale if bone is too close to center of the eye
+        if coords_eye is None:
+            return False
 
     # dist = math.sqrt((coords_eye[0] - head.head[x_cord]) ** 2 + (coords_eye[1] - head.head[y_cord]) ** 2 + (coords_eye[2] - head.head[z_cord]) ** 2)
     # dist2 = np.linalg.norm(coords_eye - head.head)
@@ -615,6 +619,8 @@ def fix_eye_position(context, old_eye, new_eye, head, right_side):
     new_eye.tail[y_cord] = new_eye.head[y_cord]
     new_eye.tail[z_cord] = new_eye.head[z_cord] + 0.1
 
+    return True
+
 
 # Repair vrc shape keys
 def repair_shapekeys(mesh_name, vertex_group):
@@ -631,7 +637,7 @@ def repair_shapekeys(mesh_name, vertex_group):
     bm.from_mesh(mesh.data)
     bm.verts.ensure_lookup_table()
 
-    # Get a vertex from the eye vertex group # TODO https://i.imgur.com/tWi8lk6.png after many times resetting the eyes
+    # Get a vertex from the eye vertex group
     print('DEBUG: Group: ' + vertex_group)
     group = mesh.vertex_groups.get(vertex_group)
     if group is None:
@@ -642,10 +648,16 @@ def repair_shapekeys(mesh_name, vertex_group):
 
     vcoords = None
     gi = group.index
+    # Always pick the lowest-index vertex in the group instead of the last one encountered. Vertex order can
+    # change between resets (e.g. after mesh edits), so without this the picked vertex and therefore which
+    # shape key vertex gets nudged below was not stable across repeated eye resets.
     for v in mesh.data.vertices:
         for g in v.groups:
             if g.group == gi:
                 vcoords = v.co.xyz
+                break
+        if vcoords is not None:
+            break
 
     if not vcoords:
         return
@@ -688,7 +700,7 @@ def randBoolNumber():
 
 
 # Repair vrc shape keys with random vertex
-def repair_shapekeys_mouth(mesh_name):  # TODO Add vertex repairing!
+def repair_shapekeys_mouth(mesh_name):
     # This is done to fix a very weird bug where the mouth stays open sometimes
     Common.set_default_stage()
     Common.remove_rigidbodies_global()
@@ -715,7 +727,6 @@ def repair_shapekeys_mouth(mesh_name):  # TODO Add vertex repairing!
             shapekey_coords[1] -= 0.00007
             shapekey_coords[2] -= 0.00007
             shapekey[value] = mesh.matrix_world.inverted() @ shapekey_coords
-            print('TEST')
             moved = True
             break
 
@@ -822,7 +833,7 @@ class StopTestingButton(bpy.types.Operator):
         for pb in armature_obj.pose.bones:
             pb.select = False
 
-        armature = Common.set_default_stage()
+        Common.set_default_stage()
         # armature.data.pose_position = 'REST'
 
         for shape_key in Common.get_objects()[context.scene.mesh_name_eye].data.shape_keys.key_blocks:
@@ -980,8 +991,14 @@ class AdjustEyesButton(bpy.types.Operator):
         old_eye_left = armature.pose.bones.get(context.scene.eye_left)
         old_eye_right = armature.pose.bones.get(context.scene.eye_right)
 
-        fix_eye_position(context, old_eye_left, new_eye_left, None, False)
-        fix_eye_position(context, old_eye_right, new_eye_right, None, True)
+        for new_eye, old_eye, right_side in ((new_eye_left, old_eye_left, False),
+                                             (new_eye_right, old_eye_right, True)):
+            # Read the name before any mode switch invalidates the EditBone.
+            new_eye_name = new_eye.name
+            if not fix_eye_position(context, old_eye, new_eye, None, right_side):
+                Common.switch('OBJECT')
+                self.report({'ERROR'}, t('AdjustEyesButton.error.noVertex', bone=new_eye_name))
+                return {'CANCELLED'}
 
         Common.switch('POSE')
 

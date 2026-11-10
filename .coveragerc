@@ -1,0 +1,48 @@
+# Coverage configuration for the headless Blender test suite.
+#
+# The Blender tests load the add-on from a throwaway *copy* of the repository
+# (see tests/blender/_addon_test_utils.py::loaded_addon), so coverage records
+# execution against temp-dir paths like
+#   /tmp/cats-blender-test-XXXX/addons/cats_blender_plugin_test/tools/common.py
+# The [paths] section below maps those copies back onto the real source tree so
+# the report is expressed in first-party paths. Measurement runs in parallel
+# mode and the runner calls combine() to apply this remapping.
+[run]
+branch = True
+parallel = True
+# The add-on package the harness installs the temp copy under.
+# Keep in sync with CATS_TEST_ADDON_MODULE in _addon_test_utils.py.
+
+[paths]
+tools =
+    tools/
+    */cats_blender_plugin_test/tools/
+ui =
+    ui/
+    */cats_blender_plugin_test/ui/
+package =
+    ./
+    */cats_blender_plugin_test/
+
+[report]
+include =
+    */cats_blender_plugin_test/tools/*
+    */cats_blender_plugin_test/ui/*
+    */cats_blender_plugin_test/updater.py
+    */cats_blender_plugin_test/__init__.py
+    */cats_blender_plugin_test/extentions.py
+    */cats_blender_plugin_test/globs.py
+    tools/*
+    ui/*
+    updater.py
+    __init__.py
+    extentions.py
+    globs.py
+omit =
+    */mmd_tools_local/*
+    */extern_tools/*
+    */wheels/*
+    */tests/*
+    */__pycache__/*
+show_missing = True
+skip_covered = False

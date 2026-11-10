@@ -1,0 +1,132 @@
+# Copyright 2014 MMD Tools authors
+# This file is part of MMD Tools.
+
+import re
+
+from bpy.types import Operator
+from mathutils import Matrix, Quaternion
+
+
+class _SetShadingBase:
+    bl_options = {"REGISTER", "UNDO"}
+
+    @staticmethod
+    def _get_view3d_spaces(context):
+        if getattr(context.area, "type", None) == "VIEW_3D":
+            return (context.area.spaces[0],)
+        return (area.spaces[0] for area in getattr(context.screen, "areas", ()) if area.type == "VIEW_3D")
+
+    def execute(self, context):
+        try:
+            context.scene.render.engine = "BLENDER_EEVEE"  # Blender 5.0+
+        except TypeError:
+            context.scene.render.engine = "BLENDER_EEVEE_NEXT"  # Blender 4.2-4.5
+
+        shading_mode = getattr(self, "_shading_mode", None)
+        for space in self._get_view3d_spaces(context):
+            shading = space.shading
+            shading.type = "SOLID"
+            shading.light = "FLAT" if shading_mode == "SHADELESS" else "STUDIO"
+            shading.color_type = "TEXTURE" if shading_mode else "MATERIAL"
+            shading.show_object_outline = False
+            shading.show_backface_culling = False
+        return {"FINISHED"}
+
+
+class SetGLSLShading(Operator, _SetShadingBase):
+    bl_idname = "mmd_tools_local.set_glsl_shading"
+    bl_label = "GLSL View"
+    bl_description = "Use GLSL shading with additional lighting"
+
+    _shading_mode = "GLSL"
+
+
+class SetShadelessGLSLShading(Operator, _SetShadingBase):
+    bl_idname = "mmd_tools_local.set_shadeless_glsl_shading"
+    bl_label = "Shadeless GLSL View"
+    bl_description = "Use only toon shading"
+
+    _shading_mode = "SHADELESS"
+
+
+class ResetShading(Operator, _SetShadingBase):
+    bl_idname = "mmd_tools_local.reset_shading"
+    bl_label = "Reset View"
+    bl_description = "Reset to default Blender shading"
+
+
+class FlipPose(Operator):
+    bl_idname = "mmd_tools_local.flip_pose"
+    bl_label = "Flip Pose"
+    bl_description = "Apply the current pose of selected bones to matching bone on opposite side of X-Axis."
+    bl_options = {"REGISTER", "UNDO"}
+
+    # https://docs.blender.org/manual/en/dev/rigging/armatures/bones/editing/naming.html
+    __LR_REGEX = [
+        {"re": re.compile(r"^(.+)(RIGHT|LEFT)(\.\d+)?$", re.IGNORECASE), "lr": 1},
+        {"re": re.compile(r"^(.+)([\.\- _])(L|R)(\.\d+)?$", re.IGNORECASE), "lr": 2},
+        {"re": re.compile(r"^(LEFT|RIGHT)(.+)$", re.IGNORECASE), "lr": 0},
+        {"re": re.compile(r"^(L|R)([\.\- _])(.+)$", re.IGNORECASE), "lr": 0},
+        {"re": re.compile(r"^(.+)(左|右)(\.\d+)?$"), "lr": 1},
+        {"re": re.compile(r"^(左|右)(.+)$"), "lr": 0},
+    ]
+    __LR_MAP = {
+        "RIGHT": "LEFT",
+        "Right": "Left",
+        "right": "left",
+        "LEFT": "RIGHT",
+        "Left": "Right",
+        "left": "right",
+        "L": "R",
+        "l": "r",
+        "R": "L",
+        "r": "l",
+        "左": "右",
+        "右": "左",
+    }
+
+    @classmethod
+    def flip_name(cls, name):
+        for regex in cls.__LR_REGEX:
+            match = regex["re"].match(name)
+            if match:
+                groups = match.groups()
+                lr = groups[regex["lr"]]
+                if lr in cls.__LR_MAP:
+                    flip_lr = cls.__LR_MAP[lr]
+                    name = ""
+                    for i, s in enumerate(groups):
+                        if i == regex["lr"]:
+                            name += flip_lr
+                        elif s:
+                            name += s
+                    return name
+        return ""
+
+    @staticmethod
+    def __cmul(vec1, vec2):
+        return type(vec1)([x * y for x, y in zip(vec1, vec2, strict=False)])
+
+    @staticmethod
+    def __matrix_compose(loc, rot, scale):
+        return (Matrix.Translation(loc) @ rot.to_matrix().to_4x4()) @ Matrix([(scale[0], 0, 0, 0), (0, scale[1], 0, 0), (0, 0, scale[2], 0), (0, 0, 0, 1)])
+
+    @classmethod
+    def __flip_pose(cls, matrix_basis, bone_src, bone_dest):
+        m = bone_dest.bone.matrix_local.to_3x3().transposed()
+        mi = bone_src.bone.matrix_local.to_3x3().transposed().inverted() if bone_src != bone_dest else m.inverted()
+        loc, rot, scale = matrix_basis.decompose()
+        loc = cls.__cmul(mi @ loc, (-1, 1, 1))
+        rot = cls.__cmul(Quaternion(mi @ rot.axis, rot.angle).normalized(), (1, 1, -1, -1))
+        bone_dest.matrix_basis = cls.__matrix_compose(m @ loc, Quaternion(m @ rot.axis, rot.angle).normalized(), scale)
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == "ARMATURE" and obj.mode == "POSE"
+
+    def execute(self, context):
+        pose_bones = context.active_object.pose.bones
+        for b, mat in [(x, x.matrix_basis.copy()) for x in context.selected_pose_bones]:
+            self.__flip_pose(mat, b, pose_bones.get(self.flip_name(b.name), b))
+        return {"FINISHED"}

@@ -2,7 +2,7 @@
 
 import bpy
 
-from .main import ToolPanel, SearchMenuOperatorBase, draw_info_box
+from .main import ToolPanel, draw_info_box, draw_section, draw_wiki_button
 from .. import globs
 from ..tools import common as Common
 from ..tools import iconloader as Iconloader
@@ -10,6 +10,8 @@ from ..tools import armature_bones as Armature_bones
 from ..tools import armature_custom as Armature_custom
 from ..tools.register import register_wrap
 from ..tools.translations import t
+
+WIKI = 'CustomPanel.wikiURL'
 
 
 @register_wrap
@@ -105,15 +107,14 @@ class CustomPanel(ToolPanel, bpy.types.Panel):
     bl_idname = 'VIEW3D_PT_custom_v3'
     bl_label = t('CustomPanel.label')
     bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 10
+
+    def draw_header_preset(self, context):
+        draw_wiki_button(self.layout, WIKI, pad=1.5)
 
     def draw(self, context):
-        layout = self.layout
-        col = layout.column(align=True)
-
-        # Tutorial button
-        row = col.row(align=True)
-        row.scale_y = 1.3
-        row.operator(Armature_custom.CustomModelTutorialButton.bl_idname, icon='FORWARD')
+        # Parent panel is just a container for sub-panels
+        pass
 
 
 @register_wrap
@@ -122,6 +123,10 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
     bl_label = t('CustomPanel.armature.label')
     bl_parent_id = 'VIEW3D_PT_custom_v3'
     bl_options = set()
+    bl_order = 0
+
+    def draw_header_preset(self, context):
+        draw_wiki_button(self.layout, WIKI, 'armature-mode')
 
     def draw(self, context):
         layout = self.layout
@@ -133,24 +138,20 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
             draw_info_box(col, t('CustomPanel.warn.twoArmatures'))
             return
 
-        col.separator()
-
         # Settings
-        box = col.box()
-        box_col = box.column(align=True)
-        box_col.scale_y = 0.75
-        
-        box_col.prop(context.scene, 'merge_same_bones')
-        box_col.prop(context.scene, 'apply_transforms')
-        box_col.prop(context.scene, 'merge_armatures_join_meshes')
-        box_col.prop(context.scene, 'merge_armatures_remove_zero_weight_bones')
-        box_col.prop(context.scene, 'merge_armatures_cleanup_shape_keys')
+        settings_col = draw_section(col, t('CustomPanel.settingsSection'), 'PREFERENCES').column(align=True)
+        settings_col.scale_y = 0.75
+
+        settings_col.prop(context.scene, 'merge_same_bones')
+        settings_col.prop(context.scene, 'apply_transforms')
+        settings_col.prop(context.scene, 'merge_armatures_join_meshes')
+        settings_col.prop(context.scene, 'merge_armatures_remove_zero_weight_bones')
+        settings_col.prop(context.scene, 'merge_armatures_cleanup_shape_keys')
 
         col.separator()
 
         # Merge selection
-        box = col.box()
-        box_col = box.column(align=True)
+        box_col = draw_section(col, t('CustomPanel.selectionSection'), 'RESTRICT_SELECT_OFF').column(align=True)
         box_col.scale_y = 1.0
 
         # Get safe enum values for display (handles integer indices in Blender 5.0)
@@ -160,13 +161,13 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.mergeInto'))
         row.operator(SearchMenuOperator_merge_armature_into.bl_idname,
-                    text=merge_into_name if merge_into_name else t('CustomPanel.selectArmature'), 
+                    text=Common.enum_display_text(merge_into_name, t('CustomPanel.selectArmature')), 
                     icon=globs.ICON_MOD_ARMATURE)
 
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.toMerge'))
         row.operator(SearchMenuOperator_merge_armature.bl_idname,
-                    text=merge_armature_name if merge_armature_name else t('CustomPanel.selectArmature'), 
+                    text=Common.enum_display_text(merge_armature_name, t('CustomPanel.selectArmature')), 
                     icon_value=Iconloader.preview_collections["custom_icons"]["UP_ARROW"].icon_id)
 
         # Bone attachment if needed
@@ -186,7 +187,7 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
                 row = box_col.row(align=True)
                 row.label(text=t('CustomPanel.attachToBone'))
                 row.operator(SearchMenuOperator_attach_to_bone.bl_idname, 
-                           text=attach_bone_name if attach_bone_name else t('CustomPanel.selectBone'), 
+                           text=Common.enum_display_text(attach_bone_name, t('CustomPanel.selectBone')), 
                            icon='BONE_DATA')
             else:
                 row = box_col.row(align=True)
@@ -206,6 +207,10 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
     bl_label = t('CustomPanel.mesh.label')
     bl_parent_id = 'VIEW3D_PT_custom_v3'
     bl_options = set()
+    bl_order = 1
+
+    def draw_header_preset(self, context):
+        draw_wiki_button(self.layout, WIKI, 'mesh-mode')
 
     def draw(self, context):
         layout = self.layout
@@ -220,19 +225,15 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
             ])
             return
 
-        col.separator()
-
         # Settings
-        box = col.box()
-        box_col = box.column(align=True)
-        box_col.scale_y = 0.75
-        box_col.prop(context.scene, 'merge_armatures_join_meshes')
+        settings_col = draw_section(col, t('CustomPanel.settingsSection'), 'PREFERENCES').column(align=True)
+        settings_col.scale_y = 0.75
+        settings_col.prop(context.scene, 'merge_armatures_join_meshes')
 
         col.separator()
 
         # Merge selection
-        box = col.box()
-        box_col = box.column(align=True)
+        box_col = draw_section(col, t('CustomPanel.selectionSection'), 'RESTRICT_SELECT_OFF').column(align=True)
         box_col.scale_y = 1.0
 
         # Get safe enum values for display (handles integer indices in Blender 5.0)
@@ -243,19 +244,19 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.mergeInto'))
         row.operator(SearchMenuOperator_merge_armature_into.bl_idname,
-                    text=merge_into_name if merge_into_name else t('CustomPanel.selectArmature'), 
+                    text=Common.enum_display_text(merge_into_name, t('CustomPanel.selectArmature')), 
                     icon=globs.ICON_MOD_ARMATURE)
 
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.attachMesh2'))
         row.operator(SearchMenuOperator_attach_mesh.bl_idname,
-                    text=attach_mesh_name if attach_mesh_name else t('CustomPanel.selectMesh'),
+                    text=Common.enum_display_text(attach_mesh_name, t('CustomPanel.selectMesh')),
                     icon_value=Iconloader.preview_collections["custom_icons"]["UP_ARROW"].icon_id)
 
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.attachToBone'))
         row.operator(SearchMenuOperator_attach_to_bone.bl_idname,
-                    text=attach_bone_name if attach_bone_name else t('CustomPanel.selectBone'),
+                    text=Common.enum_display_text(attach_bone_name, t('CustomPanel.selectBone')),
                     icon='BONE_DATA')
 
         col.separator()

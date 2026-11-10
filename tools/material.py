@@ -1,11 +1,10 @@
 import os
 import bpy
+import numpy as np
 
 from . import common as Common
 from .register import register_wrap
 from .translations import t
-from mmd_tools_local.operators import morph as Morph
-from . import armature as Armature
 mmd_tools_local_installed = True
 
 @register_wrap
@@ -62,28 +61,56 @@ class CombineMaterialsButton(bpy.types.Operator):
         return hash(''.join(hash_components))
 
     def generate_combined_tex(self):
+        """Map each duplicate material (by pointer) to the first material seen with the same hash."""
         self.combined_tex = {}
-        material_data = {}
-        
-        # Fast material hashing
+        canonical_by_hash = {}
         for ob in Common.get_meshes_objects():
-            for index, mat_slot in enumerate(ob.material_slots):
-                hash_val = self.hash_material(mat_slot.material)
-                if hash_val not in material_data:
-                    material_data[hash_val] = []
-                material_data[hash_val].append({'mat': mat_slot.name, 'index': index})
-        
-        # Filter single materials
-        self.combined_tex = {k: v for k, v in material_data.items() if len(v) > 1}
+            for mat_slot in ob.material_slots:
+                material = mat_slot.material
+                if material is None:
+                    continue
+                canonical = canonical_by_hash.setdefault(self.hash_material(material), material)
+                if canonical.as_pointer() != material.as_pointer():
+                    self.combined_tex[material.as_pointer()] = canonical
 
-    def batch_assign_materials(self, mesh, material_groups):
-        Common.switch('EDIT')
-        for materials in material_groups:
-            bpy.ops.mesh.select_all(action='DESELECT')
-            for mat in materials:
-                mesh.active_material_index = mat['index']
-                bpy.ops.object.material_slot_select()
-            bpy.ops.object.material_slot_assign()
+    def combine_mesh_materials(self, mesh):
+        """Fold every duplicate slot on ``mesh`` into the slot holding its canonical material."""
+        slots = mesh.material_slots
+        if not slots:
+            return 0
+
+        # First slot on this mesh per material; duplicates fold into these.
+        first_slot = {}
+        for index, slot in enumerate(slots):
+            if slot.material is not None:
+                first_slot.setdefault(slot.material.as_pointer(), index)
+
+        remap = list(range(len(slots)))
+        combined = 0
+        for index, slot in enumerate(slots):
+            material = slot.material
+            if material is None:
+                continue
+            canonical = self.combined_tex.get(material.as_pointer(), material)
+            target = first_slot.setdefault(canonical.as_pointer(), index)
+            if target != index:
+                remap[index] = target
+                combined += 1
+            elif canonical.as_pointer() != material.as_pointer():
+                slot.material = canonical
+                combined += 1
+
+        if any(target != index for index, target in enumerate(remap)):
+            polygons = mesh.data.polygons
+            indices = np.empty(len(polygons), dtype=np.int32)
+            polygons.foreach_get('material_index', indices)
+            lookup = np.array(remap, dtype=np.int32)
+            valid = indices < len(lookup)
+            indices[valid] = lookup[indices[valid]]
+            polygons.foreach_set('material_index', indices)
+            mesh.data.update()
+
+        return combined
 
     def execute(self, context):
         print('COMBINE MATERIALS!')
@@ -104,14 +131,9 @@ class CombineMaterialsButton(bpy.types.Operator):
             Common.unselect_all()
             Common.set_active(mesh)
 
-            # Process material groups
-            material_groups = list(self.combined_tex.values())
-            if material_groups:
-                self.batch_assign_materials(mesh, material_groups)
-                total_combined += sum(len(group) for group in material_groups)
+            total_combined += self.combine_mesh_materials(mesh)
 
-            # Cleanup
-            Common.switch('OBJECT')
+            # Drop the slots that no longer own any polygons
             bpy.ops.object.material_slot_remove_unused()
             Common.clean_material_names(mesh)
             

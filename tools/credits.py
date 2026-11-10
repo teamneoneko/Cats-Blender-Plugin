@@ -42,14 +42,3 @@ class PatchnotesButton(bpy.types.Operator):
 
         self.report({'INFO'}, t('PatchnotesButton.success'))
         return {'FINISHED'}
-
-@register_wrap
-class SupportButton(bpy.types.Operator):
-    bl_idname = 'cats_credits.support'
-    bl_label = t('SupportButton.label')
-    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
-
-    def execute(self, context):
-        webbrowser.open(t('SupportButton.URL'))
-        self.report({'INFO'}, t('SupportButton.success'))
-        return {'FINISHED'}

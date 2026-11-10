@@ -1,16 +1,24 @@
 schema_version = "1.0.0"
 
-# Unoffical Cats Blender Plugin Extenstion
+#Cats Blender Plugin Extenstion
 id = "cats_blender_plugin"
-version = "5.0.2"
-name = "Unoffical Cats Blender Plugin"
+version = "5.3.1"
+name = "Cats Blender Plugin"
 tagline = "A tool designed to shorten steps needed to import and optimize models into VRChat"
-maintainer = "Unoffical Cats Team <hello@yusarina.xyz>"
+maintainer = "Yusarina <hello@neoneko.org>"
 type = "add-on"
 permissions = ["files", "network"]
-website = "https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-"
+website = "https://git.neoneko.org/NeoNeko/Cats-Blender-Plugin"
 tags = ["3D View", "Modeling", "Mesh", "Object"]
-blender_version_min = "5.0.0"
+blender_version_min = "5.2.0"
+blender_version_max = "5.4.0"
 license = [
   "SPDX:MIT",
+]
+
+# Bundled Python dependencies (packaged as wheels). Lifted out of the vendored
+# MMD Tools extension by scripts/vendor_mmd_tools.py -- see that script when
+# updating MMD Tools. Used by the bundled mmd_tools_local package.
+wheels = [
+  "./wheels/opencc_python_reimplemented-0.1.7-py2.py3-none-any.whl",
 ]

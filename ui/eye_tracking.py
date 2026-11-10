@@ -3,11 +3,14 @@
 import bpy
 
 from .. import globs
-from .main import ToolPanel, draw_info_box, draw_error_box
+from .main import ToolPanel, draw_info_box, draw_error_box, draw_section, draw_wiki_button
 from ..tools import common as Common
 from ..tools import eyetracking as Eyetracking
 from ..tools.register import register_wrap
 from ..tools.translations import t
+
+WIKI = 'EyeTrackingPanel.wikiURL'
+
 
 @register_wrap
 class SearchMenuOperatorBoneHead(bpy.types.Operator):
@@ -145,6 +148,10 @@ class EyeTrackingPanel(ToolPanel, bpy.types.Panel):
     bl_idname = 'VIEW3D_PT_eye_tracking_v3'
     bl_label = t('EyeTrackingPanel.label')
     bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 70
+
+    def draw_header_preset(self, context):
+        draw_wiki_button(self.layout, WIKI, pad=1.5)
 
     def draw(self, context):
         # Parent panel is now just a container for sub-panels
@@ -157,6 +164,10 @@ class SDK3EyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
     bl_label = t('EyeTrackingPanel.sdk3.label')
     bl_parent_id = 'VIEW3D_PT_eye_tracking_v3'
     bl_options = set()
+    bl_order = 0
+
+    def draw_header_preset(self, context):
+        draw_wiki_button(self.layout, WIKI, 'sdk3-mode-setup')
 
     def draw(self, context):
         layout = self.layout
@@ -173,25 +184,25 @@ class SDK3EyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Eye bones section
-        box = col.box()
-        box_col = box.column(align=True)
-        
         # Get armature and verify it exists
         armature = Common.get_armature()
         if not armature:
             draw_error_box(col, t('EyeTrackingPanel.error.noArm'))
             return
 
-        row = box_col.row(align=True)
-        row.scale_y = 1.0
-        row.label(text=t('Scene.eye_left.label') + ":")
-        row.prop_search(context.scene, "eye_left", armature.data, "bones", text="")
+        box_col = draw_section(col, t('EyeTrackingPanel.bonesSection'), 'BONE_DATA')
 
         row = box_col.row(align=True)
         row.scale_y = 1.0
-        row.label(text=t('Scene.eye_right.label') + ":")
-        row.prop_search(context.scene, "eye_right", armature.data, "bones", text="")
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.eye_left.label') + ":")
+        split.prop_search(context.scene, "eye_left", armature.data, "bones", text="")
+
+        row = box_col.row(align=True)
+        row.scale_y = 1.0
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.eye_right.label') + ":")
+        split.prop_search(context.scene, "eye_right", armature.data, "bones", text="")
 
         col.separator()
 
@@ -207,6 +218,10 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
     bl_label = t('EyeTrackingPanel.legacy.label')
     bl_parent_id = 'VIEW3D_PT_eye_tracking_v3'
     bl_options = set()
+    bl_order = 1
+
+    def draw_header_preset(self, context):
+        draw_wiki_button(self.layout, WIKI, 'legacy-mode-setup')
 
     def draw(self, context):
         layout = self.layout
@@ -226,10 +241,9 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         col.separator()
 
         # Troubleshooting Guide
-        box = col.box()
-        help_col = box.column(align=True)
+        help_col = draw_section(col, t('EyeTrackingPanel.troubleshooting.title'), 'QUESTION',
+                                WIKI, 'common-issues')
         help_col.scale_y = 0.85
-        help_col.label(text=t('EyeTrackingPanel.troubleshooting.title'), icon='QUESTION')
         help_col.label(text=t('EyeTrackingPanel.troubleshooting.vertexGroups'), icon='GROUP_VERTEX')
         help_col.label(text=t('EyeTrackingPanel.troubleshooting.shapeKeys'), icon='SHAPEKEY_DATA')
         help_col.label(text=t('EyeTrackingPanel.troubleshooting.boneWeights'), icon='BONE_DATA')
@@ -243,12 +257,10 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         else:
             self.draw_testing_mode(context, col)
 
-        # Progress Indicator (when operations are running)
-        if hasattr(context.scene, "progress_update"):
+        if getattr(context.scene, "progress_update", 0) > 0:
             col.separator()
-            box = col.box()
-            box.label(text="Operation Progress:", icon='TIME')
-            box.prop(context.scene, "progress_update", text="")
+            progress_col = draw_section(col, t('EyeTrackingPanel.progressSection'), 'TIME')
+            progress_col.prop(context.scene, "progress_update", text="")
 
     def draw_creation_mode(self, context, box):
         col = box.column(align=True)
@@ -279,16 +291,17 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_no_meshes_warning(self, col):
         col.separator()
-        sub = col.column(align=True)
+        col.column(align=True)
         row = col.row(align=True)
         row.scale_y = 1.1
         row.label(text=t('EyeTrackingPanel.error.noMesh'), icon='ERROR')
 
     def draw_mesh_selector(self, context, col):
         col.separator()
-        row = col.row(align=True)
+        sec = draw_section(col, t('EyeTrackingPanel.meshSection'), 'MESH_DATA')
+        row = sec.row(align=True)
         row.scale_y = 1.1
-        row.prop(context.scene, 'mesh_name_eye', icon='MESH_DATA')
+        row.prop(context.scene, 'mesh_name_eye', text="", icon='MESH_DATA')
 
     def draw_bone_selection(self, context, col):
         armature = Common.get_armature()
@@ -299,22 +312,26 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
             return
         
         col.separator()
-        row = col.row(align=True)
+        sec = draw_section(col, t('EyeTrackingPanel.bonesSection'), 'BONE_DATA')
+        row = sec.row(align=True)
         row.scale_y = 1.1
-        row.label(text=t('Scene.head.label')+":")
-        row.prop_search(context.scene, "head", armature.data, "bones", text="")
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.head.label')+":")
+        split.prop_search(context.scene, "head", armature.data, "bones", text="")
 
-        row = col.row(align=True)
+        row = sec.row(align=True)
         row.scale_y = 1.1
         row.active = not context.scene.disable_eye_movement
-        row.label(text=t('Scene.eye_left.label')+":")
-        row.prop_search(context.scene, "eye_left", armature.data, "bones", text="")
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.eye_left.label')+":")
+        split.prop_search(context.scene, "eye_left", armature.data, "bones", text="")
 
-        row = col.row(align=True)
+        row = sec.row(align=True)
         row.scale_y = 1.1
         row.active = not context.scene.disable_eye_movement
-        row.label(text=t('Scene.eye_right.label')+":")
-        row.prop_search(context.scene, "eye_right", armature.data, "bones", text="")
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.eye_right.label')+":")
+        split.prop_search(context.scene, "eye_right", armature.data, "bones", text="")
 
     def draw_shapekey_selection(self, context, col):
         col.separator()
@@ -336,45 +353,52 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
             col.label(text=t('EyeTrackingPanel.error.noShapekeys'), icon='ERROR')
             return
 
+        sec = draw_section(col, t('EyeTrackingPanel.shapeKeysSection'), 'SHAPEKEY_DATA')
+
         # Wink Left
-        row = col.row(align=True)
+        row = sec.row(align=True)
         row.scale_y = 1.1
         row.active = active
-        row.label(text=t('Scene.wink_left.label')+":")
-        row.prop_search(context.scene, "wink_left", mesh.data.shape_keys, "key_blocks", text="")
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.wink_left.label')+":")
+        split.prop_search(context.scene, "wink_left", mesh.data.shape_keys, "key_blocks", text="")
 
         # Wink Right  
-        row = col.row(align=True)
+        row = sec.row(align=True)
         row.scale_y = 1.1
         row.active = active
-        row.label(text=t('Scene.wink_right.label')+":")
-        row.prop_search(context.scene, "wink_right", mesh.data.shape_keys, "key_blocks", text="")
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.wink_right.label')+":")
+        split.prop_search(context.scene, "wink_right", mesh.data.shape_keys, "key_blocks", text="")
 
         # Lower Lid Left
-        row = col.row(align=True)
+        row = sec.row(align=True)
         row.scale_y = 1.1
         row.active = active
-        row.label(text=t('Scene.lowerlid_left.label')+":")
-        row.prop_search(context.scene, "lowerlid_left", mesh.data.shape_keys, "key_blocks", text="")
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.lowerlid_left.label')+":")
+        split.prop_search(context.scene, "lowerlid_left", mesh.data.shape_keys, "key_blocks", text="")
 
         # Lower Lid Right
-        row = col.row(align=True)
+        row = sec.row(align=True)
         row.scale_y = 1.1
         row.active = active
-        row.label(text=t('Scene.lowerlid_right.label')+":")
-        row.prop_search(context.scene, "lowerlid_right", mesh.data.shape_keys, "key_blocks", text="")
+        split = row.split(factor=0.35, align=True)
+        split.label(text=t('Scene.lowerlid_right.label')+":")
+        split.prop_search(context.scene, "lowerlid_right", mesh.data.shape_keys, "key_blocks", text="")
 
     def draw_options(self, context, col):
         col.separator()
-        row = col.row(align=True)
+        sec = draw_section(col, t('EyeTrackingPanel.optionsSection'), 'PREFERENCES')
+        row = sec.row(align=True)
         row.prop(context.scene, 'disable_eye_blinking')
 
-        row = col.row(align=True)
+        row = sec.row(align=True)
         row.prop(context.scene, 'disable_eye_movement')
 
         if not context.scene.disable_eye_movement:
-            col.separator()
-            row = col.row(align=True)
+            sec.separator(factor=0.5)
+            row = sec.row(align=True)
             row.prop(context.scene, 'eye_distance')
 
     def draw_creation_button(self, box):
@@ -437,15 +461,14 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         row.operator(Eyetracking.ResetEyeTrackingButton.bl_idname, icon='FILE_REFRESH')
 
         # Eye Movement Preview at bottom
-        preview_box = col.box()
-        preview_box.label(text="Eye Movement Preview:", icon='PREVIEW_RANGE')
+        preview_col = draw_section(col, t('EyeTrackingPanel.previewSection'), 'PREVIEW_RANGE')
         
-        row = preview_box.row(align=True)
-        row.prop(context.scene, "eye_rotation_x", text="Vertical Range")
-        row.prop(context.scene, "eye_rotation_y", text="Horizontal Range")
+        row = preview_col.row(align=True)
+        row.prop(context.scene, "eye_rotation_x", text=t('EyeTrackingPanel.verticalRange'))
+        row.prop(context.scene, "eye_rotation_y", text=t('EyeTrackingPanel.horizontalRange'))
         
         # Visual indicator for current eye rotation
-        indicator_row = preview_box.row()
+        indicator_row = preview_col.row()
         indicator_row.scale_y = 2.0
         indicator_row.alignment = 'CENTER'
         

@@ -1,0 +1,9 @@
+t2jp.json is an OpenCC conversion configuration (Traditional Chinese
+Kyūjitai to New Japanese Shinjitai). It is licensed under the Apache
+License, Version 2.0, and includes configuration data developed by
+[OpenCC](https://github.com/BYVoid/OpenCC).
+
+The OpenCC engine itself is provided by the opencc-python-reimplemented
+wheel declared in blender_manifest.toml; this configuration is loaded by
+absolute path because the upstream wheel ships the required JPVariants
+dictionary but not the t2jp configuration.

@@ -1,4 +1,4 @@
-# GPL License
+# MIT License
 
 import bpy
 from difflib import SequenceMatcher
@@ -29,20 +29,32 @@ class RootButton(bpy.types.Operator):
 
         # this is the bones that will be parented
         child_bones = globs.root_bones[context.scene.root_bone]
+        edit_bones = bpy.context.object.data.edit_bones
+
+        if any(name not in edit_bones for name in child_bones):
+            globs.root_bones_choices = {}
+            saved_data.load()
+            self.report({'ERROR'}, t('RootButton.error.stale'))
+            return {'CANCELLED'}
 
         # Create the new root bone
+        first_child = edit_bones[child_bones[0]]
+        parent = first_child.parent
         new_bone_name = 'Root_' + child_bones[0]
-        root_bone = bpy.context.object.data.edit_bones.new(new_bone_name)
-        root_bone.parent = bpy.context.object.data.edit_bones[child_bones[0]].parent
+        root_bone = edit_bones.new(new_bone_name)
+        root_bone.parent = parent
+
+        if parent is not None:
+            root_bone.head = parent.head
+            root_bone.tail = parent.tail
+        else:
+            root_bone.tail = first_child.head
+            root_bone.head = first_child.head - (first_child.tail - first_child.head)
 
         # Parent all children to the new root bone
         for child_bone in child_bones:
-            bpy.context.object.data.edit_bones[child_bone].use_connect = False
-            bpy.context.object.data.edit_bones[child_bone].parent = root_bone
-
-        # Set position of new bone to parent
-        root_bone.head = root_bone.parent.head
-        root_bone.tail = root_bone.parent.tail
+            edit_bones[child_bone].use_connect = False
+            edit_bones[child_bone].parent = root_bone
 
         # reset the root bone cache
         globs.root_bones_choices = {}
@@ -112,10 +124,13 @@ def get_parent_root_bones(self, context):
                 m = SequenceMatcher(None, rootbone.name, bone.name)
                 if m.ratio() >= 0.70:
                     accepted = False
-                    if bone.parent is not None:
-                        for child_bone in bone.parent.children:
-                            if child_bone.name == rootbone.name:
-                                accepted = True
+                    # Check if both bones have the same parent (are siblings)
+                    if bone.parent is not None and rootbone.parent is not None:
+                        if bone.parent.name == rootbone.parent.name:
+                            accepted = True
+                    elif bone.parent is None and rootbone.parent is None:
+                        # Both are root bones (no parent)
+                        accepted = True
 
                     check_these_bones.remove(bone.name)
                     if accepted:

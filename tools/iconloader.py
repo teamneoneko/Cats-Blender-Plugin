@@ -2,18 +2,12 @@
 
 import os
 import bpy
-import shutil
 import pathlib
 
 import bpy.utils.previews
 from bpy.utils.previews import ImagePreviewCollection
 import typing
 
-from . import common as Common
-from . import settings as Settings
-from .. import globs
-from ..tools.register import register_wrap
-from .translations import t
 
 # global variables
 preview_collections: typing.Type[ImagePreviewCollection] = {}

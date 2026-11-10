@@ -1,7 +1,6 @@
 # MIT License
 
 import os
-import traceback
 import bpy
 import copy
 import zipfile
@@ -21,21 +20,18 @@ from . import settings as Settings
 from ..tools import iconloader as Iconloader
 from .register import register_wrap
 from .translations import t
-from mmd_tools_local.utils import makePmxBoneMap
-from mmd_tools_local.core.vmd import importer as vmd_importer
-from mmd_tools_local.translations import DictionaryEnum
-from mmd_tools_local import auto_scene_setup
+from ..mmd_tools_local.translations import DictionaryEnum
 
 current_blender_version = str(bpy.app.version[:2])[1:-1].replace(', ', '.')
 
 mmd_tools_local_installed = False
 try:
-    import mmd_tools_local
+    from .. import mmd_tools_local  # noqa: F401 - imported to test availability
     mmd_tools_local_installed = True
-except:
+except ImportError:
     pass
 
-formats = '*.pmx;*.pmd;*.xps;*.mesh;*.ascii;*.smd;*.qc;*.qci;*.vta;*.dmx;*.fbx;*.dae;*.vrm;*.zip'
+formats = '*.pmx;*.pmd;*.xps;*.mesh;*.ascii;*.smd;*.qc;*.qci;*.vta;*.dmx;*.fbx;*.dae;*.vrm;*.gltf;*.glb;*.zip'
 format_list = formats.replace('*.', '').split(';')
 zip_files = {}
 
@@ -47,11 +43,11 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     bl_description = t('ImportAnyModel.desc2.8')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
-    files = bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'HIDDEN', 'SKIP_SAVE'})
-    directory = bpy.props.StringProperty(maxlen=1024, subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement, options={'HIDDEN', 'SKIP_SAVE'})
+    directory: bpy.props.StringProperty(maxlen=1024, subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
-    filter_glob = bpy.props.StringProperty(default=formats, options={'HIDDEN'})
-    text1 = bpy.props.BoolProperty(
+    filter_glob: bpy.props.StringProperty(default=formats, options={'HIDDEN'})
+    text1: bpy.props.BoolProperty(
         name=t('ImportAnyModel.importantInfo.label'),
         description=t('ImportAnyModel.importantInfo.desc'),
         default=False
@@ -186,6 +182,33 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             post_import_armature = post_import_armatures[0]
             for mesh in post_import_meshes:
                 mesh.parent = post_import_armature
+
+        # glTF / GLB (importer is bundled with Blender)
+        elif file_ending == 'gltf' or file_ending == 'glb':
+            if not addon_utils.check('io_scene_gltf2')[1]:
+                addon_utils.enable('io_scene_gltf2')
+
+            pre_import_armatures = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE']
+            pre_import_meshes = [obj for obj in bpy.data.objects if obj.type == 'MESH']
+
+            try:
+                bpy.ops.import_scene.gltf('EXEC_DEFAULT',
+                                          filepath=file_path)
+            except (TypeError, ValueError):
+                bpy.ops.import_scene.gltf('INVOKE_DEFAULT')
+                return
+
+            post_import_armatures = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE' and obj not in pre_import_armatures]
+            post_import_meshes = [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj not in pre_import_meshes]
+
+            if len(post_import_armatures) != 1:
+                return
+
+            # Parent any unparented imported meshes to the imported armature
+            post_import_armature = post_import_armatures[0]
+            for mesh in post_import_meshes:
+                if not mesh.parent:
+                    mesh.parent = post_import_armature
 
         # DAE
         elif file_ending == 'dae':
@@ -380,6 +403,7 @@ class ModelsPopup(bpy.types.Operator):
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(ImportVRM.bl_idname)
+        row.operator(ImportGLTF.bl_idname)
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(ImportMMDAnimation.bl_idname)
@@ -518,21 +542,15 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
             bpy.ops.mmd_tools_local.import_vmd(filepath=self.filepath,bone_mapper='RENAMED_BONES',use_underscore=True, dictionary='INTERNAL')
 
-            #create animation for original if there isn't one.
-            if armature.animation_data == None :
+            if armature.animation_data is None:
                 armature.animation_data_create()
-            if armature.animation_data.action == None:
-                armature.animation_data.action = bpy.data.actions.new("MMD Animation")
 
-
-            #create animation for new if there isn't one.
-            if new_armature.animation_data == None :
+            # The import should have produced an action on the proxy, fall back to
+            # an empty one so the assignment below never hits a None action.
+            if new_armature.animation_data is None:
                 new_armature.animation_data_create()
-            if new_armature.animation_data.action == None:
+            if new_armature.animation_data.action is None:
                 new_armature.animation_data.action = bpy.data.actions.new("EMPTY_SOURCE")
-
-            active_obj = new_armature
-            ad = armature.animation_data
 
             #iterate through bones and translate them back, therefore blender API will change the animation to be correct.
             reverse_bonedict = {v: k for k, v in bonedict.items()}
@@ -542,6 +560,10 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
             #assign animation back to original rig.
             armature.animation_data.action = new_armature.animation_data.action
+            if hasattr(new_armature.animation_data, 'action_slot'):
+                armature.animation_data.action_slot = new_armature.animation_data.action_slot
+
+            proxy_data = new_armature.data
 
             #make sure our new armature is selected
             Common.unselect_all()
@@ -551,6 +573,9 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
             #delete active object which is armature.
             bpy.ops.object.delete(use_global=True, confirm=False)
+
+            if proxy_data.users == 0:
+                bpy.data.armatures.remove(proxy_data)
             
         return {'FINISHED'}
 
@@ -630,6 +655,25 @@ class ImportVRM(bpy.types.Operator):
             bpy.ops.import_scene.vrm('INVOKE_DEFAULT')
         except AttributeError:
             bpy.ops.cats_importer.install_vrm('INVOKE_DEFAULT')
+
+        return {'FINISHED'}
+
+
+@register_wrap
+class ImportGLTF(bpy.types.Operator):
+    bl_idname = 'cats_importer.import_gltf'
+    bl_label = t('ImportGLTF.label')
+    bl_description = t('ImportGLTF.desc')
+    bl_options = {'INTERNAL'}
+
+    def execute(self, context):
+        Common.remove_unused_objects()
+
+        # Enable the glTF importer if it isn't enabled yet (bundled with Blender)
+        if not addon_utils.check('io_scene_gltf2')[1]:
+            addon_utils.enable('io_scene_gltf2')
+
+        bpy.ops.import_scene.gltf('INVOKE_DEFAULT')
 
         return {'FINISHED'}
 
@@ -781,10 +825,10 @@ class ExportGmodPlayermodel(bpy.types.Operator):
     bl_description = "Export as Gmod Playermodel Addon to your addons and make GMA beside Blender file. May not always work."
     bl_options = {'INTERNAL'}
 
-    steam_library_path = bpy.props.StringProperty(subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
-    gmod_model_name = bpy.props.StringProperty(default = "Missing No")
-    platform_name = bpy.props.StringProperty(default = "Garrys Mod")
-    armature_name = bpy.props.StringProperty(default = "")
+    steam_library_path: bpy.props.StringProperty(subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    gmod_model_name: bpy.props.StringProperty(default = "Missing No")
+    platform_name: bpy.props.StringProperty(default = "Garrys Mod")
+    armature_name: bpy.props.StringProperty(default = "")
 
     def execute(self, context):
         print("===============START GMOD EXPORT PROCESS===============")
@@ -818,7 +862,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         Common.unselect_all()
         print("testing if SMD tools exist.")
         try:
-            bpy.ops.import_scene.smd('EXEC_DEFAULT',files=[{'name': "barney_reference.smd"}], append = "NEW_ARMATURE",directory=os.path.dirname(os.path.abspath(__file__))+"/../extern_tools/valve_resources/")
+            bpy.ops.import_scene.smd('EXEC_DEFAULT',files=[{'name': "barney_reference.smd"}], append = "NEW_ARMATURE",directory=os.path.dirname(os.path.abspath(__file__))+"/../resources/valve_resources/")
         except AttributeError:
             bpy.ops.cats_importer.install_source('INVOKE_DEFAULT')
             return
@@ -838,11 +882,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             for collection in bpy.data.collections:
                 try:
                     collection.objects.unlink(newobj)
-                except:
+                except RuntimeError:
                     pass
             try:
                 bpy.context.collection.objects.unlink(newobj)
-            except:
+            except RuntimeError:
                 pass
             barneycollection.objects.link(newobj)
         bpy.context.collection.children.link(barneycollection)
@@ -863,21 +907,21 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             for collection in bpy.data.collections:
                 try:
                     collection.objects.unlink(obj)
-                except:
+                except RuntimeError:
                     pass
             try:
                 bpy.context.collection.objects.unlink(obj)
-            except:
+            except RuntimeError:
                 pass
             refcoll.objects.link(obj)
         for collection in bpy.data.collections:
             try:
                 collection.objects.unlink(armature)
-            except:
+            except RuntimeError:
                 pass
         try:
             bpy.context.collection.objects.unlink(armature)
-        except:
+        except RuntimeError:
             pass
         refcoll.objects.link(armature)
         bpy.context.collection.children.link(refcoll)
@@ -961,7 +1005,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
 
         print("grabbing barney armature")
         barney_armature = None
-        barney_mesh = None
         barneycollection = bpy.data.collections.get("barney_collection")
         assert(barneycollection is not None)
         assert(len(barneycollection.objects) > 0)
@@ -989,7 +1032,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         print("positioning bones for barney armature at your armature's bones PLEASE HAVE A PELVIS BONE")
         barney_pose_bone_names = [j.name for j in children_bone_recursive(barney_armature.pose.bones["ValveBiped.Bip01_Pelvis"])] #bones are default in order of parent child.
 
-        armature_matrixes = dict()
         barney_armature_name = barney_armature.name
         body_armature_name = body_armature.name
         for barney_bone_name in barney_pose_bone_names:
@@ -1008,7 +1050,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 newmatrix = Matrix.Translation((editbone.matrix[0][3],editbone.matrix[1][3],editbone.matrix[2][3]))
                 bone.matrix = newmatrix
                 bone.rotation_euler = (0,0,0)
-            except:
+            except (KeyError, RuntimeError):
                 Common.switch('OBJECT')
 
         print("applying barney pose as rest pose")
@@ -1035,11 +1077,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         for collection in bpy.data.collections:
             try:
                 collection.objects.unlink(bpy.data.objects[body_armature_name])
-            except:
+            except RuntimeError:
                 pass
         try:
             bpy.context.collection.objects.unlink(bpy.data.objects[body_armature_name])
-        except:
+        except RuntimeError:
             pass
         refcoll.objects.link(bpy.data.objects[body_armature_name])
 
@@ -1057,11 +1099,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         for obj in context.selected_objects:
             try:
                 refcoll.objects.unlink(obj)
-            except:
+            except RuntimeError:
                 pass
             try:
                 bpy.context.collection.objects.unlink(obj)
-            except:
+            except RuntimeError:
                 pass
             physcoll.objects.link(obj)
 
@@ -1078,11 +1120,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         for obj in context.selected_objects:
             try:
                 refcoll.objects.unlink(obj)
-            except:
+            except RuntimeError:
                 pass
             try:
                 bpy.context.collection.objects.unlink(obj)
-            except:
+            except RuntimeError:
                 pass
             armcoll.objects.link(obj)
 
@@ -1179,7 +1221,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                                 obj.vertex_groups.active_index = index
                                 bpy.ops.object.vertex_group_select()
                                 break
-                    except:
+                    except (RuntimeError, KeyError):
                         print("failed to find vertex group "+bone+" On phys obj. Skipping.")
                         continue
                     #duplicate and make convex hull then separate
@@ -1288,7 +1330,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                             obj.vertex_groups.active_index = index
                             bpy.ops.object.vertex_group_select()
                             break
-                except:
+                except (RuntimeError, KeyError):
                     print("failed to find vertex group "+bone+" On arms. Skipping.")
                     continue
             bpy.ops.mesh.delete(type='VERT')
@@ -1614,7 +1656,7 @@ $sequence \"proportions\"{
             Common.set_active(body_armature)
             try:
                 body_armature.animation_data_create()
-            except:
+            except RuntimeError:
                 pass
             body_armature.animation_data.action = bpy.data.actions["idle"]
         else:
@@ -1622,7 +1664,7 @@ $sequence \"proportions\"{
             Common.set_active(body_armature)
             try:
                 body_armature.animation_data_create()
-            except:
+            except RuntimeError:
                 pass
             body_armature.animation_data.action = bpy.data.actions.new(name="idle")
 
@@ -1674,7 +1716,7 @@ $sequence \"proportions\"{
         Common.unselect_all()
         Common.set_active(body_armature)
 
-        bpy.ops.import_scene.smd('EXEC_DEFAULT',files=[{'name': "reference.smd"}], append = "APPEND",directory=os.path.dirname(os.path.abspath(__file__))+"/../extern_tools/valve_resources/")
+        bpy.ops.import_scene.smd('EXEC_DEFAULT',files=[{'name': "reference.smd"}], append = "APPEND",directory=os.path.dirname(os.path.abspath(__file__))+"/../resources/valve_resources/")
 
         for barney_bone_name in barney_pose_bone_names:
             bone = body_armature.pose.bones.get(barney_bone_name)
@@ -1807,7 +1849,7 @@ player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sa
             Common.set_active(body_armature)
             try:
                 body_armature.animation_data_create()
-            except:
+            except RuntimeError:
                 pass
             body_armature.animation_data.action = bpy.data.actions["idle_arms"]
         else:
@@ -1815,7 +1857,7 @@ player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sa
             Common.set_active(body_armature)
             try:
                 body_armature.animation_data_create()
-            except:
+            except RuntimeError:
                 pass
             body_armature.animation_data.action = bpy.data.actions.new(name="idle_arms")
 
@@ -2008,11 +2050,11 @@ class ExportModel(bpy.types.Operator):
     bl_description = t('ExportModel.desc')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
-    action = bpy.props.EnumProperty(
+    action: bpy.props.EnumProperty(
         items=(('CHECK', '', 'Please Ignore'),
                ('NO_CHECK', '', 'Please Ignore')))
 
-    filepath = bpy.props.StringProperty()
+    filepath: bpy.props.StringProperty()
 
     def execute(self, context):
         meshes = Common.get_meshes_objects_for_export()
@@ -2181,10 +2223,10 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             
             # Call the MMD Tools VMD importer directly with the file we selected
             # and the parameters we set in the UI
-            from mmd_tools_local.core.vmd import importer as vmd_importer
-            from mmd_tools_local import auto_scene_setup
-            from mmd_tools_local.utils import makePmxBoneMap
-            from mmd_tools_local.translations import DictionaryEnum
+            from ..mmd_tools_local.core.vmd import importer as vmd_importer
+            from ..mmd_tools_local import auto_scene_setup
+            from ..mmd_tools_local.utils import makePmxBoneMap
+            from ..mmd_tools_local.translations import DictionaryEnum
             
             bone_mapper = None
             if self.bone_mapper == "PMX":
@@ -2223,7 +2265,7 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             return {'CANCELLED'}
 
 
-#donated to cats unofficial by @989onan - comment by @989onan
+#donated to cats unofficial by @989onan - comment by @989onan (Thanks for the "donation" but this was broken @yusarina)
 @register_wrap
 class Cats_OT_ExportResonite(bpy.types.Operator):
     bl_idname = 'cats_importer.export_resonite'
@@ -2240,24 +2282,23 @@ class Cats_OT_ExportResonite(bpy.types.Operator):
         return False
 
     def execute(self, context: bpy.types.Context):
-        if bpy.app.version[0] < 4:
-            bpy.ops.export_scene.gltf('INVOKE_AREA',
-                export_image_format = 'JPEG',
-                export_jpeg_quality = 75,
-                export_materials = 'EXPORT',
-                export_animations = True,
-                export_animation_mode = 'ACTIONS',
-                export_nla_strips_merged_animation_name = 'Animation',
-                export_nla_strips = True)            
-        else:
-            bpy.ops.export_scene.gltf('INVOKE_AREA',
-                export_image_format = 'WEBP',
-                export_image_quality = 75,
-                export_materials = 'EXPORT',
-                export_animations = True,
-                export_animation_mode = 'ACTIONS',
-                export_nla_strips_merged_animation_name = 'Animation',
-                export_nla_strips = True)
+        # Select only the avatar (armature + its meshes) so the export doesn't drag in lights,
+        # cameras or other stray scene objects.
+        armature = Common.get_armature()
+        Common.unselect_all()
+        for mesh in Common.get_meshes_objects_for_export():
+            Common.select(mesh)
+        if armature:
+            Common.select(armature)
+            Common.set_active(armature)
+        bpy.ops.export_scene.gltf('INVOKE_AREA',
+            export_format = 'GLB',
+            use_selection = True,
+            export_apply = True,
+            export_image_format = 'AUTO',
+            export_image_quality = 75,
+            export_materials = 'EXPORT',
+            export_animations = False)
         return {'FINISHED'}
 
 

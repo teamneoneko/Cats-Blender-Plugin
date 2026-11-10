@@ -4,43 +4,31 @@ import re
 import bpy
 import time
 import bmesh
+import fnmatch
 import numpy as np
 
 from bpy.types import (
-    Key,
     ShapeKey,
-    AnimData,
-    Context,
     Object,
-    Mesh,
-    Node,
-    NodeLink,
     ShaderNodeTexImage,
     ShaderNodeGroup,
 )
 
-from math import degrees
 from mathutils import Vector
-from datetime import datetime
 from html.parser import HTMLParser
-from functools import lru_cache
 from html.entities import name2codepoint
-from typing import Optional, Set, Dict, Any
+from typing import Optional, Any
 
 from . import common as Common
 from . import iconloader as Iconloader
 from . import translate as Translate
 from . import armature_bones as Bones
-from . import settings as Settings
+from . import colorspace as Colorspace
 from .register import register_wrap
 from .translations import t
 from sys import intern
 
-from mmd_tools_local import utils
-
-def version_3_6_or_older():
-    return bpy.app.version < (3, 7)
-
+from ..mmd_tools_local import utils
 
 def get_objects():
     return bpy.context.view_layer.objects
@@ -74,12 +62,105 @@ def get_enum_property_value(property_holder, property_name, items_func=None):
                 items = items_func(property_holder, bpy.context)
                 if items and 0 <= value < len(items):
                     return items[value][0]  # Return the identifier
-            except:
+            except (IndexError, KeyError, TypeError, AttributeError):
                 pass
-        
+
         return str(value) if value is not None else ''
-    except:
+    except Exception as e:
+        print(f'CATS get_enum_property_value failed: {e}')
         return ''
+
+
+def get_protected_bone_patterns():
+    """Return the user's protected bone patterns as a list of lowercase glob patterns."""
+    raw = getattr(bpy.context.scene, 'protected_bones', '') or ''
+    return [pattern.strip().lower() for pattern in raw.split(',') if pattern.strip()]
+
+
+def is_protected_bone(bone_name, patterns=None):
+    """True if bone_name matches any user-defined protect pattern (case-insensitive glob)."""
+    if patterns is None:
+        patterns = get_protected_bone_patterns()
+    if not patterns:
+        return False
+    name = bone_name.lower()
+    return any(fnmatch.fnmatchcase(name, pattern) for pattern in patterns)
+
+
+# Bones that only exist on a Rigify metarig's face rig; a quick tell for an
+# ungenerated metarig that doesn't have the DEF-/MCH-/ORG- deform bones yet.
+_RIGIFY_FACE_BONES = {'brow.B.L', 'lip.B.R', 'lip.T.R', 'lip.B.L', 'lip.T.L'}
+
+
+def is_rigify_armature(armature):
+    """True if the armature looks like a Rigify or Metarig rig."""
+    if not armature or getattr(armature, 'type', None) != 'ARMATURE' or not armature.data:
+        return False
+    if armature.name.lower() == 'metarig':
+        return True
+
+    bones = armature.data.bones
+    # Generated Rigify rig always has the deform spine.
+    if 'DEF-spine' in bones:
+        return True
+    # Rigify deform/mechanism/original bones, or the metarig face rig.
+    for bone in bones:
+        if bone.name.startswith(('DEF-', 'MCH-', 'ORG-')) or bone.name in _RIGIFY_FACE_BONES:
+            return True
+    # Ungenerated metarig: a plain 'spine' chain plus a metarig-ish name.
+    if 'spine' in bones and 'metarig' in armature.name.lower():
+        return True
+    return False
+
+
+# Custom property used to track a bone's identity across renames so the change
+BONE_ORIG_NAME_KEY = 'cats_orig_name'
+
+
+def snapshot_bone_identities(armature):
+    """Tag every bone with its current name so renames can be tracked later.
+    """
+    if not armature or not armature.data:
+        return set()
+    names = set()
+    for bone in armature.data.bones:
+        bone[BONE_ORIG_NAME_KEY] = bone.name
+        names.add(bone.name)
+    return names
+
+
+def build_bone_change_report(armature, snapshot_names):
+    """Diff current bone names against the snapshot taken by snapshot_bone_identities."""
+    report = {'renamed': [], 'removed': []}
+    if not armature or not armature.data:
+        return report
+
+    seen_originals = set()
+    for bone in armature.data.bones:
+        original = bone.get(BONE_ORIG_NAME_KEY)
+        if original is None:
+            continue
+        seen_originals.add(original)
+        if original != bone.name:
+            report['renamed'].append((original, bone.name))
+
+    # Anything present before the fix that no longer carries its tag was deleted.
+    for original in snapshot_names:
+        if original not in seen_originals:
+            report['removed'].append(original)
+
+    report['renamed'].sort()
+    report['removed'].sort()
+    return report
+
+
+def clear_bone_identity_snapshot(armature):
+    """Remove the tracking custom property so it never reaches an export."""
+    if not armature or not armature.data:
+        return
+    for bone in armature.data.bones:
+        if BONE_ORIG_NAME_KEY in bone:
+            del bone[BONE_ORIG_NAME_KEY]
 
 
 class SavedData:
@@ -124,11 +205,11 @@ class SavedData:
 
             mode, selected, hidden, pose = values
             # print(obj_name, mode, selected, hidden)
-            print(obj_name, pose)
 
-            if load_mode and obj.mode != mode:
-                set_active(obj, skip_sel=True)
-                switch(mode, check_mode=False)
+            if load_mode:
+                if obj.mode != mode:
+                    set_active(obj, skip_sel=True)
+                    switch(mode, check_mode=False)
                 if pose:
                     obj.data.pose_position = pose
 
@@ -196,7 +277,10 @@ def get_top_parent(child):
 
 
 def unhide_all_unnecessary():
-    # TODO: Documentation? What does "unnecessary" mean?
+    # Clears view-layer/collection-level hide state (the eye-icon viewport hide and collection hide/select-lock
+    # flags) rather than each object's own hide state. These are "unnecessary" in the sense that they're
+    # incidental UI hides that aren't meaningful to Cats' own hide tracking, as opposed to an object's actual
+    # hide_get()/hide_render state, which unhide_all() below clears separately via hide(obj, False).
     try:
         switch('OBJECT')
         bpy.ops.object.hide_view_clear()
@@ -301,6 +385,12 @@ def switch(new_mode, check_mode=True):
         bpy.ops.object.mode_set(mode=new_mode, toggle=False)
 
 
+def is_rigidbody_or_joint(obj):
+    """True if the object is an MMD rigidbody or joint group."""
+    name = obj.name.lower()
+    return 'rigidbodies' in name or 'joints' in name
+
+
 def remove_rigidbodies_global():
 
     if bpy.context.scene.remove_rigidbodies_joints_global:
@@ -345,10 +435,6 @@ def set_default_stage():
 
 
 def apply_modifier(mod, as_shapekey=False):
-    if bpy.app.version < (2, 90):
-        bpy.ops.object.modifier_apply(apply_as='SHAPE' if as_shapekey else 'DATA', modifier=mod.name)
-        return
-
     if as_shapekey:
         bpy.ops.object.modifier_apply_as_shapekey(keep_modifier=False, modifier=mod.name)
     else:
@@ -433,7 +519,8 @@ def vertex_group_exists(mesh_name, bone_name):
         try:
             mesh.vertex_groups[bone_name].weight(i)
             return True
-        except:
+        except (RuntimeError, KeyError):
+            # RuntimeError: this vertex isn't in the group; KeyError: the group name doesn't exist
             pass
 
     return False
@@ -515,12 +602,12 @@ def validate_armature_selection():
                 def fix_armature_selection():
                     try:
                         bpy.context.scene.armature = new_armature
-                    except:
+                    except (AttributeError, TypeError):
                         pass
                     return None  # Don't repeat
                 bpy.app.timers.register(fix_armature_selection)
-    except:
-        pass
+    except Exception as e:
+        print(f'CATS validate_armature_selection failed: {e}')
 
 
 def update_armature_selection(self, context):
@@ -530,8 +617,8 @@ def update_armature_selection(self, context):
         validate_armature_selection()
         # Then update the material list
         update_material_list(self, context)
-    except:
-        pass
+    except Exception as e:
+        print(f'CATS update_armature_selection failed: {e}')
 
 
 def get_armature_merge_list(self, context):
@@ -799,7 +886,6 @@ def get_meshes_objects(armature_name=None, mode=0, check=True, visible_only=Fals
     return meshes
 
 def get_meshes_objects_for_export(armature_name=None, mode=0, check=True):
-    context = bpy.context
     if not armature_name:
         armature = get_armature()
         if armature:
@@ -874,24 +960,26 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
             mesh.data.uv_layers[0].name = 'UVMap'
             
 
-    # Get the name of the active mesh in order to check if it was deleted later
+    # Get the name of the active mesh in order to check if it was deleted later.
+    # The joined objects are freed by the join, so remember them by name now.
     active_mesh_name = context.view_layer.objects.active.name
+    joined_mesh_names = {mesh.name for mesh in meshes_to_join}
 
     # Join the meshes
     if bpy.ops.object.join.poll():
         bpy.ops.object.join()
     else:
         print('NO MESH COMBINED!')
-    
+
     # In Blender 5.0 we need to refresh the context after operations
     context = bpy.context
-    
+
 
     # Delete meshes that somehow weren't deleted. Both pre and post join mesh deletion methods are needed!
     for mesh in get_meshes_objects(armature_name=armature_name):
         if mesh.name == active_mesh_name:
             set_active(mesh)
-        elif mesh.name in meshes_to_join:
+        elif mesh.name in joined_mesh_names:
             delete(mesh)
             print('DELETED', mesh.name, mesh.users)
 
@@ -917,14 +1005,17 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
 def repair_mesh(mesh, armature_name):
     mesh.parent_type = 'OBJECT'
 
-    # Remove duplicate armature modifiers
+    # Remove duplicate armature modifiers.
+    # Iterate over a snapshot (list()) so removing a modifier doesn't disturb the loop, and use the
+    # data API so we always edit THIS mesh's modifiers regardless of the current active object -
+    # bpy.ops.object.modifier_remove would operate on the active object, which repair_mesh never sets.
     mod_count = 0
-    for mod in mesh.modifiers:
+    for mod in list(mesh.modifiers):
         mod.show_expanded = False
         if mod.type == 'ARMATURE':
             mod_count += 1
             if mod_count > 1:
-                bpy.ops.object.modifier_remove(modifier=mod.name)
+                mesh.modifiers.remove(mod)
                 continue
             mod.object = get_armature(armature_name=armature_name)
             mod.show_viewport = True
@@ -1104,10 +1195,10 @@ def prepare_separation(mesh):
 def clean_shapekeys(mesh):
     # Remove empty shapekeys
     if has_shapekeys(mesh):
-        for kb in mesh.data.shape_keys.key_blocks:
+        for kb in list(mesh.data.shape_keys.key_blocks):
             if can_remove_shapekey(kb):
                 mesh.shape_key_remove(kb)
-        if len(mesh.data.shape_keys.key_blocks) == 1:
+        if has_shapekeys(mesh) and len(mesh.data.shape_keys.key_blocks) == 1:
             mesh.shape_key_remove(mesh.data.shape_keys.key_blocks[0])
 
 
@@ -1215,7 +1306,9 @@ def repair_shapekey_order(mesh_name, armature_name=None):
 
 
 
-def update_shapekey_orders():
+def update_shapekey_orders(picked_author_names=None):
+    """Translate the saved shape key order the same way the keys themselves get translated."""
+    picked_author_names = picked_author_names or {}
     for armature in get_armature_objects():
         shape_key_order_translated = []
 
@@ -1235,7 +1328,9 @@ def update_shapekey_orders():
 
         # Get shape keys and translate them
         for shape_name in order:
-            shape_key_order_translated.append(Translate.translate(shape_name, add_space=True, translating_shapes=True)[0])
+            shape_key_order_translated.append(
+                Translate.resolve_name(shape_name, picked_author_names.get(shape_name),
+                                       add_space=True, translating_shapes=True)[0])
 
         # print(armature.name, shape_key_order_translated)
         custom_data['shape_key_order'] = shape_key_order_translated
@@ -1412,9 +1507,14 @@ def delete_zero_weight(armature_name=None, ignore=''):
     keep_twists = bpy.context.scene.delete_zero_weight_keep_twists
     keep_empty_parents = bpy.context.scene.delete_zero_weight_keep_empty_parents
     skip_hidden_bones = bpy.context.scene.delete_zero_weight_skip_hidden_bones
+    protected_patterns = get_protected_bone_patterns()
 
     for bone_name in not_used_bone_names:
         bone = bone_name_to_edit_bone[bone_name]
+
+        # Never touch bones the user marked as protected
+        if is_protected_bone(bone_name, protected_patterns):
+            continue
 
         if skip_hidden_bones and bone.hide:
             continue
@@ -1618,13 +1718,10 @@ class ShowError(bpy.types.Operator):
                     row.label(text=line, icon_value=Iconloader.preview_collections["custom_icons"]["empty"].icon_id)
 
 
-def has_shapekeys(mesh_obj: Object) -> bool:
-    return mesh_obj.data.shape_keys is not None
-
-
-@lru_cache(maxsize=None)
 def _get_shape_key_co(shape_key: ShapeKey) -> np.ndarray:
-    return np.array([v.co for v in shape_key.data])
+    co = np.empty(len(shape_key.data) * 3, dtype=np.float32)
+    shape_key.data.foreach_get('co', co)
+    return co
 
 
 def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True) -> int:
@@ -1634,21 +1731,29 @@ def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True)
     mesh = mesh_obj.data
 
     if not has_shapekeys(mesh_obj) or len(mesh.shape_keys.key_blocks) == 1:
-        return 0
+        save_shapes = False
 
     pre_polygons = len(mesh.polygons)
 
     if save_shapes:
         vertex_selection = np.full(len(mesh.vertices), True, dtype=bool)
-        cached_co_getter = lru_cache(maxsize=None)(_get_shape_key_co)
+        # Cache per call only, so coordinates are never reused after the shape keys change
+        co_cache = {}
+
+        def get_co(key_block):
+            co = co_cache.get(key_block.name)
+            if co is None:
+                co = co_cache[key_block.name] = _get_shape_key_co(key_block)
+            return co
+
         for kb in mesh.shape_keys.key_blocks[1:]:
             relative_key = kb.relative_key
             if kb == relative_key:
                 continue
-            same = cached_co_getter(kb) == cached_co_getter(relative_key)
+            same = get_co(kb) == get_co(relative_key)
             vertex_not_moved_by_shape_key = np.all(same.reshape(-1, 3), axis=1)
             vertex_selection &= vertex_not_moved_by_shape_key
-        del cached_co_getter
+        del co_cache
 
         if not vertex_selection.any():
             return 0
@@ -1660,11 +1765,9 @@ def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True)
             bpy.ops.object.mode_set(mode='EDIT')
             verts = list(bmesh.from_edit_mesh(mesh).verts)
             for v in verts:
-                v.select = vertex_selection[v.index]
+                v.select = bool(vertex_selection[v.index])
             bpy.ops.object.mode_set(mode='OBJECT')
             bpy.context.view_layer.update()
-    else:
-        bmesh.ops.select_all(bm, action='DESELECT')
 
     bm = bmesh.new()
     bm.from_mesh(mesh)
@@ -1673,20 +1776,11 @@ def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True)
     else:
         verts = bm.verts
 
-    total_verts = len(verts)
-    progress_steps = 100
-    progress_step_size = total_verts // progress_steps
-    progress = 0
-
     bmesh.ops.remove_doubles(bm, verts=verts, dist=threshold)
 
-    while progress < total_verts:
-        bm.select_flush(True)
-        bpy.context.view_layer.update()
-        bpy.context.window_manager.progress_update(progress / total_verts)
-        progress += progress_step_size
-
     bm.to_mesh(mesh)
+    bm.free()
+    mesh.update()
 
     return pre_polygons - len(mesh.polygons)
 
@@ -1721,9 +1815,9 @@ def mix_weights(mesh, vg_from, vg_to, mix_strength=1.0, mix_mode='ADD', mix_set=
     mod.mix_set = mix_set  # Use 'ALL' to include all vertices
     mod.mask_constant = mix_strength  # Strength of the mix
     # Apply the modifier to the mesh
-    # Depending on your Blender version, you may need to adjust how the modifier is applied.
     if bpy.ops.object.modifier_apply.poll():
         mesh.modifiers.active = mod
+        bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=0)
         bpy.ops.object.modifier_apply(modifier=mod.name)
     # Optionally remove the source vertex group
     if delete_old_vg:
@@ -1801,9 +1895,32 @@ def update_material_list(self=None, context=None):
         print('Material Combiner not found')
 
 
+def _linear_to_srgb_encoded(linear_color):
+    """Convert a linear RGB numpy array to the sRGB-encoded values that would be stored in the pixels of an
+    image marked as sRGB colorspace. This is color_scene_linear_to_srgb from node_color.h in the Blender source
+    code, rewritten for Python and numpy.
+
+    Given: sRGB(pixels) * color == sRGB(baked_pixels)
+    We can treat it as:
+      pixels**2.4 * color == baked_pixels**2.4
+    to get:
+      pixels * color**1/2.4 == baked_pixels
+    giving us both the input and output image pixels in linear colorspace."""
+    encoded_color = linear_color.copy()
+    is_small_mask = encoded_color < 0.0031308
+    small_rgb = encoded_color[is_small_mask]
+    # 0 if less than 0, otherwise multiply by 12.92
+    encoded_color[is_small_mask] = np.where(small_rgb < 0.0, 0, small_rgb * 12.92)
+
+    is_large_mask = np.invert(is_small_mask)
+    large_rgb = encoded_color[is_large_mask]
+    encoded_color[is_large_mask] = (large_rgb ** (1.0 / 2.4)) * 1.055 - 0.055
+    return encoded_color
+
+
 def bake_mmd_colors(node_base_tex: ShaderNodeTexImage, node_mmd_shader: ShaderNodeGroup):
-    """Bake the mmd ambient color and diffuse color into the base tex or return the combined color if there is no base
-    tex. This process follows the same steps that the mmd_shader group node follows."""
+    """Bake the mmd ambient color and diffuse color into the base tex or into a small solid-colour image if there is
+    no base tex. This process follows the same steps that the mmd_shader group node follows."""
     # Input names used by mmd_shader group node from the mmd_tools_local addon
     ambient_color_input_name = "Ambient Color"
     diffuse_color_input_name = "Diffuse Color"
@@ -1834,14 +1951,33 @@ def bake_mmd_colors(node_base_tex: ShaderNodeTexImage, node_mmd_shader: ShaderNo
     # This is the first step done inside the mmd_shader group node
     mmd_color = np.clip(ambient_color + diffuse_color * 0.6, 0, 1)
 
-    # TODO: Create a 4x4 image of the colour instead to avoid issues where Blender colours are linear, but Unity colours
-    #  could be linear or could be sRGB depending on the settings used and the shaders used.
-    # If there's no image, we'll use a color instead
+    # If there's no image, bake the color into a small solid-colour image instead of returning a flat color to be
+    # used as the Base Color input's default_value directly. A default_value is always linear and unambiguous
+    # inside Blender, but once exported to FBX, Unity can interpret a flat material color property as either
+    # linear or sRGB depending on its color space project settings, so the same avatar can look different in
+    # Unity than it did in Blender. An actual image is interpreted consistently by Unity's texture import
+    # (as sRGB color data), which avoids that ambiguity.
     if not node_base_tex or not node_base_tex.image:
+        srgb_color = _linear_to_srgb_encoded(mmd_color)
         # Add alpha of 1 to the color to make it into RGBA because colors in shader nodes are RGBA, despite only RGB
         # being used.
-        principled_base_color = np.append(mmd_color, 1)
-        return None, principled_base_color
+        pixel = np.append(srgb_color, 1)
+
+        baked_image = bpy.data.images.new(node_mmd_shader.name + "MMDCatsBakedColor", width=4, height=4, alpha=True)
+        Colorspace.set_role(baked_image, Colorspace.COLOR)
+        baked_image.pixels.foreach_set(np.tile(pixel, baked_image.size[0] * baked_image.size[1]))
+        if bpy.data.is_saved:
+            baked_image.filepath = bpy.path.abspath("//" + baked_image.name + ".png")
+            baked_image.file_format = 'PNG'
+            baked_image.save()
+
+        # There was no existing image texture node to reuse, so create one for the caller to link in.
+        node_tree = node_mmd_shader.id_data
+        baked_tex_node = node_tree.nodes.new(type="ShaderNodeTexImage")
+        baked_tex_node.label = "Cats Baked MMD Color"
+        baked_tex_node.image = baked_image
+        baked_tex_node.location = (node_mmd_shader.location[0] - 300, node_mmd_shader.location[1])
+        return baked_tex_node, None
     else:
         # Multiply the base_tex by the combined diffuse and ambient color.
         base_tex_image = node_base_tex.image
@@ -1853,7 +1989,7 @@ def bake_mmd_colors(node_base_tex: ShaderNodeTexImage, node_mmd_shader: ShaderNo
         # There are other non-linear colorspaces, but they are more complicated and there are no clear conversions
         # because it looks like Blender uses OCIO for them. Typically, only linear colorspaces and sRGB are used, so we
         # are ignoring the other colorspaces for now.
-        if base_tex_image.colorspace_settings.name == 'sRGB':
+        if Colorspace.is_srgb(base_tex_image):
             # In shader nodes, the linear base_color would be multiplied by the sRGB image pixels, but we can only read
             # and write image pixels in scene linear colorspace.
             #
@@ -1862,24 +1998,8 @@ def bake_mmd_colors(node_base_tex: ShaderNodeTexImage, node_mmd_shader: ShaderNo
             # The conversion from linear to sRGB is then cancelled out by being viewed in sRGB colorspace.
             #
             # Alternatively, you can look at it mathematically, since to convert linear pixels to how they would appear
-            # if viewed in sRGB colorspace, the conversion is pretty close to RGB**2.4:
-            # Given: sRGB(pixels) * color == sRGB(baked_pixels)
-            # We can treat it as:
-            #   pixels**2.4 * color == baked_pixels**2.4
-            # to get:
-            #   pixels * color**1/2.4 == baked_pixels
-            # giving us both the input and output image pixels in linear colorspace
-            # The following is color_scene_linear_to_srgb from node_color.h in the Blender source code, rewritten for
-            # Python and numpy
-            is_small_mask = mmd_color < 0.0031308
-            small_rgb = mmd_color[is_small_mask]
-            # 0 if less than 0, otherwise multiply by 12.92
-            mmd_color[is_small_mask] = np.where(small_rgb < 0.0, 0, small_rgb * 12.92)
-
-            # Invert is_small_mask in-place, new variable name for clarity
-            is_large_mask = np.invert(is_small_mask, out=is_small_mask)
-            large_rgb = mmd_color[is_large_mask]
-            mmd_color[is_large_mask] = (large_rgb ** (1.0 / 2.4)) * 1.055 - 0.055
+            # if viewed in sRGB colorspace, the conversion is pretty close to RGB**2.4.
+            mmd_color = _linear_to_srgb_encoded(mmd_color)
 
         # Read the image pixels into a numpy array
         pixels = np.empty(np.prod(base_tex_image.size) * 4, dtype=np.single)
@@ -1902,20 +2022,10 @@ def bake_mmd_colors(node_base_tex: ShaderNodeTexImage, node_mmd_shader: ShaderNo
         # Set the colorspace to match the original image
         baked_image.colorspace_settings.name = base_tex_image.colorspace_settings.name
         # Replace the existing image in the node with the new, baked image
-
-        expected_len = baked_image.size[0] * baked_image.size[1] * 4
-
-        pixels = np.empty(np.prod(base_tex_image.size) * 4, dtype=np.single)
-        base_tex_image.pixels.foreach_get(pixels)
-
-        # Resize pixels to expected length
-        pixels.resize(expected_len) 
-
-        print(f"Pixels length: {len(pixels)}, Expected: {expected_len}")
         node_base_tex.image = baked_image
 
-        # Write the image pixels to the image
-        baked_image.pixels.foreach_set(pixels)
+        # Write the already-baked (colour-multiplied) pixels to the new image
+        baked_image.pixels.foreach_set(pixels.reshape(-1))
         # Save the image to file if possible
         if bpy.data.is_saved:
             node_base_tex.image.save()
@@ -2144,7 +2254,7 @@ def html_to_text(html):
     try:
         parser.feed(html)
         parser.close()
-    except:  # HTMLParseError: No good replacement?
+    except Exception:  # HTMLParser can raise assorted parse errors; fall back to whatever was parsed
         pass
     return parser.get_text()
 
@@ -2279,7 +2389,11 @@ def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_na
 
     # Getting property_holder.property_name isn't possible since it will cause infinite recursion, but we can get the
     # raw stored value without issue
-    current_choice_value = property_holder.get(property_name)
+    if hasattr(property_holder, 'bl_system_properties_get'):
+        sys_props = property_holder.bl_system_properties_get()
+        current_choice_value = sys_props.get(property_name) if sys_props is not None else None
+    else:
+        current_choice_value = property_holder.get(property_name)
     # If the property is not yet initialised, it should get set to a valid index automatically, so we only care
     # if it has already been initialised
     is_initialised = current_choice_value is not None
@@ -2366,11 +2480,11 @@ def _schedule_enum_fix(property_holder, scene, property_name, property_path, new
                 # Use path_resolve to handle nested properties correctly
                 prop = scene_by_name.path_resolve(property_path, False)
                 setattr(prop.data, property_name, new_value)
-            except:
+            except (ValueError, AttributeError, TypeError):
                 # If path resolution fails, try direct setattr as fallback
                 try:
                     setattr(scene_by_name, property_name, new_value)
-                except:
+                except (AttributeError, TypeError):
                     pass
         scheduled_property_set.discard(property_path)
         return None  # Return None to not repeat the timer
@@ -2389,6 +2503,10 @@ def is_enum_non_empty(string):
 
     Returns True in all other cases."""
     return _empty_enum_identifier != string
+
+
+def enum_display_text(value, fallback):
+    return value if value and is_enum_non_empty(value) else fallback
 
 
 # Recursion guard: tracks which enum properties are currently being evaluated to prevent infinite recursion.
@@ -2447,38 +2565,19 @@ def wrap_dynamic_enum_items(items_func, property_name, sort=True, in_place=True,
 
     return wrapped_items_func
     
-if bpy.app.version >= (3, 2):
-    # Passing in context_override as a positional-only argument is deprecated as of Blender 3.2, replaced with
-    # Context.temp_override
-    def op_override(operator, context_override: dict[str, Any], context: Optional[bpy.types.Context] = None,
-                    execution_context: Optional[str] = None,
-                    undo: Optional[bool] = None, **operator_args) -> set[str]:
-        """Call an operator with a context override"""
-        args = []
-        if execution_context is not None:
-            args.append(execution_context)
-        if undo is not None:
-            args.append(undo)
+def op_override(operator, context_override: dict[str, Any], context: Optional[bpy.types.Context] = None,
+                execution_context: Optional[str] = None,
+                undo: Optional[bool] = None, **operator_args) -> set[str]:
+    """Call an operator with a context override"""
+    args = []
+    if execution_context is not None:
+        args.append(execution_context)
+    if undo is not None:
+        args.append(undo)
 
-        if context is None:
-            context = bpy.context
-        with context.temp_override(**context_override):
-            return operator(*args, **operator_args)
-else:
-    def op_override(operator, context_override: Dict[str, Any], context: Optional[bpy.types.Context] = None,
-                    execution_context: Optional[str] = None,
-                    undo: Optional[bool] = None, **operator_args) -> Set[str]:
-        """Call an operator with a context override"""
-        if context is not None:
-            context_base = context.copy()
-            context_base.update(context_override)
-            context_override = context_base
-        args = [context_override]
-        if execution_context is not None:
-            args.append(execution_context)
-        if undo is not None:
-            args.append(undo)
-
+    if context is None:
+        context = bpy.context
+    with context.temp_override(**context_override):
         return operator(*args, **operator_args)
 
 def set_material_shading():
@@ -2491,8 +2590,7 @@ def set_material_shading():
                     space.shading.studio_light = 'forest.exr'
                     space.shading.studiolight_rotate_z = 0.0
                     space.shading.studiolight_background_alpha = 0.0
-                    if bpy.app.version >= (2, 82):
-                        space.shading.render_pass = 'COMBINED'
+                    space.shading.render_pass = 'COMBINED'
 
 def clear_unused_data():
     """

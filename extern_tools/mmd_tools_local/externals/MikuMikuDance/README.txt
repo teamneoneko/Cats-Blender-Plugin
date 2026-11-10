@@ -1,1 +1,0 @@
-Copy from https://sites.google.com/view/vpvp/

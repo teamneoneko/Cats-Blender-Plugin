@@ -2,11 +2,10 @@
 
 import bpy
 import webbrowser
-from typing import List, Optional, Dict, Set, Tuple, Union
+from typing import List, Optional, Tuple
 from mathutils import Vector
 
 from . import common as Common
-from . import armature_bones as Bones
 from .register import register_wrap
 from .translations import t
 
@@ -44,7 +43,7 @@ class MergeArmature(bpy.types.Operator):
         merge_armature_name = Common.get_enum_property_value(bpy.context.scene, 'merge_armature', Common.get_armature_merge_list)
         base_armature = Common.get_objects().get(base_armature_name)
         merge_armature = Common.get_objects().get(merge_armature_name)
-        armature = Common.set_default_stage()
+        Common.set_default_stage()
         wm.progress_update(20)
 
         if not base_armature or not merge_armature:
@@ -86,7 +85,6 @@ class MergeArmature(bpy.types.Operator):
         merge_armatures(
             base_armature_name,
             merge_armature_name,
-            mesh_only=False,
             merge_same_bones=context.scene.merge_same_bones
         )
         wm.progress_update(90)
@@ -215,7 +213,7 @@ class AttachMesh(bpy.types.Operator):
         # Calculate optimal bone placement
         center_vector = Common.find_center_vector_of_vertex_group(mesh, mesh_name)
         if center_vector is None:
-            self.report({'ERROR'}, f"Unable to find center of vertex group")
+            self.report({'ERROR'}, "Unable to find center of vertex group")
             saved_data.load()
             wm.progress_end()
             return {'CANCELLED'}
@@ -270,38 +268,6 @@ class TransformValidator:
             return False, "Mesh has non-uniform scale. Please apply scale (Ctrl+A)"
         
         return True, ""
-    
-    @staticmethod
-    def validate_object_transforms_clean(obj: bpy.types.Object) -> bool:
-        """Check if an object's transforms are at default values using consistent tolerance."""
-        if not obj:
-            return False
-            
-        for i in range(3):
-            if (abs(obj.scale[i] - 1.0) > TRANSFORM_EPSILON or 
-                abs(obj.location[i]) > TRANSFORM_EPSILON or 
-                abs(obj.rotation_euler[i]) > TRANSFORM_EPSILON):
-                return False
-        return True
-    
-    @staticmethod
-    def validate_armature_transforms_compatible(
-        base_armature: bpy.types.Object,
-        merge_armature: bpy.types.Object, 
-        mesh_merge: Optional[bpy.types.Object] = None
-    ) -> bool:
-        """Validate transforms of armatures and optional mesh for compatibility."""
-        # Check if both armatures have compatible scale values
-        for i in range(3):
-            if abs(base_armature.scale[i] - merge_armature.scale[i]) > POSITION_TOLERANCE:
-                return False
-                
-            # Check rotations
-            if (abs(merge_armature.rotation_euler[i]) > POSITION_TOLERANCE or 
-                (mesh_merge and abs(mesh_merge.rotation_euler[i]) > POSITION_TOLERANCE)):
-                return False
-                
-        return True
 
 def validate_mesh_name(armature: bpy.types.Object, mesh_name: str) -> Tuple[bool, str]:
     """Validate mesh name doesn't conflict with existing bones."""
@@ -314,8 +280,6 @@ def validate_mesh_name(armature: bpy.types.Object, mesh_name: str) -> Tuple[bool
 
 def calculate_bone_orientation(mesh, vertices):
     """Calculate optimal bone orientation based on mesh geometry."""
-    from mathutils import Vector
-    
     # Calculate mesh dimensions
     if not vertices:
         return Vector((0, 0, 0.1)), 0.0
@@ -330,15 +294,20 @@ def calculate_bone_orientation(mesh, vertices):
     
     return dimensions, roll_angle
 
+def _is_rigidbody_or_joint(obj: bpy.types.Object) -> bool:
+    name = obj.name.lower()
+    return 'rigidbodies' in name or 'joints' in name
+
+
 def delete_rigidbodies_and_joints(armature: bpy.types.Object):
     """Delete rigid bodies and joints associated with the armature."""
     to_delete = []
     for child in Common.get_top_parent(armature).children:
-        if 'rigidbodies' in child.name.lower() or 'joints' in child.name.lower():
+        if _is_rigidbody_or_joint(child):
             to_delete.append(child)
-        for grandchild in child.children:
-            if 'rigidbodies' in grandchild.name.lower() or 'joints' in grandchild.name.lower():
-                to_delete.append(grandchild)
+            continue
+        to_delete.extend(g for g in child.children if _is_rigidbody_or_joint(g))
+
     for obj in to_delete:
         Common.delete_hierarchy(obj)
 
@@ -369,77 +338,12 @@ def is_transform_clean(obj: bpy.types.Object) -> bool:
     return True
 
 
-def attach_mesh_to_armature(mesh: bpy.types.Object, armature: bpy.types.Object, attach_bone_name: str):
-    """Attach a mesh to a bone in the armature."""
-    # Reparent mesh to target armature
-    mesh.parent = armature
-    mesh.parent_type = 'OBJECT'
-
-    # Apply transforms
-    Common.apply_transforms(armature_name=armature.name)
-    Common.apply_transforms_to_mesh(mesh)
-
-    # Prepare mesh vertex groups
-    Common.unselect_all()
-    Common.set_active(mesh)
-    Common.switch('EDIT')
-    prepare_mesh_vertex_groups(mesh)
-
-    # Switch armature to edit mode
-    Common.unselect_all()
-    Common.set_active(armature)
-    Common.switch('EDIT')
-
-    # Create bone in target armature
-    attach_to_bone = armature.data.edit_bones.get(attach_bone_name)
-    if not attach_to_bone:
-        raise Exception(f"Attach bone '{attach_bone_name}' not found in armature.")
-    mesh_bone = armature.data.edit_bones.new(mesh.name)
-    mesh_bone.parent = attach_to_bone
-
-    # Compute the center vector
-    center_vector = Common.find_center_vector_of_vertex_group(mesh, mesh.name)
-    if center_vector is None:
-        raise Exception(f"Unable to find center of vertex group '{mesh.name}'.")
-
-    # Set bone head and tail positions
-    mesh_bone.head = center_vector
-    mesh_bone.tail = center_vector.copy()
-    mesh_bone.tail[2] += 0.1
-
-    # Switch armature back to object mode
-    Common.switch('OBJECT')
-
-    # Remove previous armature modifiers and add new one
-    add_armature_modifier(mesh, armature)
-
-
-def prepare_mesh_vertex_groups(mesh: bpy.types.Object):
-    """Prepare mesh by assigning all vertices to a new vertex group."""
-    # Delete all previous vertex groups
-    if mesh.vertex_groups:
-        bpy.ops.object.vertex_group_remove(all=True)
-
-    # Select and assign all vertices to new vertex group
-    bpy.ops.mesh.select_all(action='SELECT')
-    vg = mesh.vertex_groups.new(name=mesh.name)
-    bpy.ops.object.vertex_group_assign()
-
-    Common.switch('OBJECT')
-
-    # Verify that the vertex group has vertices assigned
-    verts_in_group = [v for v in mesh.data.vertices if vg.index in [g.group for g in v.groups]]
-    if not verts_in_group:
-        raise Exception(f"Vertex group '{mesh.name}' is empty or does not exist.")
-
 def merge_armatures(
     base_armature_name: str,
     merge_armature_name: str,
-    mesh_only: bool,
-    mesh_name: Optional[str] = None,
     merge_same_bones: bool = False
 ):
-    tolerance = 0.00008726647  # around 0.005 degrees
+    tolerance = POSITION_TOLERANCE
     base_armature = Common.get_objects().get(base_armature_name)
     merge_armature = Common.get_objects().get(merge_armature_name)
 
@@ -495,8 +399,9 @@ def merge_armatures(
         original_parents[bone.name] = bone.parent.name if bone.parent else None
 
     if not merge_same_bones:
-        attach_bone = bpy.context.scene.attach_to_bone 
-        if attach_bone:
+        attach_bone = Common.get_enum_property_value(
+            bpy.context.scene, 'attach_to_bone', Common.get_bones_merge)
+        if attach_bone and not Common.is_enum_empty(attach_bone):
             for bone in merge_armature.data.bones:
                 # Only set new parent for root bones (bones without parents)
                 if not bone.parent:
@@ -566,19 +471,19 @@ def merge_armatures(
     meshes_merged = [mesh for mesh in meshes_merged if mesh]
 
     # Process vertex groups to merge or rename '.merge' groups
-    if not mesh_only:
-        process_vertex_groups(meshes_merged)
-        
-        # Remove zero weight bones after vertex groups are processed
-        if bpy.context.scene.merge_armatures_remove_zero_weight_bones:
-            for mesh in meshes_merged:
-                Common.remove_unused_vertex_groups(ignore_main_bones=True)
-            if Common.get_meshes_objects(armature_name=base_armature_name):
-                Common.delete_zero_weight(armature_name=base_armature_name)
-                
-            # Clean up the scene
-            Common.set_default_stage()
-            Common.remove_rigidbodies_global()
+    process_vertex_groups(meshes_merged)
+
+    # Remove zero weight bones after vertex groups are processed
+    if bpy.context.scene.merge_armatures_remove_zero_weight_bones:
+        # remove_unused_vertex_groups() walks every mesh in the scene itself, so it is
+        # called once rather than once per mesh in meshes_merged.
+        Common.remove_unused_vertex_groups(ignore_main_bones=True)
+        if Common.get_meshes_objects(armature_name=base_armature_name):
+            Common.delete_zero_weight(armature_name=base_armature_name)
+
+        # Clean up the scene
+        Common.set_default_stage()
+        Common.remove_rigidbodies_global()
 
     # Remove any remaining '.merge' bones
     Common.unselect_all()
@@ -593,13 +498,12 @@ def merge_armatures(
     # Final cleanup
     Common.set_default_stage()
     Common.remove_rigidbodies_global()
-    if not mesh_only:
-        if bpy.context.scene.merge_armatures_remove_zero_weight_bones:
-            Common.remove_unused_vertex_groups()
-            if Common.get_meshes_objects(armature_name=base_armature_name):
-                Common.delete_zero_weight(armature_name=base_armature_name)
-            Common.set_default_stage()
-            Common.remove_rigidbodies_global()
+    if bpy.context.scene.merge_armatures_remove_zero_weight_bones:
+        Common.remove_unused_vertex_groups()
+        if Common.get_meshes_objects(armature_name=base_armature_name):
+            Common.delete_zero_weight(armature_name=base_armature_name)
+        Common.set_default_stage()
+        Common.remove_rigidbodies_global()
 
     # Clear unused data blocks
     Common.clear_unused_data()
@@ -643,44 +547,6 @@ def adjust_merge_armature_transforms(
         mesh_merge.location[i] = 0
         mesh_merge.rotation_euler[i] = 0
         mesh_merge.scale[i] = 1
-
-def detect_bones_to_merge(
-    base_edit_bones: bpy.types.ArmatureEditBones,
-    merge_edit_bones: bpy.types.ArmatureEditBones,
-    tolerance: float,
-    merge_same_bones: bool
-) -> List[str]:
-    """Detect corresponding bones between base and merge armatures using smart detection and position tolerance."""
-    bones_to_merge = []
-
-    # Cache base bone positions using mathutils.Vector
-    base_bones_positions = {
-        bone.name: Vector(bone.head) for bone in base_edit_bones
-    }
-
-    # Smart bone detection
-    for merge_bone in merge_edit_bones:
-        merge_bone_position = Vector(merge_bone.head)
-        found_match = False
-
-        if merge_same_bones and merge_bone.name in base_bones_positions:
-            # If merging same bones by name
-            bones_to_merge.append(merge_bone.name)
-            found_match = True
-        else:
-            # Find bones with close positions using Vector distance calculation
-            for base_bone_name, base_bone_position in base_bones_positions.items():
-                distance = (merge_bone_position - base_bone_position).length
-                if distance <= tolerance:
-                    bones_to_merge.append(base_bone_name)
-                    found_match = True
-                    break
-
-        if not found_match:
-            # Handle unmatched bones if needed
-            pass
-
-    return bones_to_merge
 
 def process_vertex_groups(meshes: List[bpy.types.Object]) -> None:
     """Process all vertex groups in the given meshes efficiently, merging or renaming groups with '.merge' suffix."""
@@ -747,17 +613,6 @@ def _merge_vertex_groups_optimized(mesh: bpy.types.Object, vg_from: bpy.types.Ve
         # Batch operation - add all vertices at once with their final weights
         for vertex_idx, weight in weights_combined.items():
             vg_to.add([vertex_idx], weight, 'REPLACE')
-
-def mix_vertex_groups(mesh: bpy.types.Object, vg_from_name: str, vg_to_name: str) -> None:
-    """Mix vertex group weights from 'vg_from' into 'vg_to' and remove 'vg_from'."""
-    vg_from = mesh.vertex_groups.get(vg_from_name)
-    vg_to = mesh.vertex_groups.get(vg_to_name)
-    
-    if not vg_from or not vg_to:
-        return
-
-    _merge_vertex_groups_optimized(mesh, vg_from, vg_to)
-    mesh.vertex_groups.remove(vg_from)
 
 def add_armature_modifier(mesh: bpy.types.Object, armature: bpy.types.Object):
     """Add an armature modifier to the mesh."""

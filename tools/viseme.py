@@ -6,21 +6,6 @@ from .register import register_wrap
 from collections import OrderedDict
 from .translations import t
 
-class VisemeCache:
-    _cache = {}
-    
-    @classmethod
-    def get_cached_shape(cls, key, mix_data):
-        """Get cached shape key data if available"""
-        cache_key = (key, tuple(tuple(x) for x in mix_data))
-        return cls._cache.get(cache_key)
-    
-    @classmethod
-    def cache_shape(cls, key, mix_data, shape_data):
-        """Cache generated shape key data"""
-        cache_key = (key, tuple(tuple(x) for x in mix_data))
-        cls._cache[cache_key] = shape_data
-
 def preview_viseme(mesh, mix_data, shape_intensity):
     """Preview viseme shape in viewport and return original values"""
     original_values = {}
@@ -318,11 +303,7 @@ class AutoVisemeButton(bpy.types.Operator):
         for index, key in enumerate(shapekey_data):
             obj = shapekey_data[key]
             wm.progress_update(index)
-            
-            cached_data = VisemeCache.get_cached_shape(key, obj['mix'])
-            if cached_data:
-                continue
-                
+
             if context.scene.viseme_validate_deformation:
                 if not validate_deformation(mesh, obj['mix']):
                     self.report({'WARNING'}, t('AutoVisemeButton.warning.deformation').format(key))
@@ -331,10 +312,7 @@ class AutoVisemeButton(bpy.types.Operator):
                 original_values = preview_viseme(mesh, obj['mix'], context.scene.shape_intensity)
             
             self.mix_shapekey(context, renamed_shapes, obj['mix'], key, context.scene.shape_intensity)
-            
-            shape_data = [v.co.copy() for v in mesh.data.shape_keys.key_blocks[key].data]
-            VisemeCache.cache_shape(key, obj['mix'], shape_data)
-            
+
             if context.scene.viseme_preview_mode:
                 for shape_name, value in original_values.items():
                     if shape_name in mesh.data.shape_keys.key_blocks:

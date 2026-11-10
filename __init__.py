@@ -1,23 +1,28 @@
 # MIT License
 
-CATS_VERSION = "5.0.2.2"
+CATS_VERSION = "5.3.1.0"
 dev_branch = False
 
 import os
 import sys
 
-# Append files to sys path
-file_dir = os.path.join(os.path.dirname(__file__), 'extern_tools')
-if file_dir not in sys.path:
-    sys.path.append(file_dir)
-
 import shutil
 import pathlib
-import requests
 
-from importlib.util import find_spec
+# `requests` is normally bundled with Blender's Python, but don't let a missing copy stop CATS
+# from registering, the core rig tools don't need it. Only the network features do (This should not
+# happen with Downloaded versions of Blender from blender.org, This is mainly for Linux Users who use
+# There distros blender from the package manager.)
+try:
+    import requests
+    _requests_available = True
+except ImportError:
+    requests = None
+    _requests_available = False
 
 from . import globs
+
+globs.requests_available = _requests_available
 
 # Check if cats is reloading or started fresh
 if "bpy" not in locals():
@@ -29,9 +34,7 @@ else:
 # Load or reload all cats modules
 if not is_reloading:
     # This order is important
-    import mmd_tools_local
-    if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
-        import imscale.immersive_scaler as imscale
+    from . import mmd_tools_local
     from . import updater
     from . import tools
     from . import ui
@@ -40,8 +43,6 @@ else:
     import importlib
     importlib.reload(updater)
     importlib.reload(mmd_tools_local)
-    if 'imscale' in vars():
-        importlib.reload(imscale)
     importlib.reload(tools)
     importlib.reload(ui)
     importlib.reload(extentions)
@@ -51,14 +52,17 @@ from .tools.translations import t
 
 
 # How to update mmd_tools_local:
-# MMD Tools is no longer a drop in replacement, manually work is required please ask
-# us to update it instead.
+# It is vendored from https://github.com/MMD-Blender/blender_mmd_tools by a script.
+# Run (from the repo root):
+#     python scripts/vendor_mmd_tools.py <version>   e.g. 4.5.13
+# That downloads the release, moves operators into the mmd_tools_local.* namespace
+# (so it can't clash with an official MMD Tools install), strips the nested
+# blender_manifest.toml, and lifts the opencc wheel into ./wheels/ remember to
+# update the `wheels` list in blender_manifest.toml if the script reports a change.
+# See the docstring in scripts/vendor_mmd_tools.py for the full rationale.
 
-# How to update google_trans_new:
-# In google_trans.py comment out everything that has to do with urllib3
-# This is done because 3.5 doesn't have urllib3 by default and it is only used
-# to suppress debug logs in the console
-# Done
+# Online translation is handled by tools/translation_providers.py (Google, DeepL,
+# LibreTranslate, MyMemory) there is no longer a bundled google_trans_new package.
 
 # How to set up PyCharm with Blender:
 # https://b3d.interplanety.org/en/using-external-ide-pycharm-for-writing-blender-scripts/
@@ -163,14 +167,20 @@ def remove_corrupted_files():
 
 
 def check_unsupported_blender_versions():
-    # Don't allow Blender versions older than 4.5
-    if bpy.app.version < (5, 0):
-        unregister()
-        sys.tracebacklimit = 0
-        raise ImportError(t('Main.error.29unsupportedVersion'))
-     
-    # Don't allow 5.0+
-    if bpy.app.version >= (5, 1):
+    # Blender enforces blender_version_min from the manifest before the add-on loads,
+    # so only the upper bound needs a runtime guard here now.
+
+    # Escape hatch for the test suite's advisory run against an unreleased Blender:
+    # it needs Cats to actually load so it can report what breaks there. Nothing
+    # sets this during normal use, so users are still blocked from running Cats on
+    # a version it does not support.
+    if os.environ.get('CATS_ALLOW_UNSUPPORTED_BLENDER'):
+        print(f"### CATS: loading on unsupported Blender {bpy.app.version} because "
+              "CATS_ALLOW_UNSUPPORTED_BLENDER is set. Expect breakage.")
+        return
+
+    # Don't allow Blender versions newer than the current supported series
+    if bpy.app.version >= (5, 4):
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.40unsupportedVersion'))
 
@@ -232,26 +242,17 @@ def register():
     except ValueError:
         print('mmd_tools_local is already registered')
 
-    # Register immersive scaler if it's loaded
-    if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
-        import imscale.immersive_scaler as imscale
-        try:
-            imscale.register()
-        except ModuleNotFoundError:
-            pass
-
     # Register all classes
     count = 0
     tools.register.order_classes()
-    for cls in tools.register.__bl_classes:
+    for cls in tools.register.__bl_ordered_classes:
         try:
             bpy.utils.register_class(cls)
             count += 1
-        except ValueError:
-            pass
-    # print('Registered', count, 'CATS classes.')
-    if count < len(tools.register.__bl_classes):
-        print('Skipped', len(tools.register.__bl_classes) - count, 'CATS classes.')
+        except ValueError as e:
+            print(f'CATS: failed to register {cls!r}: {e}')
+    if count < len(tools.register.__bl_ordered_classes):
+        print('CATS: skipped', len(tools.register.__bl_ordered_classes) - count, 'classes (see errors above).')
 
     # Register Scene types
     extentions.register()
@@ -262,24 +263,23 @@ def register():
     # Load the dictionaries and check if they are found.
     globs.dict_found = tools.translate.load_translations()
 
-    # Set preferred Blender options
-    if hasattr(tools.common.get_user_preferences(), 'system') and hasattr(tools.common.get_user_preferences().system, 'use_international_fonts'):
-        tools.common.get_user_preferences().system.use_international_fonts = True
-    elif hasattr(tools.common.get_user_preferences(), 'view') and hasattr(tools.common.get_user_preferences().view, 'use_international_fonts'):
-        tools.common.get_user_preferences().view.use_international_fonts = True
-    else:
-        pass  # From 2.83 on this is no longer needed
-    tools.common.get_user_preferences().filepaths.use_file_compression = True
-    bpy.context.window_manager.addon_support = {'OFFICIAL', 'COMMUNITY'}
-
     # Add shapekey button to shapekey menu
     bpy.types.MESH_MT_shape_key_context_menu.append(tools.shapekey.addToShapekeyMenu)
 
     # Disable request warning when using google translate
-    requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
+    if globs.requests_available:
+        requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
     # Apply the settings after a short time, because you can't change checkboxes during register process
     tools.settings.start_apply_settings_timer()
+
+    # Re-apply the user's settings whenever a .blend is opened (scene props are
+    # per-file, so a freshly opened file would otherwise override them).
+    tools.settings.register_load_post_handler()
+
+    # Kick off the background update check once at startup instead of on every
+    # panel redraw.
+    updater.check_for_update_background(check_on_startup=True)
 
     print("### Loaded CATS successfully!\n")
 
@@ -303,13 +303,8 @@ def unregister():
         print('mmd_tools_local was not registered')
         pass
 
-    # Unload immersive scaler
-    if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
-        import imscale.immersive_scaler as imscale
-        try:
-            imscale.unregister()
-        except ModuleNotFoundError:
-            pass 
+    # Remove Scene/Material properties before the PropertyGroups they point to
+    extentions.unregister()
 
     # Unload all classes in reverse order
     count = 0
@@ -328,16 +323,16 @@ def unregister():
 
     # Remove shapekey button from shapekey menu
     try:
-        bpy.types.MESH_MT_shape_key_specials.remove(tools.shapekey.addToShapekeyMenu)
+        bpy.types.MESH_MT_shape_key_context_menu.remove(tools.shapekey.addToShapekeyMenu)
     except AttributeError:
         print('shapekey button was not registered')
         pass
+    except ValueError:
+        print('shapekey button was not registered')
+        pass
 
-    # Remove folder from sys path
-    if file_dir in sys.path:
-        sys.path.remove(file_dir)
-
-    tools.settings.stop_apply_settings_threads()
+    tools.settings.stop_apply_settings_timer()
+    tools.settings.unregister_load_post_handler()
 
     print("### Unloaded CATS successfully!\n")
 

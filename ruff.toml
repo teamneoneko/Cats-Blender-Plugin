@@ -1,0 +1,25 @@
+# Ruff configuration for Cats-Blender-Plugin.
+#
+# Scope: first-party code. Vendored third-party trees are excluded because we
+# ship them as-is and can't act on their lint findings without patching upstream.
+# Blender 5.2 bundles CPython 3.13, the oldest Python Cats has to run on.
+target-version = "py313"
+
+extend-exclude = [
+    "mmd_tools_local",
+    "extern_tools",
+    "wheels",
+]
+
+[lint]
+# Pyflakes only: high-signal, behaviour-relevant defects (undefined names,
+# unused imports, redefinitions, unused variables) without the noise of
+# stylistic rules on a large existing codebase. Widen this later if desired.
+select = ["F"]
+
+[lint.per-file-ignores]
+# Blender add-ons import submodules in their package __init__ files purely for
+# the registration side effect: defining a class decorated with register_wrap
+# appends it to the registration list at import time. Those imports look unused
+# to a linter but removing them would stop operators/panels from registering.
+"__init__.py" = ["F401"]

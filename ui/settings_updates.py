@@ -4,29 +4,32 @@ import bpy
 
 from .. import globs
 from .. import updater
-from .main import ToolPanel, layout_split
+from .main import ToolPanel, layout_split, draw_section, draw_wiki_button
 from ..tools import settings as Settings
 from ..tools.register import register_wrap
 from ..tools.translations import t, DownloadTranslations
+
+WIKI = 'UpdaterPanel.wikiURL'
+
 
 @register_wrap
 class UpdaterPanel(ToolPanel, bpy.types.Panel):
     bl_idname = 'VIEW3D_PT_updater_v3'
     bl_label = t('UpdaterPanel.label')
     bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 110
+
+    def draw_header_preset(self, context):
+        draw_wiki_button(self.layout, WIKI, pad=1.5)
 
     def draw(self, context):
         layout = self.layout
         box = layout.box()
 
         # Settings section
-        settings_box = box.box()
-        settings_col = settings_box.column(align=True)
-        
-        header_row = settings_col.row(align=True)
-        header_row.scale_y = 0.75
-        header_row.label(text=t('UpdaterPanel.name'), icon=globs.ICON_SETTINGS)
-        
+        settings_col = draw_section(box, t('UpdaterPanel.name'), globs.ICON_SETTINGS,
+                                    WIKI, 'general-settings')
+
         settings_col.separator()
 
         # General settings
@@ -39,9 +42,11 @@ class UpdaterPanel(ToolPanel, bpy.types.Panel):
         row = settings_col.row(align=True)
         row.prop(context.scene, "export_translate_csv")
         
-        row = settings_col.row(align=True)
-        path = context.scene.custom_translate_csv_export_dir if context.scene.custom_translate_csv_export_dir else default_cats_dir
-        row.prop(context.scene, "custom_translate_csv_export_dir")
+        settings_col.separator(factor=0.5)
+        lbl = settings_col.row(align=True)
+        lbl.scale_y = 0.75
+        lbl.label(text=t('Scene.customfoldershapekeycsv.label'))
+        settings_col.prop(context.scene, "custom_translate_csv_export_dir", text="")
 
         settings_col.separator()
 
@@ -60,9 +65,9 @@ class UpdaterPanel(ToolPanel, bpy.types.Panel):
         settings_col.separator()
 
         # Debug options
-        debug_box = box.box()
-        debug_col = debug_box.column(align=True)
-        
+        debug_col = draw_section(box, t('UpdaterPanel.debugSection'), 'CONSOLE',
+                                 WIKI, 'debug-options')
+
         row = debug_col.row(align=True)
         row.scale_y = 0.75
         row.operator(Settings.ResetGoogleDictButton.bl_idname, icon='X')

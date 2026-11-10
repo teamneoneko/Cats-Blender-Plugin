@@ -1,6 +1,5 @@
 # MIT License
 
-import bpy
 
 # for bone root parenting
 root_bones = {}
@@ -13,6 +12,11 @@ dev_branch = False
 dict_found = False
 version = None
 version_str = ''
+
+# Set at registration. False means the `requests` module (normally bundled with Blender's Python)
+# is unavailable, so network-only features (translation/dictionary downloads, Google translate) are
+# disabled while the core rig tools keep working.
+requests_available = True
 
 # other
 time_format = "%Y-%m-%d %H:%M:%S"
